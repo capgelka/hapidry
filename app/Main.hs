@@ -10,6 +10,7 @@ import Data.Aeson (FromJSON)
 import Data.Aeson.Lens (key)
 import Data.Map (Map)
 import Data.Text (Text)
+
 import qualified Data.ByteString.Lazy as B
     
 import Data.Digest.Pure.MD5 (md5, MD5Digest)
@@ -34,11 +35,11 @@ appkey = "6e5f8970828d967595661329239df3b5"
 skey = "a503505ae803ee7f4fd477f01c1958b1"
 
 digestToText :: MD5Digest -> Text
-digestToText = read . show
+digestToText = read .  (\s -> "\"" ++ s ++ "\"") . show
 
 keyHash :: B.ByteString -> B.ByteString -> Text
-keyHash pass key = read $ "\"" ++ show (md5 $ B.append key pass) ++ "\"" ::Text
--- keyHash pass key = digestToText $ md5 $ B.append key pass
+-- keyHash pass key = read $ "\"" ++ show (md5 $ B.append key pass) ++ "\"" ::Text
+keyHash pass key = digestToText $ md5 $ B.append key pass
                    -- in case hash of
                    --      (MD5Digest h) -> h
 -- Get GHC to derive a FromJSON instance for us.
