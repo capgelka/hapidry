@@ -31,7 +31,9 @@ executable hapidry-exe
                      , hslogger
                      , aeson
                      , lens
-                     , pureMD5
+                     , cryptohash
+                     , binary
+                     , base16-bytestring
                      , bytestring
                      , containers
                      , text

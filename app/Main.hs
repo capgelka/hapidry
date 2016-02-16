@@ -10,10 +10,14 @@ import Data.Aeson (FromJSON)
 import Data.Aeson.Lens (key)
 import Data.Map (Map)
 import Data.Text (Text)
-
-import qualified Data.ByteString.Lazy as B
+import Data.Text.Encoding (decodeLatin1)
+import Data.Binary (encode)
+import qualified Data.ByteString.Base16 as B16 (encode)
+import qualified Data.ByteString.Char8 as B
+import Data.ByteString.Lazy (toStrict)
+import qualified Crypto.Hash.MD5 as MD5
     
-import Data.Digest.Pure.MD5 (md5, MD5Digest)
+
 import GHC.Generics (Generic)
 import qualified Control.Exception as E
 
@@ -34,23 +38,24 @@ data GetBody = GetBody {
 appkey = "6e5f8970828d967595661329239df3b5"
 skey = "a503505ae803ee7f4fd477f01c1958b1"
 
-digestToText :: MD5Digest -> Text
-digestToText = read .  (\s -> "\"" ++ s ++ "\"") . show
+-- digestToText :: MD5Digest -> Text
+-- --digestToText = read .  (\s -> "\"" ++ s ++ "\"") . show
+-- digestToText = decodeUtf8 . toStrict . encode
 
 keyHash :: B.ByteString -> B.ByteString -> Text
 -- keyHash pass key = read $ "\"" ++ show (md5 $ B.append key pass) ++ "\"" ::Text
-keyHash pass key = digestToText $ md5 $ B.append key pass
+keyHash pass key = decodeLatin1 $ B16.encode $ MD5.hash $ B.append key pass --need fix  to CP1251
                    -- in case hash of
                    --      (MD5Digest h) -> h
 -- Get GHC to derive a FromJSON instance for us.
 
-        -- self.result = requests.get(
-        --     'http://www.diary.ru/api/?appkey={}&password={}&username={}&method=user.auth'.format(
-        --         self.appkey,
-        --         hashlib.md5(
-        --             self.skey + bytes(self.password, 'cp1251'))
-        --                 .hexdigest(),
-        --         self.username)).text
+-- self.result = requests.get(
+--     'http://www.diary.ru/api/?appkey={}&password={}&username={}&method=user.auth'.format(
+--         self.appkey,
+--         hashlib.md5(
+--             self.skey + bytes(self.password, 'cp1251'))
+--                 .hexdigest(),
+--         self.username)).text
         -- self.sid = json.loads(self.result)['sid']
         -- print(type(self.sid))
 
@@ -152,6 +157,8 @@ main = do
   -- basic_asJSON
   -- failing_asJSON_catch
   -- either_asJSON
+  print skey
+  print $ keyHash "1234123" skey 
   r <- authRequest appkey skey "hastest" "1234123"
   print $ r ^? responseBody
   lens_aeson
