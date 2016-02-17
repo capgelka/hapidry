@@ -33,6 +33,7 @@ executable hapidry-exe
                      , lens
                      , cryptohash
                      , binary
+                     , mtl
                      , base16-bytestring
                      , bytestring
                      , containers

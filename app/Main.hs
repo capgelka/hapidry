@@ -9,6 +9,8 @@ import Control.Lens ((&), (^.), (^?), (.~))
 import Data.Aeson (FromJSON)
 import Data.Aeson.Lens (key)
 import Data.Map (Map)
+import Data.Maybe (fromMaybe)
+import Data.Either
 import Data.Text (Text)
 import Data.Text.Encoding (decodeLatin1)
 import Data.Binary (encode)
@@ -16,7 +18,7 @@ import qualified Data.ByteString.Base16 as B16 (encode)
 import qualified Data.ByteString.Char8 as B
 import Data.ByteString.Lazy (toStrict)
 import qualified Crypto.Hash.MD5 as MD5
-    
+import Control.Monad.Reader
 
 import GHC.Generics (Generic)
 import qualified Control.Exception as E
@@ -49,23 +51,47 @@ keyHash pass key = decodeLatin1 $ B16.encode $ MD5.hash $ B.append key pass --ne
                    --      (MD5Digest h) -> h
 -- Get GHC to derive a FromJSON instance for us.
 
--- self.result = requests.get(
---     'http://www.diary.ru/api/?appkey={}&password={}&username={}&method=user.auth'.format(
---         self.appkey,
---         hashlib.md5(
---             self.skey + bytes(self.password, 'cp1251'))
---                 .hexdigest(),
---         self.username)).text
-        -- self.sid = json.loads(self.result)['sid']
-        -- print(type(self.sid))
+-- apiGet :: IO (Response B.ByteString)
+apiGet params sid = do
+    r <- getWith params' "http://www.diary.ru/api"
+    let code = r ^? responseBody . key "result"
+    return $ case code of
+               (Just "0") -> r
+               _          -> r
+        where
+          params' = params' & param "sid" .~ [sid]
 
-authRequest appkey secret user password = getWith params "http://www.diary.ru/api" where
-    params = defaults
-             & param "appkey" .~ [appkey]
-             & param "password" .~ [keyHash password secret]
-             & param "username" .~ [user]
-             & param "method" .~  ["user.auth"]
+         -- -           case response of
+         --              (Right x) -> 
 
+--                       where response = do
+--                                     r <- getWith params "http://www.diary.ru/api" params
+
+-- sid :: Reader B.ByteString B.ByteString
+    
+--authRequest :: B.ByteString -> B.ByteString -> B.ByteString -> B.ByteString -> IO (Response B.ByteString) 
+authRequest appkey secret user password = getWith params "http://www.diary.ru/api"
+  -- return r
+      where
+  -- x = case r ^? responseBody . key "result" of
+  --       "0" ->  r ^? responseBody . key "sid"
+  --       _   ->  r ^? responseBody . key "result"
+
+                --result = r ^? responseBody . key "result"
+        params = defaults
+                            & param "appkey" .~ [appkey]
+                            & param "password" .~ [keyHash password secret]
+                            & param "username" .~ [user]
+                            & param "method" .~  ["user.auth"]
+
+authorize appkey secret user password = do
+  r <- authRequest appkey secret user password
+  let code = r ^? responseBody . key "result"
+  return $ case code of
+             (Just "0") -> Right $ fromMaybe "" $ r ^? responseBody . key "sid"
+             (Just _  ) -> Left $ fromMaybe "" $ code--r ^? responseBody . key "Error"
+             Nothing    -> Left "Unkown error"
+                           
 instance FromJSON GetBody
 
 
@@ -156,9 +182,18 @@ main :: IO ()
 main = do
   -- basic_asJSON
   -- failing_asJSON_catch
-  -- either_asJSON
+  either_asJSON
   print skey
-  print $ keyHash "1234123" skey 
-  r <- authRequest appkey skey "hastest" "1234123"
-  print $ r ^? responseBody
+  print $ keyHash "1234123" skey
+ -- print $ authRequest appkey skey "hastest" "1234123"
+  r <- authRequest appkey skey "hastest" "12341230"
+  -- print r
+  print $ r ^? responseBody . key "sid"
+  -- (authorize appkey skey "hastest" "12341230") + 2
+  a <- authorize appkey skey "hastest" "12341230"
+  print $ a
+  aa <- authorize appkey skey "hastest" "1234123"
+  print $ aa
+  -- print v
+  -- print authRequest
   lens_aeson
