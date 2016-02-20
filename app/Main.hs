@@ -8,7 +8,7 @@
 import Control.Lens ((&), (^.), (^?), (.~))
 import Data.Aeson (FromJSON, fromJSON)
 import Data.Aeson.Encode (encodeToTextBuilder, encodeToBuilder)
-import Data.Aeson.Lens (key, _String)
+import Data.Aeson.Lens (key, _String, _Integer)
 import Data.Map (Map)
 import Data.Maybe (fromMaybe)
 import Data.Either
@@ -17,6 +17,7 @@ import qualified Data.Text.Lazy as L (toStrict)
 import qualified Data.Text.Lazy.Encoding as LE (decodeLatin1)
 import qualified Data.Text.Lazy.Builder as LB (toLazyText)
 import Data.Text.Encoding (decodeLatin1)
+import Data.Text.Read (decimal)
 import Data.Binary (encode)
 import qualified Data.ByteString.Base16 as B16 (encode)
 import qualified Data.ByteString.Char8 as B
@@ -53,7 +54,7 @@ data GetBody = GetBody {
 data  ClientCredentials =  ClientCredentials {
       password :: B.ByteString,
       appkey  :: Text,
-      sid     :: Either Text Text,
+      sid     :: Either Integer Text,
       user    :: Text,  
       secret  :: B.ByteString
       } deriving Show
@@ -70,7 +71,10 @@ keyHash pass key = decodeLatin1 $ B16.encode $ MD5.hash $ B.append key pass --ne
 -- apiGet :: IO (Response B.ByteString)
 -- sid :: Reader                  -- 
 
--- apiGet params sid = do
+-- apiGet :: ClientCredentials -> [(Text, Text)] -> IO ClientCredentials
+-- apiGet env params = case env & sid of
+--                       (Right x) -> 
+                    
 --     r <- getWith params' "http://www.diary.ru/api"
 --     let code = r ^? responseBody . key "result"
 --     return $ case code of
@@ -105,43 +109,13 @@ authRequest env = do
     -- authParse :: IO a -> IO b
     authParse response = case response  ^? responseBody . key "result" of
             (Just "0") -> Right  $ (response ^. responseBody . key "sid" . _String)
-            (Just  x)  -> Left $ (response ^. responseBody . key "result" . _String)
-            Nothing    -> Left "Unkown error"   
+            (Just  x)  -> Left $ (\(Right a) -> fst a)
+                               $ decimal
+                               $ (response ^. responseBody . key "result" . _String)
+            Nothing    -> Left $  (-1)
 
 
-    -- ssid = case code of
-    --    (Just "0") -> Right ""
-    --    (Just _  ) -> Left  ""-- $ fromJSON $ fromMaybe "" $ code . _String--r ^? responseBody . key "Error"
-    --    Nothing    -> Left "Unkown error"
-    -- code = (getWith params "http://www.diary.ru/api" ) ^? responseBody . key "result"
-    -- params = defaults
-    --                         & param "appkey" .~ [appkey env]
-    --                         & param "password" .~ [keyHash (password env) (secret env)]
-    --                         & param "username" .~ [user env ]
-    --                         & param "method" .~  ["user.auth"]
-    -- Right $ fromJSON $ fromMaybe "" $ (getWith params "http://www.diary.ru/api")  ^? responseBody . key "sid" . _String
-  -- return r
-    --   where
-        
-  -- -- x = case r ^? responseBody . key "result" of
-  -- --       "0" ->  r ^? responseBody . key "sid"
-  -- --       _   ->  r ^? responseBody . key "result"
 
-  --               --result = r ^? responseBody . key "result"
-  --       params = defaults
-  --                           & param "appkey" .~ [appkey env]
-  --                           & param "password" .~ [keyHash $ (password env) (secret env)]
-  --                           & param "username" .~ [user env ]
-  --                           & param "method" .~  ["user.auth"]
-
--- authorize appkey secret user password = do
---   r <- authRequest appkey secret user password
---   let code = r ^? responseBody . key "result"
---   return $ case code of
---              (Just "0") -> Right $ fromMaybe "" $ r ^? responseBody . key "sid"
---              (Just _  ) -> Left $ fromMaybe "" $ code--r ^? responseBody . key "Error"
---              Nothing    -> Left "Unkown error"
-                           
 instance FromJSON GetBody
 
 
@@ -248,7 +222,7 @@ main = do
                 password = "1234123",
                 appkey  = "6e5f8970828d967595661329239df3b5",
                 sid     = Right "",
-                user    = "hastest",  
+                user    = "hasteset",  
                 secret  = "a503505ae803ee7f4fd477f01c1958b1"
              }
              
