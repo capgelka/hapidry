@@ -2,21 +2,26 @@
 --
 -- This library provides several ways to handle JSON responses
 
-{-# LANGUAGE DeriveGeneric, OverloadedStrings, ScopedTypeVariables #-}
+{-# LANGUAGE DeriveGeneric, OverloadedStrings#-}
 {-# OPTIONS_GHC -fno-warn-unused-binds #-}
 
 import Control.Lens ((&), (^.), (^?), (.~))
-import Data.Aeson (FromJSON)
-import Data.Aeson.Lens (key)
+import Data.Aeson (FromJSON, fromJSON)
+import Data.Aeson.Encode (encodeToTextBuilder, encodeToBuilder)
+import Data.Aeson.Lens (key, _String)
 import Data.Map (Map)
 import Data.Maybe (fromMaybe)
 import Data.Either
 import Data.Text (Text)
+import qualified Data.Text.Lazy as L (toStrict)
+import qualified Data.Text.Lazy.Encoding as LE (decodeLatin1)
+import qualified Data.Text.Lazy.Builder as LB (toLazyText)
 import Data.Text.Encoding (decodeLatin1)
 import Data.Binary (encode)
 import qualified Data.ByteString.Base16 as B16 (encode)
 import qualified Data.ByteString.Char8 as B
 import Data.ByteString.Lazy (toStrict)
+import Data.ByteString.Builder (toLazyByteString)
 import qualified Crypto.Hash.MD5 as MD5
 import Control.Monad.Reader
 
@@ -37,12 +42,23 @@ data GetBody = GetBody {
   } deriving (Show, Generic)
 
 
-appkey = "6e5f8970828d967595661329239df3b5"
-skey = "a503505ae803ee7f4fd477f01c1958b1"
+--appkey = "6e5f8970828d967595661329239df3b5"
+--skey = "a503505ae803ee7f4fd477f01c1958b1"
 
 -- digestToText :: MD5Digest -> Text
 -- --digestToText = read .  (\s -> "\"" ++ s ++ "\"") . show
 -- digestToText = decodeUtf8 . toStrict . encode
+
+-- all data needed for requests to api
+data  ClientCredentials =  ClientCredentials {
+      password :: B.ByteString,
+      appkey  :: Text,
+      sid     :: Either Text Text,
+      user    :: Text,  
+      secret  :: B.ByteString
+      } deriving Show
+
+type Environment a = ReaderT ClientCredentials IO a
 
 keyHash :: B.ByteString -> B.ByteString -> Text
 -- keyHash pass key = read $ "\"" ++ show (md5 $ B.append key pass) ++ "\"" ::Text
@@ -52,14 +68,16 @@ keyHash pass key = decodeLatin1 $ B16.encode $ MD5.hash $ B.append key pass --ne
 -- Get GHC to derive a FromJSON instance for us.
 
 -- apiGet :: IO (Response B.ByteString)
-apiGet params sid = do
-    r <- getWith params' "http://www.diary.ru/api"
-    let code = r ^? responseBody . key "result"
-    return $ case code of
-               (Just "0") -> r
-               _          -> r
-        where
-          params' = params' & param "sid" .~ [sid]
+-- sid :: Reader                  -- 
+
+-- apiGet params sid = do
+--     r <- getWith params' "http://www.diary.ru/api"
+--     let code = r ^? responseBody . key "result"
+--     return $ case code of
+--                (Just "0")  -> r
+--                (Just "12") ->   r
+--         where
+--           params' = params' & param "sid" .~ [sid]
 
          -- -           case response of
          --              (Right x) -> 
@@ -69,28 +87,60 @@ apiGet params sid = do
 
 -- sid :: Reader B.ByteString B.ByteString
     
---authRequest :: B.ByteString -> B.ByteString -> B.ByteString -> B.ByteString -> IO (Response B.ByteString) 
-authRequest appkey secret user password = getWith params "http://www.diary.ru/api"
-  -- return r
-      where
-  -- x = case r ^? responseBody . key "result" of
-  --       "0" ->  r ^? responseBody . key "sid"
-  --       _   ->  r ^? responseBody . key "result"
-
-                --result = r ^? responseBody . key "result"
-        params = defaults
-                            & param "appkey" .~ [appkey]
-                            & param "password" .~ [keyHash password secret]
-                            & param "username" .~ [user]
+--authRequest :: Environment (IO ClientCredentials)--B.ByteString -> B.ByteString -> B.ByteString -> B.ByteString -> IO (Response B.ByteString)
+authRequest :: ClientCredentials -> IO ClientCredentials
+authRequest env = do
+  --r <- getWith params "http://www.diary.ru/api"
+  -- let x = password env + 2
+  let params = defaults
+                            & param "appkey" .~ [appkey env]
+                            & param "password" .~ [keyHash (password env) (secret env)]
+                            & param "username" .~ [user env ]
                             & param "method" .~  ["user.auth"]
+  r <- getWith params "http://www.diary.ru/api" -- >>= return 
+  --let r =  
+  -- r <- getWith params "http://www.diary.ru/api"                         
+  return $ env { sid = (authParse r)} where --authParse $ getWith $ params
+    -- authParse :: IO String -> Text
+    -- authParse :: IO a -> IO b
+    authParse response = case response  ^? responseBody . key "result" of
+            (Just "0") -> Right  $ (response ^. responseBody . key "sid" . _String)
+            (Just  x)  -> Left $ (response ^. responseBody . key "result" . _String)
+            Nothing    -> Left "Unkown error"   
 
-authorize appkey secret user password = do
-  r <- authRequest appkey secret user password
-  let code = r ^? responseBody . key "result"
-  return $ case code of
-             (Just "0") -> Right $ fromMaybe "" $ r ^? responseBody . key "sid"
-             (Just _  ) -> Left $ fromMaybe "" $ code--r ^? responseBody . key "Error"
-             Nothing    -> Left "Unkown error"
+
+    -- ssid = case code of
+    --    (Just "0") -> Right ""
+    --    (Just _  ) -> Left  ""-- $ fromJSON $ fromMaybe "" $ code . _String--r ^? responseBody . key "Error"
+    --    Nothing    -> Left "Unkown error"
+    -- code = (getWith params "http://www.diary.ru/api" ) ^? responseBody . key "result"
+    -- params = defaults
+    --                         & param "appkey" .~ [appkey env]
+    --                         & param "password" .~ [keyHash (password env) (secret env)]
+    --                         & param "username" .~ [user env ]
+    --                         & param "method" .~  ["user.auth"]
+    -- Right $ fromJSON $ fromMaybe "" $ (getWith params "http://www.diary.ru/api")  ^? responseBody . key "sid" . _String
+  -- return r
+    --   where
+        
+  -- -- x = case r ^? responseBody . key "result" of
+  -- --       "0" ->  r ^? responseBody . key "sid"
+  -- --       _   ->  r ^? responseBody . key "result"
+
+  --               --result = r ^? responseBody . key "result"
+  --       params = defaults
+  --                           & param "appkey" .~ [appkey env]
+  --                           & param "password" .~ [keyHash $ (password env) (secret env)]
+  --                           & param "username" .~ [user env ]
+  --                           & param "method" .~  ["user.auth"]
+
+-- authorize appkey secret user password = do
+--   r <- authRequest appkey secret user password
+--   let code = r ^? responseBody . key "result"
+--   return $ case code of
+--              (Just "0") -> Right $ fromMaybe "" $ r ^? responseBody . key "sid"
+--              (Just _  ) -> Left $ fromMaybe "" $ code--r ^? responseBody . key "Error"
+--              Nothing    -> Left "Unkown error"
                            
 instance FromJSON GetBody
 
@@ -113,18 +163,18 @@ basic_asJSON = do
 -- The response we expect here is valid JSON, but cannot be converted
 -- to an [Int], so this will throw a JSONError.
 
-failing_asJSON :: IO ()
-failing_asJSON = do
-  (r :: Response [Int]) <- asJSON =<< get "http://httpbin.org/get"
-  putStrLn $ "response: " ++ show (r ^. responseBody)
+-- failing_asJSON :: IO ()
+-- failing_asJSON = do
+--   (r :: Response [Int]) <- asJSON =<< get "http://httpbin.org/get"
+--   putStrLn $ "response: " ++ show (r ^. responseBody)
 
 
 
--- This demonstrates how to catch a JSONError.
+-- -- This demonstrates how to catch a JSONError.
 
-failing_asJSON_catch :: IO ()
-failing_asJSON_catch =
-  failing_asJSON `E.catch` \(e :: JSONError) -> print e
+-- failing_asJSON_catch :: IO ()
+-- failing_asJSON_catch =
+--   failing_asJSON `E.catch` \(e :: JSONError) -> print e
 
 
 
@@ -140,18 +190,18 @@ failing_asJSON_catch =
 -- * if the conversion succeeds, the Right constructor will contain
 --   the converted response
 
-either_asJSON :: IO ()
-either_asJSON = do
-  r <- get "http://httpbin.org/get"
+-- either_asJSON :: IO ()
+-- either_asJSON = do
+--   r <- get "http://httpbin.org/get"
 
-  -- This first conversion attempt will fail, but because we're using
-  -- Either, it will not throw an exception that kills execution.
-  let failing = asJSON r :: Either E.SomeException (Response [Int])
-  print failing
+--   -- This first conversion attempt will fail, but because we're using
+--   -- Either, it will not throw an exception that kills execution.
+--   let failing = asJSON r :: Either E.SomeException (Response [Int])
+--   print failing
 
-  -- Our second conversion attempt will succeed.
-  let succeeding = asJSON r :: Either E.SomeException (Response GetBody)
-  print succeeding
+--   -- Our second conversion attempt will succeed.
+--   let succeeding = asJSON r :: Either E.SomeException (Response GetBody)
+--   print succeeding
 
 
 
@@ -182,18 +232,34 @@ main :: IO ()
 main = do
   -- basic_asJSON
   -- failing_asJSON_catch
-  either_asJSON
-  print skey
-  print $ keyHash "1234123" skey
+  -- either_asJSON
+  -- print skey
+  -- print $ keyHash "1234123" skey
  -- print $ authRequest appkey skey "hastest" "1234123"
-  r <- authRequest appkey skey "hastest" "12341230"
-  -- print r
-  print $ r ^? responseBody . key "sid"
-  -- (authorize appkey skey "hastest" "12341230") + 2
-  a <- authorize appkey skey "hastest" "12341230"
-  print $ a
-  aa <- authorize appkey skey "hastest" "1234123"
-  print $ aa
+  -- let config = runReader ClientCredentials ClientCredentials {
+  --               password = "1234123",
+  --               appkey  = "6e5f8970828d967595661329239df3b5",
+  --               sid     = "",
+  --               user    = "hastest",  
+  --               secret  = "a503505ae803ee7f4fd477f01c1958b1"
+  --            }
+             
+  let client = ClientCredentials {
+                password = "1234123",
+                appkey  = "6e5f8970828d967595661329239df3b5",
+                sid     = Right "",
+                user    = "hastest",  
+                secret  = "a503505ae803ee7f4fd477f01c1958b1"
+             }
+             
+  r <- authRequest client
+  print r
+  -- print $ r ^? responseBody . key "sid"
+  -- -- (authorize appkey skey "hastest" "12341230") + 2
+  -- a <- authorize appkey skey "hastest" "12341230"
+  -- print $ a
+  -- aa <- authorize appkey skey "hastest" "1234123"
+  -- print $ aa
   -- print v
   -- print authRequest
-  lens_aeson
+  -- lens_aeson
