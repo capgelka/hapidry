@@ -83,14 +83,11 @@ apiGet env p = apiGet' env (toOptions p) where
             apiGet'' :: Options -> IO (Either Integer Text)
             apiGet'' params = do
                 r <- getWith params "http://www.diary.ru/api"
-                let code = r ^? responseBody . key "result"
-                case  r ^? responseBody . key "result" of
-                   (Just "0")  -> return $ Right $ r ^. responseBody . _String
-                   (Just "12") -> do 
-                                  newEnv <- authRequest e
-                                  apiGet' newEnv params
-                   (Just x)    -> Left x _Integer
-                   Nothing     -> Left (-1)
+                case r ^? responseBody . key "result" . _Integer of
+                   (Just 0)  -> return $ Right $ r ^. responseBody . _String
+                   (Just 12) ->  authRequest e >>= (\newEnv -> apiGet' newEnv params) 
+                   (Just x)    -> return $ Left $ x
+                   Nothing     -> return $ Left (-1)
 
                     -- (\x -> authRequest e >>= apiGet' x params) 
 
