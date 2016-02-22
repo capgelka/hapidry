@@ -71,20 +71,29 @@ keyHash pass key = decodeLatin1 $ B16.encode $ MD5.hash $ B.append key pass --ne
 -- apiGet :: IO (Response B.ByteString)
 -- sid :: Reader                  -- 
 
-options :: [(Text, Text)] -> Options
-options x = defaults & foldr (\(x, y) p -> p . set (param x) [y]) id x -- (\x f-> defaults x . f)
+toOptions :: [(Text, Text)] -> Options
+toOptions x = defaults & foldr (\(x, y) p -> p . set (param x) [y]) id x -- (\x f-> defaults x . f)
 
--- apiGet :: ClientCredentials -> [(Text, Text)] -> IO (Either Text a)
--- apiGet env params = case env & sid of
---         (Left _)  -> return $ Left $ "You need authorize before performing requests"
---         (Right x) -> apiGet' $ params & param "sid" .~ [x] where
---             apiGet' :: [(Text, Text)] -> IO (Either Text a)
---             apiGet' params = do
---                 r <- getWith params "http://www.diary.ru/api"
---                 let code = r ^? responseBody . key "result"
---                 return $ case code of
---                    (Just "0")  -> Right $ r ^? responseBody
---                    (Just "12") -> apiGet (authRequest env) $ params
+apiGet :: ClientCredentials -> [(Text, Text)] -> IO (Either Integer Text)
+apiGet env p = apiGet' env (toOptions p) where
+    apiGet' :: ClientCredentials -> Options -> IO (Either Integer Text)
+    apiGet' e params = case e & sid of
+        (Left _)  -> return $ Left $ (-1)
+        (Right x) -> apiGet'' $ params where -- & param "sid" .~ [x] where
+            apiGet'' :: Options -> IO (Either Integer Text)
+            apiGet'' params = do
+                r <- getWith params "http://www.diary.ru/api"
+                let code = r ^? responseBody . key "result"
+                case  r ^? responseBody . key "result" of
+                   (Just "0")  -> return $ Right $ r ^. responseBody . _String
+                   (Just "12") -> do 
+                                  newEnv <- authRequest e
+                                  apiGet' newEnv params
+                   (Just x)    -> Left x _Integer
+                   Nothing     -> Left (-1)
+
+                    -- (\x -> authRequest e >>= apiGet' x params) 
+
 
     -- r <- getWith params' "http://www.diary.ru/api"
     -- let code = r ^? responseBody . key "result"
