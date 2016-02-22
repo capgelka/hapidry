@@ -5,7 +5,7 @@
 {-# LANGUAGE DeriveGeneric, OverloadedStrings#-}
 {-# OPTIONS_GHC -fno-warn-unused-binds #-}
 
-import Control.Lens ((&), (^.), (^?), (.~))
+import Control.Lens ((&), (^.), (^?), (.~), set)
 import Data.Aeson (FromJSON, fromJSON)
 import Data.Aeson.Encode (encodeToTextBuilder, encodeToBuilder)
 import Data.Aeson.Lens (key, _String, _Integer)
@@ -71,17 +71,28 @@ keyHash pass key = decodeLatin1 $ B16.encode $ MD5.hash $ B.append key pass --ne
 -- apiGet :: IO (Response B.ByteString)
 -- sid :: Reader                  -- 
 
--- apiGet :: ClientCredentials -> [(Text, Text)] -> IO ClientCredentials
+options :: [(Text, Text)] -> Options
+options x = defaults & foldr (\(x, y) p -> p . set (param x) [y]) id x -- (\x f-> defaults x . f)
+
+-- apiGet :: ClientCredentials -> [(Text, Text)] -> IO (Either Text a)
 -- apiGet env params = case env & sid of
---                       (Right x) -> 
-                    
---     r <- getWith params' "http://www.diary.ru/api"
---     let code = r ^? responseBody . key "result"
---     return $ case code of
---                (Just "0")  -> r
---                (Just "12") ->   r
---         where
---           params' = params' & param "sid" .~ [sid]
+--         (Left _)  -> return $ Left $ "You need authorize before performing requests"
+--         (Right x) -> apiGet' $ params & param "sid" .~ [x] where
+--             apiGet' :: [(Text, Text)] -> IO (Either Text a)
+--             apiGet' params = do
+--                 r <- getWith params "http://www.diary.ru/api"
+--                 let code = r ^? responseBody . key "result"
+--                 return $ case code of
+--                    (Just "0")  -> Right $ r ^? responseBody
+--                    (Just "12") -> apiGet (authRequest env) $ params
+
+    -- r <- getWith params' "http://www.diary.ru/api"
+    -- let code = r ^? responseBody . key "result"
+    -- return $ case code of
+    --            (Just "0")  -> r
+    --            (Just "12") -> r
+    --     where
+    --       params' = params' & param "sid" .~ [sid]
 
          -- -           case response of
          --              (Right x) -> 
@@ -222,7 +233,7 @@ main = do
                 password = "1234123",
                 appkey  = "6e5f8970828d967595661329239df3b5",
                 sid     = Right "",
-                user    = "hasteset",  
+                user    = "hastest",  
                 secret  = "a503505ae803ee7f4fd477f01c1958b1"
              }
              
