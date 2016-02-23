@@ -6,7 +6,7 @@
 {-# OPTIONS_GHC -fno-warn-unused-binds #-}
 
 import Control.Lens ((&), (^.), (^?), (.~), set)
-import Data.Aeson (FromJSON, fromJSON)
+import Data.Aeson (FromJSON, fromJSON, decode)
 import Data.Aeson.Encode (encodeToTextBuilder, encodeToBuilder)
 import Data.Aeson.Lens (key, _String, _Integer)
 import Data.Map (Map)
@@ -25,6 +25,7 @@ import Data.ByteString.Lazy (toStrict)
 import Data.ByteString.Builder (toLazyByteString)
 import qualified Crypto.Hash.MD5 as MD5
 import Control.Monad.Reader
+import qualified Data.ByteString.Lazy.Char8 as BL --(ByteString)
 
 import GHC.Generics (Generic)
 import qualified Control.Exception as E
@@ -42,13 +43,24 @@ data GetBody = GetBody {
   , url :: Text
   } deriving (Show, Generic)
 
+data UmailData = UmailData {
+    umailid :: Integer,
+    from_username :: Text,
+    dateline :: Text,
+    read :: Text, 
+    no_smilies :: Text,
+    title :: Text,
+    message_html :: Text
+} deriving (Show, Generic)
 
---appkey = "6e5f8970828d967595661329239df3b5"
---skey = "a503505ae803ee7f4fd477f01c1958b1"
+data Umail = Umail {
+    count :: Integer,
+    umail :: UmailData
+} deriving (Show, Generic)
 
--- digestToText :: MD5Digest -> Text
--- --digestToText = read .  (\s -> "\"" ++ s ++ "\"") . show
--- digestToText = decodeUtf8 . toStrict . encode
+
+instance FromJSON Umail
+instance FromJSON UmailData
 
 -- all data needed for requests to api
 data  ClientCredentials =  ClientCredentials {
@@ -74,40 +86,40 @@ keyHash pass key = decodeLatin1 $ B16.encode $ MD5.hash $ B.append key pass --ne
 toOptions :: [(Text, Text)] -> Options
 toOptions x = defaults & foldr (\(x, y) p -> p . set (param x) [y]) id x -- (\x f-> defaults x . f)
 
-apiGet :: ClientCredentials -> [(Text, Text)] -> IO (Either Integer Text)
+apiGet :: ClientCredentials -> [(Text, Text)] -> IO (Either Integer BL.ByteString)
 apiGet env p = apiGet' env (toOptions p) where
-    apiGet' :: ClientCredentials -> Options -> IO (Either Integer Text)
+    apiGet' :: ClientCredentials -> Options -> IO (Either Integer BL.ByteString)
     apiGet' e params = case e & sid of
         (Left _)  -> return $ Left $ (-1)
-        (Right x) -> apiGet'' $ params where -- & param "sid" .~ [x] where
-            apiGet'' :: Options -> IO (Either Integer Text)
+        (Right x) -> apiGet'' $ params & param "sid" .~ [x] where -- & param "sid" .~ [x] where
+            apiGet'' :: Options -> IO (Either Integer BL.ByteString)
             apiGet'' params = do
+                print params
                 r <- getWith params "http://www.diary.ru/api"
-                case r ^? responseBody . key "result" . _Integer of
-                   (Just 0)  -> return $ Right $ r ^. responseBody . _String
-                   (Just 12) ->  authRequest e >>= (\newEnv -> apiGet' newEnv params) 
-                   (Just x)    -> return $ Left $ x
-                   Nothing     -> return $ Left (-1)
+                print $ r ^? responseBody 
+                -- print $ r ^? responseBody . key "result"
+                -- print $ r ^? responseBody . key "result" . _String
+                -- print $ r ^? responseBody . key "result" . _Integer
+                -- print $ r ^? responseBody . key "result" . _String
+                print $ r ^? responseBody . _String
+                case r ^? responseBody . key "result" . _String of
+                   (Just "0")  -> return $ Right $ r ^. responseBody
+                   (Just "12") -> authRequest e >>= (\newEnv -> apiGet' newEnv params) 
+                   (Just x)  -> return $ Left (-1) -- $ x
+                   Nothing   -> return $ Left (-11)
 
-                    -- (\x -> authRequest e >>= apiGet' x params) 
+userGet :: ClientCredentials -> [(Text, Text)] -> IO (Either Integer BL.ByteString)
+userGet env params = apiGet env (("method", "user.get"):params)
 
 
-    -- r <- getWith params' "http://www.diary.ru/api"
-    -- let code = r ^? responseBody . key "result"
-    -- return $ case code of
-    --            (Just "0")  -> r
-    --            (Just "12") -> r
-    --     where
-    --       params' = params' & param "sid" .~ [sid]
+umailGet :: ClientCredentials -> [(Text, Text)] -> IO (Either Integer (Maybe Umail))
+umailGet env params = do
+    r <- apiGet env (("method", "umail.get"):params)
+    return $ case r of
+      (Right x) -> Right $ (decode x :: Maybe Umail)
+      (Left x) -> Left $ x
 
-         -- -           case response of
-         --              (Right x) -> 
-
---                       where response = do
---                                     r <- getWith params "http://www.diary.ru/api" params
-
--- sid :: Reader B.ByteString B.ByteString
-    
+                     
 --authRequest :: Environment (IO ClientCredentials)--B.ByteString -> B.ByteString -> B.ByteString -> B.ByteString -> IO (Response B.ByteString)
 authRequest :: ClientCredentials -> IO ClientCredentials
 authRequest env = do
@@ -245,6 +257,10 @@ main = do
              
   r <- authRequest client
   print r
+  r2 <- umailGet r []
+  print $ r2
+  r3 <- apiGet r (("method", "umail.get"):[])
+  print $ r3
   -- print $ r ^? responseBody . key "sid"
   -- -- (authorize appkey skey "hastest" "12341230") + 2
   -- a <- authorize appkey skey "hastest" "12341230"
