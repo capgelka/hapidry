@@ -87,15 +87,41 @@ keyHash pass key = decodeLatin1 $ B16.encode $ MD5.hash $ B.append key pass --ne
 -- Get GHC to derive a FromJSON instance for us.
 
 -- apiGet :: IO (Response B.ByteString)
--- sid :: Reader                  -- 
-ununicode = map (\x -> let elem = Map.lookup x table in if elem /= Nothing then elem else Just x) where
-  table = Map.fromList $ BL.zip letters rus
+-- sid :: Reader
+--ununicode :: BL.ByteString -> BL.ByteString                 -- 
+ununicode = BL.concat . (map (\x -> replace (BL.pack x))) . BL.unpack where -- sequence $ map (\x -> let elem = Map.lookup x table in 
+--                               if elem /= Nothing then elem else Just x) s where
+  replace x = let elem = Map.lookup x table
+                in case (if elem /= Nothing then elem else Just x) of
+                    (Just a)  -> a
+                    -- (Nothing)  -> " "
+  table = Map.fromList $ zip letters rus
   --rus =  "GGG" --[1040 .. 1103] :: [Integer]
-  rus = "ЁёАБВГДЕЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯабвгдежзийклмнопрстуфхцчшщъыьэюя" :: BL.ByteString
+  rus = ["Ё", "ё", "А", "Б", "В", "Г", "Д", "Е", "Ж", "З", "И", "Й", "К", "Л", "М",
+         "Н", "О", "П", "Р", "С", "Т", "У", "Ф", "Х", "Ц", "Ч", "Ш", "Щ", "Ъ", "Ы",
+         "Ь", "Э", "Ю", "Я", "а", "б", "в", "г", "д", "е", "ж", "з", "и", "й", "к",
+         "л", "м", "н", "о", "п", "р", "с", "т", "у", "ф", "х", "ц", "ч", "ш", "щ",
+         "ъ", "ы", "ь", "э", "ю", "я"] :: [BL.ByteString]
   --rus = "\1025\1105\1040\1041\1042\1043\1044\1045\1046\1047\1048\1049\1050\1051\1052\1053\1054\1055\1056\1057\1058\1059\1060\1061\1062\1063\1064\1065\1066\1067\1068\1069\1070\1071\1072\1073\1074\1075\1076\1077\1078\1079\1080\1081\1082\1083\1084\1085\1086\1087\1088\1089\1090\1091\1092\1093\1094\1095\1096\1097\1098\1099\1100\1101\1102\1103"
-  letters = BL.concat $ map (\l -> BL.append "\\u" l)
-                         ("0x0401":"0x0451":(map (\x -> encode (x :: Integer))
-                                                      [0x0410 .. 0x044f]))
+  letters = ["\\u0401", "\\u0451", "\\u0410", "\\u0411", "\\u0412", "\\u0413", 
+             "\\u0414", "\\u0415", "\\u0416", "\\u0417", "\\u0418", "\\u0419",
+             "\\u041a", "\\u041b", "\\u041c", "\\u041d", "\\u041e", "\\u041f",
+             "\\u0420", "\\u0421", "\\u0422", "\\u0423", "\\u0424", "\\u0425",
+             "\\u0426", "\\u0427", "\\u0428", "\\u0429", "\\u042a", "\\u042b",
+             "\\u042c", "\\u042d", "\\u042e", "\\u042f", "\\u0430", "\\u0431",
+             "\\u0432", "\\u0433", "\\u0434", "\\u0435", "\\u0436", "\\u0437",
+             "\\u0438", "\\u0439", "\\u043a", "\\u043b", "\\u043c", "\\u043d",
+             "\\u043e", "\\u043f", "\\u0440", "\\u0441", "\\u0442", "\\u0443",
+             "\\u0444", "\\u0445", "\\u0446", "\\u0447", "\\u0448", "\\u0449",
+             "\\u044a", "\\u044b", "\\u044c", "\\u044d", "\\u044e", "\\u044f"]
+  -- letters = "\\u0401\\u0451\\u0410\\u0411\\u0412\\u0413\\u0414\\u0415\\u0416\\\
+  --            \u0417\\u0418\\u0419\\u041a\\u041b\\u041c\\u041d\\u041e\\u041f\\\
+  --            \u0420\\u0421\\u0422\\u0423\\u0424\\u0425\\u0426\\u0427\\u0428\\\
+  --            \u0429\\u042a\\u042b\\u042c\\u042d\\u042e\\u042f\\u0430\\u0431\\\
+  --            \u0432\\u0433\\u0434\\u0435\\u0436\\u0437\\u0438\\u0439\\u043a\\\
+  --            \u043b\\u043c\\u043d\\u043e\\u043f\\u0440\\u0441\\u0442\\u0443\\\
+  --            \u0444\\u0445\\u0446\\u0447\\u0448\\u0449\\u044a\\u044b\\u044c\\\
+  --            \u044d\\u044e\\u044f"
 
 toOptions :: [(Text, Text)] -> Options
 toOptions x = defaults & foldr (\(x, y) p -> p . set (param x) [y]) id x -- (\x f-> defaults x . f)
@@ -132,7 +158,7 @@ umailGet env params = do
     x <- return $ case r of
           (Right a) -> a
           (Left a)  -> ""
-    return $ LE.decodeUtf8 $ x
+    return $ ununicode $ x
     -- return $ case r of
     --   (Right x) -> Right $ (decode x :: Maybe Umail )-- >>= (\u -> u & umail >>= return)
     --              -- do :: Maybe
@@ -279,10 +305,24 @@ main = do
              
   -- r <- authRequest client
   -- print r
+  -- print "\\u041d\\u0430\\u0438\\u0431\\u043e\\u043b\\"
+  -- print $ ununicode "\\u041d\\u0430\\u0438\\u0431\\u043e\\u043b\\"
+  -- let letters = BL.concat $ ["\\u0401", "\\u0451", "\\u0410", "\\u0411", "\\u0412", "\\u0413", 
+  --                            "\\u0414", "\\u0415", "\\u0416", "\\u0417", "\\u0418", "\\u0419",
+  --                            "\\u041a", "\\u041b", "\\u041c", "\\u041d", "\\u041e", "\\u041f",
+  --                            "\\u0420", "\\u0421", "\\u0422", "\\u0423", "\\u0424", "\\u0425",
+  --                            "\\u0426", "\\u0427", "\\u0428", "\\u0429", "\\u042a", "\\u042b",
+  --                            "\\u042c", "\\u042d", "\\u042e", "\\u042f", "\\u0430", "\\u0431",
+  --                            "\\u0432", "\\u0433", "\\u0434", "\\u0435", "\\u0436", "\\u0437",
+  --                            "\\u0438", "\\u0439", "\\u043a", "\\u043b", "\\u043c", "\\u043d",
+  --                            "\\u043e", "\\u043f", "\\u0440", "\\u0441", "\\u0442", "\\u0443",
+  --                            "\\u0444", "\\u0445", "\\u0446", "\\u0447", "\\u0448", "\\u0449",
+  --                            "\\u044a", "\\u044b", "\\u044c", "\\u044d", "\\u044e", "\\u044f"]
+
+  -- print letters
   r2 <- umailGet client []
   -- print $ r2
   r3 <- apiGet client (("method", "umail.get"):[])
-  -- let rr = (\(Right x) -> x >>= (\t -> Just $ t & umail  )) r2
   print $ r2
   print r3
   -- print $ r ^? responseBody . key "sid"
