@@ -2,7 +2,7 @@
 --
 -- This library provides several ways to handle JSON responses
 
-{-# LANGUAGE DeriveGeneric, OverloadedStrings, FlexibleContexts #-}
+{-# LANGUAGE DeriveGeneric, OverloadedStrings #-}
 {-# OPTIONS_GHC -fno-warn-unused-binds #-}
 
 import Control.Lens ((&), (^.), (^?), (.~), set)
@@ -27,6 +27,7 @@ import qualified Crypto.Hash.MD5 as MD5
 import Control.Monad.Reader
 import qualified Data.ByteString.Lazy.Char8 as BL --(ByteString)
 import Numeric (showHex)
+import qualified Data.Map as Map
 
 import GHC.Generics (Generic)
 import qualified Control.Exception as E
@@ -87,12 +88,14 @@ keyHash pass key = decodeLatin1 $ B16.encode $ MD5.hash $ B.append key pass --ne
 
 -- apiGet :: IO (Response B.ByteString)
 -- sid :: Reader                  -- 
-ununicode = table where -- map (\x -> if x == fst table then snd table else x) where
-  table = zip letters rus
-  rus = "ЁёАБВГДЕЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯабвгдежзийклмнопрстуфхцчшщъыьэюя"
+ununicode = map (\x -> let elem = Map.lookup x table in if elem /= Nothing then elem else Just x) where
+  table = Map.fromList $ BL.zip letters rus
+  --rus =  "GGG" --[1040 .. 1103] :: [Integer]
+  rus = "ЁёАБВГДЕЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯабвгдежзийклмнопрстуфхцчшщъыьэюя" :: BL.ByteString
   --rus = "\1025\1105\1040\1041\1042\1043\1044\1045\1046\1047\1048\1049\1050\1051\1052\1053\1054\1055\1056\1057\1058\1059\1060\1061\1062\1063\1064\1065\1066\1067\1068\1069\1070\1071\1072\1073\1074\1075\1076\1077\1078\1079\1080\1081\1082\1083\1084\1085\1086\1087\1088\1089\1090\1091\1092\1093\1094\1095\1096\1097\1098\1099\1100\1101\1102\1103"
-  letters = map (\l -> B.append "\\u" $ B.pack l)
-                 "0x0401":"0x0451":(map (\x -> showHex x ) [0x0410 .. 0x044f])
+  letters = BL.concat $ map (\l -> BL.append "\\u" l)
+                         ("0x0401":"0x0451":(map (\x -> encode (x :: Integer))
+                                                      [0x0410 .. 0x044f]))
 
 toOptions :: [(Text, Text)] -> Options
 toOptions x = defaults & foldr (\(x, y) p -> p . set (param x) [y]) id x -- (\x f-> defaults x . f)
