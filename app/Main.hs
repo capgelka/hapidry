@@ -13,7 +13,8 @@ import Data.Map (Map)
 import Data.Maybe (fromMaybe)
 import Data.Either
 import Data.Text (Text)
-import qualified Data.Text.Lazy as L (toStrict)
+import qualified Data.Text as T (append, cons, tail, head, take, drop)
+import qualified Data.Text.Lazy as L (toStrict, append, cons, tail, head, take, drop, Text)
 import qualified Data.Text.Lazy.Encoding as LE (decodeLatin1, decodeUtf8, encodeUtf8)
 import qualified Data.Text.Lazy.Builder as LB (toLazyText)
 import Data.Text.Encoding (decodeLatin1, decodeUtf8, encodeUtf8)
@@ -89,12 +90,12 @@ keyHash pass key = decodeLatin1 $ B16.encode $ MD5.hash $ B.append key pass --ne
 
 -- apiGet :: IO (Response B.ByteString)
 -- sid :: Reader (\x -> replace (BL.pack x))) 
-ununicode :: BL.ByteString -> BL.ByteString                 -- 
-ununicode s = replace s where 
-  replace :: BL.ByteString -> BL.ByteString
-  replace str = case (Map.lookup (BL.take 6 str) table) of
-          (Just x) -> BL.append x (replace $ BL.drop 6 str)
-          (Nothing) -> BL.cons (BL.head str)  (replace $ BL.tail str)
+-- ununicode :: BL.ByteString -> BL.ByteString                 -- 
+ununicode s = encodeUtf8 $ replace $ L.toStrict $ LE.decodeUtf8 s where 
+  -- replace :: BL.ByteString -> BL.ByteString
+  replace str = case (Map.lookup (T.take 6 str) table) of
+          (Just x) -> T.append x (replace $ T.drop 6 str)
+          (Nothing) -> T.cons (T.head str) (replace $ T.tail str)
 
   table = Map.fromList $ zip letters rus
 
@@ -102,7 +103,7 @@ ununicode s = replace s where
          "Н", "О", "П", "Р", "С", "Т", "У", "Ф", "Х", "Ц", "Ч", "Ш", "Щ", "Ъ", "Ы",
          "Ь", "Э", "Ю", "Я", "а", "б", "в", "г", "д", "е", "ж", "з", "и", "й", "к",
          "л", "м", "н", "о", "п", "р", "с", "т", "у", "ф", "х", "ц", "ч", "ш", "щ",
-         "ъ", "ы", "ь", "э", "ю", "я"]  :: [BL.ByteString]
+         "ъ", "ы", "ь", "э", "ю", "я"]  :: [Text]
  
   letters = ["\\u0401", "\\u0451", "\\u0410", "\\u0411", "\\u0412", "\\u0413", 
              "\\u0414", "\\u0415", "\\u0416", "\\u0417", "\\u0418", "\\u0419",
@@ -114,7 +115,7 @@ ununicode s = replace s where
              "\\u0438", "\\u0439", "\\u043a", "\\u043b", "\\u043c", "\\u043d",
              "\\u043e", "\\u043f", "\\u0440", "\\u0441", "\\u0442", "\\u0443",
              "\\u0444", "\\u0445", "\\u0446", "\\u0447", "\\u0448", "\\u0449",
-             "\\u044a", "\\u044b", "\\u044c", "\\u044d", "\\u044e", "\\u044f"]
+             "\\u044a", "\\u044b", "\\u044c", "\\u044d", "\\u044e", "\\u044f"] :: [Text]
 
 
 
@@ -154,7 +155,7 @@ umailGet env params = do
     x <- return $ case r of
           (Right a) -> a
           (Left a)  -> ""
-    return $ LE.encodeUtf8 $ LE.decodeUtf8 $ x
+    return $ ununicode $ x
     -- return $ case r of
     --   (Right x) -> Right $ (decode x :: Maybe Umail )-- >>= (\u -> u & umail >>= return)
     --              -- do :: Maybe
