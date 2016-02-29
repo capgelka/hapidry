@@ -13,7 +13,7 @@ import Data.Map (Map)
 import Data.Maybe (fromMaybe)
 import Data.Either
 import Data.Text (Text)
-import qualified Data.Text as T (append, cons, tail, head, take, drop)
+import qualified Data.Text as T (append, cons, tail, head, take, drop, read)
 import qualified Data.Text.Lazy as L (toStrict, append, cons, tail, head, take, drop, Text)
 import qualified Data.Text.Lazy.Encoding as LE (decodeLatin1, decodeUtf8, encodeUtf8)
 import qualified Data.Text.Lazy.Builder as LB (toLazyText)
@@ -90,13 +90,13 @@ keyHash pass key = decodeLatin1 $ B16.encode $ MD5.hash $ B.append key pass --ne
 
 -- apiGet :: IO (Response B.ByteString)
 -- sid :: Reader (\x -> replace (BL.pack x))) 
--- ununicode :: BL.ByteString -> BL.ByteString                 -- 
-ununicode s = encodeUtf8 $ replace $ L.toStrict $ LE.decodeUtf8 s where 
+-- ununicode :: BL.ByteString -> B                -- 
+ununicode s = LE.encodeUtf8 $ replace $ LE.decodeUtf8 s where 
   -- replace :: BL.ByteString -> BL.ByteString
   replace "" = ""
-  replace str = case (Map.lookup (T.take 6 str) table) of
-          (Just x) -> T.append x (replace $ T.drop 6 str)
-          (Nothing) -> T.cons (T.head str) (replace $ T.tail str)
+  replace str = case (Map.lookup (L.take 6 str) table) of
+          (Just x) -> L.append x (replace $ L.drop 6 str)
+          (Nothing) -> L.cons (L.head str) (replace $ L.tail str)
 
   table = Map.fromList $ zip letters rus
 
@@ -104,7 +104,7 @@ ununicode s = encodeUtf8 $ replace $ L.toStrict $ LE.decodeUtf8 s where
          "Н", "О", "П", "Р", "С", "Т", "У", "Ф", "Х", "Ц", "Ч", "Ш", "Щ", "Ъ", "Ы",
          "Ь", "Э", "Ю", "Я", "а", "б", "в", "г", "д", "е", "ж", "з", "и", "й", "к",
          "л", "м", "н", "о", "п", "р", "с", "т", "у", "ф", "х", "ц", "ч", "ш", "щ",
-         "ъ", "ы", "ь", "э", "ю", "я"]  :: [Text]
+         "ъ", "ы", "ь", "э", "ю", "я", "—"]  :: [L.Text]
  
   letters = ["\\u0401", "\\u0451", "\\u0410", "\\u0411", "\\u0412", "\\u0413", 
              "\\u0414", "\\u0415", "\\u0416", "\\u0417", "\\u0418", "\\u0419",
@@ -116,7 +116,8 @@ ununicode s = encodeUtf8 $ replace $ L.toStrict $ LE.decodeUtf8 s where
              "\\u0438", "\\u0439", "\\u043a", "\\u043b", "\\u043c", "\\u043d",
              "\\u043e", "\\u043f", "\\u0440", "\\u0441", "\\u0442", "\\u0443",
              "\\u0444", "\\u0445", "\\u0446", "\\u0447", "\\u0448", "\\u0449",
-             "\\u044a", "\\u044b", "\\u044c", "\\u044d", "\\u044e", "\\u044f"] :: [Text]
+             "\\u044a", "\\u044b", "\\u044c", "\\u044d", "\\u044e", "\\u044f",
+             "\\u2014"] :: [L.Text]
 
 
 
@@ -141,10 +142,12 @@ apiGet env p = apiGet' env (toOptions p) where
                 -- print $ r ^? responseBody . key "result" . _String
                 -- print $ r ^? responseBody . _String
                 case r ^? responseBody . key "result" . _String of
-                   (Just "0")  -> return $ Right $ r ^. responseBody
+                   (Just "0")  -> return $ Right $ ununicode $ r ^. responseBody
                    (Just "12") -> authRequest e >>= (\newEnv -> apiGet' newEnv params) 
-                   (Just x)  -> return $ Left (-1) -- $ x
-                   Nothing   -> return $ Left (-11)
+                   (Just _)  -> return $ Left (T.read x :: Integer)-- (\(Left a) -> fst a)
+                   --                     $ decimal
+                   --                     $ (r ^. responseBody . key "result" . _String) -- $ x
+                   Nothing   -> return $ Left (-1)
 
 userGet :: ClientCredentials -> [(Text, Text)] -> IO (Either Integer BL.ByteString)
 userGet env params = apiGet env (("method", "user.get"):params)
@@ -277,7 +280,7 @@ main = do
   r2 <- umailGet client []
   -- -- print $ r2
   -- r3 <- apiGet client (("method", "umail.get"):[])
-  B.putStrLn $  r2
+  BL.putStrLn $  r2
   -- -- print r3
   -- putStrLn $ BL.unpack r2
   -- let p = "\\u0414\\u043e\\u0431\\u0440\\u043e \\u043f\\u043e\\u0436 Diary"
