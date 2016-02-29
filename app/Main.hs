@@ -13,7 +13,7 @@ import Data.Map (Map)
 import Data.Maybe (fromMaybe)
 import Data.Either
 import Data.Text (Text)
-import qualified Data.Text as T (append, cons, tail, head, take, drop, read)
+import qualified Data.Text as T (append, cons, tail, head, take, drop)
 import qualified Data.Text.Lazy as L (toStrict, append, cons, tail, head, take, drop, Text)
 import qualified Data.Text.Lazy.Encoding as LE (decodeLatin1, decodeUtf8, encodeUtf8)
 import qualified Data.Text.Lazy.Builder as LB (toLazyText)
@@ -144,9 +144,10 @@ apiGet env p = apiGet' env (toOptions p) where
                 case r ^? responseBody . key "result" . _String of
                    (Just "0")  -> return $ Right $ ununicode $ r ^. responseBody
                    (Just "12") -> authRequest e >>= (\newEnv -> apiGet' newEnv params) 
-                   (Just _)  -> return $ Left (T.read x :: Integer)-- (\(Left a) -> fst a)
-                   --                     $ decimal
-                   --                     $ (r ^. responseBody . key "result" . _String) -- $ x
+                   (Just _)  -> return $ Left
+                                       $ (\(Right a) -> fst a)
+                                       $ decimal
+                                       $ x -- $ x
                    Nothing   -> return $ Left (-1)
 
 userGet :: ClientCredentials -> [(Text, Text)] -> IO (Either Integer BL.ByteString)
