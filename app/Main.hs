@@ -8,13 +8,14 @@
 import Control.Lens ((&), (^.), (^?), (.~), set)
 import Data.Aeson (FromJSON, fromJSON, decode, eitherDecode)
 import Data.Aeson.Encode (encodeToTextBuilder, encodeToBuilder)
-import Data.Aeson.Lens (key, _String, _Integer)
+import Data.Aeson.Lens (key, _String, _Integer, _Object, members)
 import Data.Map (Map)
 import Data.Maybe (fromMaybe)
 import Data.Either
 import Data.Text (Text)
 import qualified Data.Text as T (append, cons, tail, head, take, drop)
-import qualified Data.Text.Lazy as L (toStrict, append, cons, tail, head, take, drop, Text)
+import qualified Data.Text.Lazy as L (toStrict, append, cons, tail, head,
+                                      take, drop, Text)
 import qualified Data.Text.Lazy.Encoding as LE (decodeLatin1, decodeUtf8, encodeUtf8)
 import qualified Data.Text.Lazy.Builder as LB (toLazyText)
 import Data.Text.Encoding (decodeLatin1, decodeUtf8, encodeUtf8)
@@ -154,13 +155,14 @@ userGet :: ClientCredentials -> [(Text, Text)] -> IO (Either Integer BL.ByteStri
 userGet env params = apiGet env (("method", "user.get"):params)
 
 
---umailGet :: ClientCredentials -> [(Text, Text)] -> IO (Either Integer (Maybe Umail))
-umailGet env params = do
-    r <- apiGet env (("method", "umail.get"):params)
-    x <- return $ case r of
-          (Right a) -> a
-          (Left a)  -> ""
-    return $ ununicode $ x
+umailGet :: ClientCredentials -> [(Text, Text)] -> IO (Either Integer BL.ByteString)
+umailGet env params = apiGet env (("method", "umail.get"):params)
+    -- r <- apiGet env (("method", "umail.get"):params)
+    -- x <- return $ case r of
+    --       (Right a) -> a
+    --       (Left a)  ->  ""
+    -- return $ x -- ^? key "count" . _String
+    --(decode x :: Maybe Umail)
     -- return $ case r of
     --   (Right x) -> Right $ (decode x :: Maybe Umail )-- >>= (\u -> u & umail >>= return)
     --              -- do :: Maybe
@@ -175,11 +177,10 @@ authRequest :: ClientCredentials -> IO ClientCredentials
 authRequest env = do
   --r <- getWith params "http://www.diary.ru/api"
   -- let x = password env + 2
-  let params = defaults
-                            & param "appkey" .~ [appkey env]
-                            & param "password" .~ [keyHash (password env) (secret env)]
-                            & param "username" .~ [user env ]
-                            & param "method" .~  ["user.auth"]
+  let params = defaults & param "appkey" .~ [appkey env]
+                        & param "password" .~ [keyHash (password env) (secret env)]
+                        & param "username" .~ [user env ]
+                        & param "method" .~  ["user.auth"]
   r <- getWith params "http://www.diary.ru/api" -- >>= return 
   --let r =  
   -- r <- getWith params "http://www.diary.ru/api"                         
@@ -187,11 +188,11 @@ authRequest env = do
     -- authParse :: IO String -> Text
     -- authParse :: IO a -> IO b
     authParse response = case response  ^? responseBody . key "result" of
-            (Just "0") -> Right  $ (response ^. responseBody . key "sid" . _String)
+            (Just "0") -> Right $ (response ^. responseBody . key "sid" . _String)
             (Just  x)  -> Left $ (\(Right a) -> fst a)
                                $ decimal
                                $ (response ^. responseBody . key "result" . _String)
-            Nothing    -> Left $  (-1)
+            Nothing    -> Left $ (-1)
 
 
 
@@ -281,7 +282,8 @@ main = do
   r2 <- umailGet client []
   -- -- print $ r2
   -- r3 <- apiGet client (("method", "umail.get"):[])
-  BL.putStrLn $  r2
+  let z = ((\(Right x) -> x) r2) ^? key "count" 
+  print $ ((\(Right x) -> x) r2) ^? key "umail"  -- . _Object
   -- -- print r3
   -- putStrLn $ BL.unpack r2
   -- let p = "\\u0414\\u043e\\u0431\\u0440\\u043e \\u043f\\u043e\\u0436 Diary"
