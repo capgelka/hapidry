@@ -93,6 +93,7 @@ keyHash pass key = decodeLatin1 $ B16.encode $ MD5.hash $ B.append key pass --ne
 -- ununicode :: BL.ByteString -> BL.ByteString                 -- 
 ununicode s = encodeUtf8 $ replace $ L.toStrict $ LE.decodeUtf8 s where 
   -- replace :: BL.ByteString -> BL.ByteString
+  replace "" = ""
   replace str = case (Map.lookup (T.take 6 str) table) of
           (Just x) -> T.append x (replace $ T.drop 6 str)
           (Nothing) -> T.cons (T.head str) (replace $ T.tail str)
@@ -276,7 +277,7 @@ main = do
   r2 <- umailGet client []
   -- -- print $ r2
   -- r3 <- apiGet client (("method", "umail.get"):[])
-  print $ r2
+  B.putStrLn $  r2
   -- -- print r3
   -- putStrLn $ BL.unpack r2
   -- let p = "\\u0414\\u043e\\u0431\\u0440\\u043e \\u043f\\u043e\\u0436 Diary"
