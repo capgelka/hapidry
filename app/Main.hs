@@ -36,6 +36,7 @@ import qualified Control.Exception as E
 
 import Network.Wreq
 import Data.String.Unicode (unicodeToUtf8)
+import Options.Applicative
 
 
 
@@ -52,24 +53,24 @@ data GetBody = GetBody {
   , url :: Text
   } deriving (Show, Generic)
 
-data UmailData = UmailData {
-    umailid :: Integer,
-    from_username :: Text,
-    dateline :: Text,
-    read :: Text, 
-    no_smilies :: Text,
-    title :: Text,
-    message_html :: Text
-} deriving (Show, Generic)
+-- data UmailData = UmailData {
+--     umailid :: Integer,
+--     from_username :: Text,
+--     dateline :: Text,
+--     read :: Text, 
+--     no_smilies :: Text,
+--     title :: Text,
+--     message_html :: Text
+-- } deriving (Show, Generic)
 
-data Umail = Umail {
-    count :: Integer,
-    umail :: UmailData
-} deriving (Show, Generic)
+-- data Umail = Umail {
+--     count :: Integer,
+--     umail :: UmailData
+-- } deriving (Show, Generic)
 
 
-instance FromJSON Umail
-instance FromJSON UmailData
+-- instance FromJSON Umail
+-- instance FromJSON UmailData
 
 -- all data needed for requests to api
 data  ClientCredentials =  ClientCredentials {
@@ -236,6 +237,33 @@ lens_aeson = do
   v <- asValue =<< getWith opts "http://httpbin.org/get"
   print $ v ^? responseBody . key "args" . key "baz"
 
+
+
+
+-- data Options = Options
+--   { optGlobalOpt :: String
+--   , optGlobalFlag :: Bool
+--   ...
+--   , optCommand :: Command }
+
+-- data Command
+--   = Umail AddOptions
+--   | Commit CommitOptions
+--   ...
+
+data Sample = Sample
+  { hello :: String
+  , quiet :: Bool }
+
+sample :: Parser Sample
+sample = Sample
+     <$> strOption
+         ( long "hello"
+        <> metavar "TARGET"
+        <> help "Target for the greeting" )
+     <*> switch
+         ( long "quiet"
+        <> help "Whether to be quiet" )
 
 
 main :: IO ()
