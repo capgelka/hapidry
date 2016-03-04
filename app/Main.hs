@@ -77,7 +77,7 @@ data  ClientCredentials =  ClientCredentials {
       password :: B.ByteString,
       appkey  :: Text,
       sid     :: Either Integer Text,
-      user    :: Text,  
+      username    :: Text,  
       secret  :: B.ByteString
       } deriving Show
 
@@ -180,7 +180,7 @@ authRequest env = do
   -- let x = password env + 2
   let params = defaults & param "appkey" .~ [appkey env]
                         & param "password" .~ [keyHash (password env) (secret env)]
-                        & param "username" .~ [user env ]
+                        & param "username" .~ [username env ]
                         & param "method" .~  ["user.auth"]
   r <- getWith params "http://www.diary.ru/api" -- >>= return 
   --let r =  
@@ -251,19 +251,86 @@ lens_aeson = do
 --   | Commit CommitOptions
 --   ...
 
-data Sample = Sample
-  { hello :: String
-  , quiet :: Bool }
 
-sample :: Parser Sample
-sample = Sample
-     <$> strOption
-         ( long "hello"
-        <> metavar "TARGET"
-        <> help "Target for the greeting" )
-     <*> switch
-         ( long "quiet"
-        <> help "Whether to be quiet" )
+data Umail = Umail
+    {
+      bare :: Bool
+    , depth :: Int
+    } deriving (Show)
+
+data User = User
+    {
+      dry_run :: Bool
+    , author :: String
+    } deriving (Show)
+
+data Commands = Commands
+    {
+      umail  :: Umail
+    , user :: User
+    } deriving (Show)
+
+mainOptParse :: IO ()
+mainOptParse = execParser parseCommands >>= print
+
+parseCommands :: ParserInfo Commands
+parseCommands = info (helper <*> prsr) mod
+    where prsr = Commands
+             -- create clone and commit as subparsers
+             <$> subparser (command "umail" parseUmail)
+             <*> subparser (command "user" parseUser)
+          mod = fullDesc <> footer "footer"
+
+parseUser :: ParserInfo User
+parseUser = flip info mod . (helper <*>) $ User
+    <$> flag False True
+        (  short 'd'
+        <> long "dry-run"
+        <> help "dry run"
+        )
+    <*> strOption
+        (  short 'a'
+        <> long "author"
+        <> help "override author for commit"
+        <> metavar "<author>"
+        )
+    where mod = fullDesc
+             <> footer "commit footer"
+
+parseUmail :: ParserInfo Umail
+parseUmail = flip info mod . (helper <*>) $ Umail
+    <$> option auto -- flag False True
+        (  short 'b'
+        <> long "bare"
+        <> help "create a bare repository"
+        )
+    <*> option auto
+        (  short 'c'
+        <> long "count"
+        <> help "count of last umails to show"
+        <> metavar "<depth>"
+        )
+    where mod = fullDesc
+             <> footer "clone footer"
+
+-- data Sample = Sample
+--   { hello :: String
+--   , quiet :: Bool }
+
+-- sample :: Parser Sample
+-- sample = Sample
+--      <$> strOption
+--          ( long "hello"
+--         <> metavar "TARGET"
+--         <> help "Target for the greeting" )
+--      <*> switch
+--          ( long "quiet"
+--         <> help "Whether to be quiet" )
+
+
+-- greet :: Sample -> IO ()
+-- greet (Sample h False) = putStrLn $ "Hello, " ++ h
+-- greet _ = return ()
 
 
 main :: IO ()
@@ -286,10 +353,11 @@ main = do
                 password = "1234123",
                 appkey  = "6e5f8970828d967595661329239df3b5",
                 sid     = Right "",
-                user    = "hastest",  
+                username    = "hastest",  
                 secret  = "a503505ae803ee7f4fd477f01c1958b1"
              }
-             
+  mainOptParse
+
   -- r <- authRequest client
   -- print r
   -- print "\\u041d\\u0430\\u0438\\u0431\\u043e\\u043b\\"
