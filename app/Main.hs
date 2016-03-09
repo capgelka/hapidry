@@ -127,6 +127,9 @@ ununicode s = LE.encodeUtf8 $ replace $ LE.decodeUtf8 s where
 toOptions :: [(Text, Text)] -> Options
 toOptions x = defaults & foldr (\(x, y) p -> p . set (param x) [y]) id x -- (\x f-> defaults x . f)
 
+toForm :: [(Text, Text)] -> [FormParam]
+toForm = map (\(x, y) -> (encodeUtf8 x) := y)
+
 apiGet :: ClientCredentials -> [(Text, Text)] -> IO (Either Integer BL.ByteString)
 apiGet env p = apiGet' env (toOptions p) where
     apiGet' :: ClientCredentials -> Options -> IO (Either Integer BL.ByteString)
@@ -151,6 +154,33 @@ apiGet env p = apiGet' env (toOptions p) where
                                        $ decimal
                                        $ x -- $ x
                    Nothing   -> return $ Left (-1)
+
+apiPost :: ClientCredentials -> [(Text, Text)] -> IO (Either Integer BL.ByteString)
+apiPost env p = apiPost' env (toForm p) where
+    apiPost' :: ClientCredentials -> [FormParam] -> IO (Either Integer BL.ByteString)
+    apiPost' e params = case e & sid of
+        (Left _)  -> return $ Left $ (-1)
+        (Right x) ->  apiPost'' $ ("sid" := x):(tail params) where
+            apiPost'' :: [FormParam] -> IO (Either Integer BL.ByteString)
+            apiPost'' params = do
+                -- print params
+                r <- post "http://www.diary.ru/api" params
+                -- print $ r ^? responseBody 
+                -- print $ r ^? responseBody . key "result"
+                -- print $ r ^? responseBody . key "result" . _String
+                -- print $ r ^? responseBody . key "result" . _Integer
+                -- print $ r ^? responseBody . key "result" . _String
+                -- print $ r ^? responseBody . _String
+                case r ^? responseBody . key "result" . _String of
+                   (Just "0")  -> return $ Right $ ununicode $ r ^. responseBody
+                   (Just "12") -> authRequest e >>= (\newEnv -> apiPost' newEnv params) 
+                   (Just _)  -> return $ Left
+                                       $ (\(Right a) -> fst a)
+                                       $ decimal
+                                       $ x -- $ x
+                   Nothing   -> return $ Left (-1)
+
+
 
 userGet :: ClientCredentials -> [(Text, Text)] -> IO (Either Integer BL.ByteString)
 userGet env params = apiGet env (("method", "user.get"):params)
