@@ -13,7 +13,7 @@ import Data.Map (Map)
 import Data.Maybe (fromMaybe)
 import Data.Either
 import Data.Text (Text)
-import qualified Data.Text as T (append, cons, tail, head, take, drop)
+import qualified Data.Text as T (append, cons, tail, head, take, drop, pack)
 import qualified Data.Text.Lazy as L (toStrict, append, cons, tail, head,
                                       take, drop, Text)
 import qualified Data.Text.Lazy.Encoding as LE (decodeLatin1, decodeUtf8, encodeUtf8)
@@ -156,15 +156,23 @@ apiGet env p = apiGet' env (toOptions p) where
                    Nothing   -> return $ Left (-1)
 
 apiPost :: ClientCredentials -> [(Text, Text)] -> IO (Either Integer BL.ByteString)
-apiPost env p = apiPost' env (toForm p) where
-    apiPost' :: ClientCredentials -> [FormParam] -> IO (Either Integer BL.ByteString)
+apiPost env p = apiPost' env p where
+    updateSid :: Text -> [(Text, Text)] -> [(Text, Text)]
+    updateSid sid params = ("sid", sid):(filter (\(x, y) -> x /= "sid") params)
+    --apiPost' :: ClientCredentials -> [FormParam] -> IO (Either Integer BL.ByteString)
     apiPost' e params = case e & sid of
         (Left _)  -> return $ Left $ (-1)
-        (Right x) ->  apiPost'' $ ("sid" := x):(tail params) where
-            apiPost'' :: [FormParam] -> IO (Either Integer BL.ByteString)
+        -- _ -> return $ Left $ (-1)
+        (Right x) ->  apiPost'' $ updateSid x params where
+        -- (Right x) ->  apiPost'' $ ("sid" := x):(if length params < 5
+        --                                         then params
+        --                                         else tail params) where
+            -- apiPost'' :: [FormParam] -> IO (Either Integer BL.ByteString)
             apiPost'' params = do
-                -- print params
-                r <- post "http://www.diary.ru/api" params
+                print "Phh"
+                print params
+                print "UU(("
+                r <- post "http://www.diary.ru/api" $ toForm params
                 -- print $ r ^? responseBody 
                 -- print $ r ^? responseBody . key "result"
                 -- print $ r ^? responseBody . key "result" . _String
@@ -173,7 +181,7 @@ apiPost env p = apiPost' env (toForm p) where
                 -- print $ r ^? responseBody . _String
                 case r ^? responseBody . key "result" . _String of
                    (Just "0")  -> return $ Right $ ununicode $ r ^. responseBody
-                   (Just "12") -> authRequest e >>= (\newEnv -> apiPost' newEnv params) 
+                   (Just "12") -> authRequest e >>= (\newEnv -> apiPost' newEnv params)
                    (Just _)  -> return $ Left
                                        $ (\(Right a) -> fst a)
                                        $ decimal
@@ -300,10 +308,11 @@ data Commands
       } 
     | Post 
       {
-        postAction :: Action
+        action :: Action
       , target :: Target
-      , sourceFile :: Path
-      , journal :: String
+      , file :: Path
+      , blog :: String
+      , title :: String
       } deriving (Show)
     -- deriving (Show)
     -- {
@@ -311,21 +320,29 @@ data Commands
     -- , user :: User
     -- } deriving (Show)
 
+applyOptions :: [(Text, String)] -> [(Text, Text)]
+applyOptions = map (\(x, y) -> (x, T.pack y)) . filter (\(x, y) -> y /= "self")
+
 mainOptParse :: IO ()
 mainOptParse = do 
   let client = ClientCredentials {
                 password = "1234123",
                 appkey  = "6e5f8970828d967595661329239df3b5",
-                sid     = Right "",
+                sid     = Right "111",
                 username    = "hastest",  
                 secret  = "a503505ae803ee7f4fd477f01c1958b1"
               }
   command <- execParser $ (parseCommands 
                           `withInfo` "Interact with the Heroku Build API") -- >>= print
+  print command
   parseOpt command client >>= print where
       --parseOpt ::
       parseOpt (Umail "get" _) client = umailGet client []  -- >>= (\(Right x) -> x ^? key "umail")
-      parseOpt (Post "create" m t f) client  = postCreate client []
+      parseOpt (Post "create" target f m title)
+               client  = postCreate client 
+                                    (applyOptions [("message", m),
+                                                   ("target", target),
+                                                   ("title", title)])
       parseOpt _  client              = umailGet client [] --  >>= (\(Right x) -> x ^? key "umail") 
   -- print $ case command of
   --   (Umail "get" _) -> umailGet client [] >>= (\(Right x) -> x ^? key "umail")  --- >>= return -- & members
@@ -412,6 +429,11 @@ parsePost = Post
         <> long "message"
         <> value "self"
         <> metavar "POST_MESSAGE")
+    <*> (strOption $
+        short 't'
+        <> long "title"
+        <> value "self"
+        <> metavar "POST_MESSAGE_TITLE")
 --Info Umail
 -- parseUmail = flip info mod . (helper <*>) $ Umail
 --     <$> option auto -- flag False True
