@@ -180,7 +180,8 @@ apiPost env p = apiPost' env (toForm p) where
                                        $ x -- $ x
                    Nothing   -> return $ Left (-1)
 
-
+postCreate :: ClientCredentials -> [(Text, Text)] -> IO (Either Integer BL.ByteString)
+postCreate env p = apiPost env (("method", "post.create"):p)
 
 userGet :: ClientCredentials -> [(Text, Text)] -> IO (Either Integer BL.ByteString)
 userGet env params = apiGet env (("method", "user.get"):params)
@@ -270,22 +271,10 @@ lens_aeson = do
 
 
 
--- data Options = Options
---   { optGlobalOpt :: String
---   , optGlobalFlag :: Bool
---   ...
---   , optCommand :: Command }
-
--- data Command
---   = Umail AddOptions
---   | Commit CommitOptions
---   ...
-
--- data Args = 
-
 type Action = String
 type Target = String
 type UserId = String
+type Path   = String
 
 -- data Umail = Umail
 --     {
@@ -308,6 +297,13 @@ data Commands
       {
         userAction :: Action
       , uid :: UserId
+      } 
+    | Post 
+      {
+        postAction :: Action
+      , target :: Target
+      , sourceFile :: Path
+      , journal :: String
       } deriving (Show)
     -- deriving (Show)
     -- {
@@ -329,6 +325,7 @@ mainOptParse = do
   parseOpt command client >>= print where
       --parseOpt ::
       parseOpt (Umail "get" _) client = umailGet client []  -- >>= (\(Right x) -> x ^? key "umail")
+      parseOpt (Post "create" m t f) client  = postCreate client []
       parseOpt _  client              = umailGet client [] --  >>= (\(Right x) -> x ^? key "umail") 
   -- print $ case command of
   --   (Umail "get" _) -> umailGet client [] >>= (\(Right x) -> x ^? key "umail")  --- >>= return -- & members
@@ -336,9 +333,9 @@ mainOptParse = do
 
 parseCommands :: Parser Commands
 parseCommands = subparser $
-    command "umail" (parseUmail   `withInfo` "Start a build on the compilation app") <>
-    command "user"  (parseUser  `withInfo` "Check the status of a build") -- <>
-    -- command "release" (parseRelease `withInfo` "Release a successful build")
+    command "umail" (parseUmail   `withInfo` "get/send umails") <>
+    command "user"  (parseUser  `withInfo` "get user info") <>
+    command "post" (parsePost `withInfo` "read/write posts in selected blog")
 -- parseCommands :: ParserInfo Commands
 -- parseCommands = info (helper <*> prsr) mod
 --     where prsr = subparser
@@ -396,6 +393,25 @@ parseUmail = Umail
         <> long "user"
         <> value "self"
         <> metavar "UMAIL_TARGET")
+
+parsePost :: Parser Commands
+parsePost = Post 
+    <$> argument str (metavar "POST_ACTION")
+    <*> (strOption $
+        short 'b'
+        <> long "blog"
+        <> value "self"
+        <> metavar "POST_BLOG")
+    <*> (strOption $
+        short 'f'
+        <> long "file"
+        <> value "self"
+        <> metavar "POST_MESSAGE_FILE")
+    <*> (strOption $
+        short 'm'
+        <> long "message"
+        <> value "self"
+        <> metavar "POST_MESSAGE")
 --Info Umail
 -- parseUmail = flip info mod . (helper <*>) $ Umail
 --     <$> option auto -- flag False True
