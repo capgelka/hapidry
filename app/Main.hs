@@ -296,7 +296,7 @@ mainOptParse = do
               }
   command <- execParser $ (parseCommands 
                           `withInfo` "Interact with the Heroku Build API") -- >>= print
-  parseOpt command client >>= (\x -> print x) where
+  parseOpt command client >>= print where
       --parseOpt ::
       parseOpt (Umail "get" _) client = umailGet client []  -- >>= (\(Right x) -> x ^? key "umail")
       parseOpt _  client              = umailGet client [] --  >>= (\(Right x) -> x ^? key "umail") 
