@@ -251,103 +251,140 @@ lens_aeson = do
 --   | Commit CommitOptions
 --   ...
 
+-- data Args = 
 
-data Umail = Umail
-    {
-      bare :: Bool
-    , depth :: Int
-    } deriving (Show)
+type Action = String
+type Target = String
+type UserId = String
 
-data User = User
-    {
-      dry_run :: Bool
-    , author :: String
-    } deriving (Show)
+-- data Umail = Umail
+--     {
+--       umailAction :: Action
+--     , target :: Target
+--     } deriving (Show)
 
-data Commands = Commands
-    {
-      umail  :: Umail
-    , user :: User
-    } deriving (Show)
+-- data User = User
+--     {
+--       userAction :: Action
+--     , uid :: UserId
+--     } deriving (Show)
+
+data Commands 
+    = Umail  {
+        umailAction :: Action
+      , target :: Target
+      }
+    | User
+      {
+        userAction :: Action
+      , uid :: UserId
+      } deriving (Show)
+    -- deriving (Show)
+    -- {
+    --   umail  :: Umail
+    -- , user :: User
+    -- } deriving (Show)
 
 mainOptParse :: IO ()
-mainOptParse = execParser parseCommands >>= print
+mainOptParse = do 
+  let client = ClientCredentials {
+                password = "1234123",
+                appkey  = "6e5f8970828d967595661329239df3b5",
+                sid     = Right "",
+                username    = "hastest",  
+                secret  = "a503505ae803ee7f4fd477f01c1958b1"
+              }
+  command <- execParser $ (parseCommands 
+                          `withInfo` "Interact with the Heroku Build API") -- >>= print
+  parseOpt command client >>= (\x -> print x) where
+      --parseOpt ::
+      parseOpt (Umail "get" _) client = umailGet client []  -- >>= (\(Right x) -> x ^? key "umail")
+      parseOpt _  client              = umailGet client [] --  >>= (\(Right x) -> x ^? key "umail") 
+  -- print $ case command of
+  --   (Umail "get" _) -> umailGet client [] >>= (\(Right x) -> x ^? key "umail")  --- >>= return -- & members
+  --   _               -> umailGet client [] >>= (\(Right x) -> x ^? key "umail") --  >>= return 
 
-parseCommands :: ParserInfo Commands
-parseCommands = info (helper <*> prsr) mod
-    where prsr = Commands
-             -- create clone and commit as subparsers
-             <$> subparser (command "umail" parseUmail)
-             <*> subparser (command "user" parseUser)
-          mod = fullDesc <> footer "footer"
+parseCommands :: Parser Commands
+parseCommands = subparser $
+    command "umail" (parseUmail   `withInfo` "Start a build on the compilation app") <>
+    command "user"  (parseUser  `withInfo` "Check the status of a build") -- <>
+    -- command "release" (parseRelease `withInfo` "Release a successful build")
+-- parseCommands :: ParserInfo Commands
+-- parseCommands = info (helper <*> prsr) mod
+--     where prsr = subparser
+--              -- create clone and commit as subparsers
+--             (command "umail" parseUmail)
+--             <> subparser (command "user" parseUser)
+--           mod = fullDesc <> footer "footer"
 
-parseUser :: ParserInfo User
-parseUser = flip info mod . (helper <*>) $ User
-    <$> flag False True
-        (  short 'd'
-        <> long "dry-run"
-        <> help "dry run"
-        )
-    <*> strOption
-        (  short 'a'
-        <> long "author"
-        <> help "override author for commit"
-        <> metavar "<author>"
-        )
-    where mod = fullDesc
-             <> footer "commit footer"
+    -- where prsr = Commands
+    --          -- create clone and commit as subparsers
+    --          <$> subparser (command "umail" parseUmail)
+    --          <*> subparser (command "user" parseUser)
+    --       mod = fullDesc <> footer "footer"
 
-parseUmail :: ParserInfo Umail
-parseUmail = flip info mod . (helper <*>) $ Umail
-    <$> option auto -- flag False True
-        (  short 'b'
-        <> long "bare"
-        <> help "create a bare repository"
-        )
-    <*> option auto
-        (  short 'c'
-        <> long "count"
-        <> help "count of last umails to show"
-        <> metavar "<depth>"
-        )
-    where mod = fullDesc
-             <> footer "clone footer"
+-- parseCommands :: Parser Commands
+-- parseCommands = subparser
+--        ( command "umail" 
+--          (info parseUmail
+--                (progDesc "Print greeting"))
+--       <> command "user"
+--          (info parseUser
+--                (progDesc "Say goodbye"))
+--        )
 
--- data Sample = Sample
---   { hello :: String
---   , quiet :: Bool }
+-- opts :: ParserInfo Commands
+-- opts = info (parseCommands <**> helper) idm
 
--- sample :: Parser Sample
--- sample = Sample
---      <$> strOption
---          ( long "hello"
---         <> metavar "TARGET"
---         <> help "Target for the greeting" )
---      <*> switch
---          ( long "quiet"
---         <> help "Whether to be quiet" )
+withInfo :: Parser a -> String -> ParserInfo a
+withInfo opts desc = info (helper <*> opts) $ progDesc desc
 
+parseUser :: Parser Commands
+parseUser = User 
+    <$> argument str (metavar "USER_ACTION")
+    <*> argument str (metavar "USER_UID")
+-- parseUser = flip info mod . (helper <*>) $ User
+--     <$> flag False True
+--         (  short 'd'
+--         <> long "dry-run"
+--         <> help "dry run"
+--         )
+--     <*> strOption
+--         (  short 'a'
+--         <> long "author"
+--         <> help "override author for commit"
+--         <> metavar "<author>"
+--         )
+--     where mod = fullDesc
+--              <> footer "commit footer"
 
--- greet :: Sample -> IO ()
--- greet (Sample h False) = putStrLn $ "Hello, " ++ h
--- greet _ = return ()
-
+parseUmail :: Parser Commands
+parseUmail = Umail 
+    <$> argument str (metavar "UMAIL_ACTION")
+    <*> (strOption $
+        short 'u'
+        <> long "user"
+        <> value "self"
+        <> metavar "UMAIL_TARGET")
+--Info Umail
+-- parseUmail = flip info mod . (helper <*>) $ Umail
+--     <$> option auto -- flag False True
+--         (  short 'b'
+--         <> long "bare"
+--         <> help "create a bare repository"
+--         )
+--     <*> option auto
+--         (  short 'c'
+--         <> long "count"
+--         <> help "count of last umails to show"
+--         <> metavar "<depth>"
+--         )
+--     where mod = fullDesc
+--              <> footer "clone footer"
 
 main :: IO ()
 main = do
-  -- basic_asJSON
-  -- failing_asJSON_catch
-  -- either_asJSON
-  -- print skey
-  -- print $ keyHash "1234123" skey
- -- print $ authRequest appkey skey "hastest" "1234123"
-  -- let config = runReader ClientCredentials ClientCredentials {
-  --               password = "1234123",
-  --               appkey  = "6e5f8970828d967595661329239df3b5",
-  --               sid     = "",
-  --               user    = "hastest",  
-  --               secret  = "a503505ae803ee7f4fd477f01c1958b1"
-  --            }
+
              
   let client = ClientCredentials {
                 password = "1234123",
@@ -375,11 +412,11 @@ main = do
   --                            "\\u044a", "\\u044b", "\\u044c", "\\u044d", "\\u044e", "\\u044f"]
 
   -- print letters
-  r2 <- umailGet client []
+  -- r2 <- umailGet client []
   -- -- print $ r2
   -- r3 <- apiGet client (("method", "umail.get"):[])
-  let z = ((\(Right x) -> x) r2) ^? key "count" 
-  print $ ((\(Right x) -> x) r2) ^? key "umail"  -- . _Object
+  -- let z = ((\(Right x) -> x) r2) ^? key "count" 
+  -- print $ ((\(Right x) -> x) r2) ^? key "umail"  -- . _Object
   -- -- print r3
   -- putStrLn $ BL.unpack r2
   -- let p = "\\u0414\\u043e\\u0431\\u0440\\u043e \\u043f\\u043e\\u0436 Diary"
