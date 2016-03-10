@@ -38,9 +38,7 @@ executable hapidry-exe
                      , text
                      , lens-aeson
                      , data-default
-                     , hxt-unicode
                      , optparse-applicative
-                     , encoding
   default-language:    Haskell2010
 
 test-suite hapidry-test

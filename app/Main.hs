@@ -35,7 +35,6 @@ import GHC.Generics (Generic)
 -- import qualified Control.Exception as E.
 
 import Network.Wreq
-import Data.String.Unicode (unicodeToUtf8)
 import Options.Applicative
 
 

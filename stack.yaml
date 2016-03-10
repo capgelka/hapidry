@@ -2,8 +2,5 @@ flags: {}
 extra-package-dbs: []
 packages:
 - '.'
-extra-deps:
-- HaXml-1.22.3
-- encoding-0.6.7
-- text-1.2.2.0
+extra-deps: []
 resolver: lts-5.6
