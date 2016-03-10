@@ -13,7 +13,7 @@ import Data.Map (Map)
 import Data.Maybe (fromMaybe)
 import Data.Either
 import Data.Text (Text)
-import qualified Data.Text as T (append, cons, tail, head, take, drop, pack)
+import qualified Data.Text as T (append, cons, tail, head, take, drop, pack, unpack)
 import qualified Data.Text.Lazy as L (toStrict, append, cons, tail, head,
                                       take, drop, Text)
 import qualified Data.Text.Lazy.Encoding as LE (decodeLatin1, decodeUtf8, encodeUtf8)
@@ -24,12 +24,13 @@ import Data.Binary (encode)
 import qualified Data.ByteString.Base16 as B16 (encode)
 import qualified Data.ByteString.Char8 as B
 import Data.ByteString.Lazy (toStrict)
-import Data.ByteString.Builder (toLazyByteString)
+import Data.ByteString.Builder (toLazyByteString, int8)
 import qualified Crypto.Hash.MD5 as MD5
 import Control.Monad.Reader
 import qualified Data.ByteString.Lazy.Char8 as BL --(ByteString)
 import Numeric (showHex)
 import qualified Data.Map as Map
+import qualified Data.Char as Char
 
 import GHC.Generics (Generic)
 -- import qualified Control.Exception as E.
@@ -103,7 +104,7 @@ ununicode s = LE.encodeUtf8 $ replace $ LE.decodeUtf8 s where
 
   table = Map.fromList $ zip letters rus
 
-  rus = ["Ё", "ё", "А", "Б", "В", "Г", "Д", "Е", "Ж", "З", "И", "Й", "К", "Л", "М",
+  rus =  ["Ё", "ё", "А", "Б", "В", "Г", "Д", "Е", "Ж", "З", "И", "Й", "К", "Л", "М",
          "Н", "О", "П", "Р", "С", "Т", "У", "Ф", "Х", "Ц", "Ч", "Ш", "Щ", "Ъ", "Ы",
          "Ь", "Э", "Ю", "Я", "а", "б", "в", "г", "д", "е", "ж", "з", "и", "й", "к",
          "л", "м", "н", "о", "п", "р", "с", "т", "у", "ф", "х", "ц", "ч", "ш", "щ",
@@ -124,14 +125,29 @@ ununicode s = LE.encodeUtf8 $ replace $ LE.decodeUtf8 s where
 
 
 toCP1251 :: Text -> Text
-toCP1251 = undefined
+toCP1251 = replace . T.unpack where
+  replace "" = ""
+  replace str = case (Map.lookup (head str) table) of
+            (Just x) -> T.cons x (replace $ tail str)
+            (Nothing) -> T.cons (head str) (replace $ tail str) where
+
+
+  table = Map.fromList $ zip rus cpCodes
+  cpCodes = map toEnum (168:184:[192 .. 255]) :: [Char]
+  rus =  ['Ё', 'ё', 'А', 'Б', 'В', 'Г', 'Д', 'Е', 'Ж', 'З', 'И', 'Й', 'К', 'Л', 'М',
+         'Н', 'О', 'П', 'Р', 'С', 'Т', 'У', 'Ф', 'Х', 'Ц', 'Ч', 'Ш', 'Щ', 'Ъ', 'Ы',
+         'Ь', 'Э', 'Ю', 'Я', 'а', 'б', 'в', 'г', 'д', 'е', 'ж', 'з', 'и', 'й', 'к',
+         'л', 'м', 'н', 'о', 'п', 'р', 'с', 'т', 'у', 'ф', 'х', 'ц', 'ч', 'ш', 'щ',
+         'ъ', 'ы', 'ь', 'э', 'ю', 'я']  :: [Char]
+
+
 
 
 toOptions :: [(Text, Text)] -> Options
-toOptions x = defaults & foldr (\(x, y) p -> p . set (param x) [y]) id x -- (\x f-> defaults x . f)
+toOptions x = defaults & foldr (\(x, y) p -> p . set (param x) [toCP1251 y]) id x -- (\x f-> defaults x . f)
 
 toForm :: [(Text, Text)] -> [FormParam]
-toForm = map (\(x, y) -> (encodeUtf8 x) := y)
+toForm = map (\(x, y) -> (encodeUtf8 x) := (toCP1251 y))
 
 apiGet :: ClientCredentials -> [(Text, Text)] -> IO (Either Integer BL.ByteString)
 apiGet env p = apiGet' env (toOptions p) where
