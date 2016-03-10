@@ -36,6 +36,7 @@ import GHC.Generics (Generic)
 -- import qualified Control.Exception as E.
 
 import Network.Wreq
+import qualified Network.Wreq.Types as NWTP (FormValue, renderFormValue)
 import Options.Applicative
 
 
@@ -73,6 +74,9 @@ data GetBody = GetBody {
 
 -- instance FromJSON Umail
 -- instance FromJSON UmailData
+newtype DiaryText = DiaryText Text
+instance NWTP.FormValue DiaryText where
+    renderFormValue (DiaryText t) = toCP1251 t
 
 -- all data needed for requests to api
 data  ClientCredentials =  ClientCredentials {
@@ -124,12 +128,13 @@ ununicode s = LE.encodeUtf8 $ replace $ LE.decodeUtf8 s where
              "\\u2014"] :: [L.Text]
 
 
-toCP1251 :: Text -> Text
+toCP1251 :: Text -> B.ByteString
 toCP1251 = replace . T.unpack where
   replace "" = ""
   replace str = case (Map.lookup (head str) table) of
-            (Just x) -> T.cons x (replace $ tail str)
-            (Nothing) -> T.cons (head str) (replace $ tail str) where
+            (Just x) -> B.cons x (replace $ tail str)
+            -- _        -> "-3"
+            (Nothing) -> B.cons (head str) (replace $ tail str) where
 
 
   table = Map.fromList $ zip rus cpCodes
@@ -144,10 +149,10 @@ toCP1251 = replace . T.unpack where
 
 
 toOptions :: [(Text, Text)] -> Options
-toOptions x = defaults & foldr (\(x, y) p -> p . set (param x) [toCP1251 y]) id x -- (\x f-> defaults x . f)
+toOptions x = defaults & foldr (\(x, y) p -> p . set (param x) [y]) id x -- (\x f-> defaults x . f)
 
 toForm :: [(Text, Text)] -> [FormParam]
-toForm = map (\(x, y) -> (encodeUtf8 x) := (toCP1251 y))
+toForm = map (\(x, y) -> (encodeUtf8 x) := DiaryText y)
 
 apiGet :: ClientCredentials -> [(Text, Text)] -> IO (Either Integer BL.ByteString)
 apiGet env p = apiGet' env (toOptions p) where
@@ -342,6 +347,11 @@ mainOptParse = do
   command <- execParser $ (parseCommands 
                           `withInfo` "Interact with the Heroku Build API") -- >>= print
   print command
+  let ap = (applyOptions [("message", command & blog),
+                       ("target", command & target),
+                       ("title", command & title)])
+  print ap
+  print $ toForm ap
   parseOpt command client >>= print where
       --parseOpt ::
       parseOpt (Umail "get" _) client = umailGet client []  -- >>= (\(Right x) -> x ^? key "umail")
@@ -459,7 +469,7 @@ parsePost = Post
 
 main :: IO ()
 main = do
-
+  -- print $ toCP1251 "абвг0абвг&abcd"
              
   let client = ClientCredentials {
                 password = "1234123",
@@ -468,6 +478,7 @@ main = do
                 username    = "hastest",  
                 secret  = "a503505ae803ee7f4fd477f01c1958b1"
              }
+  print "OK"
   mainOptParse
 
   -- r <- authRequest client
