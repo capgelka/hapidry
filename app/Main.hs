@@ -32,11 +32,13 @@ import Numeric (showHex)
 import qualified Data.Map as Map
 
 import GHC.Generics (Generic)
-import qualified Control.Exception as E
+-- import qualified Control.Exception as E.
 
 import Network.Wreq
 import Data.String.Unicode (unicodeToUtf8)
 import Options.Applicative
+
+
 
 
 
@@ -122,6 +124,8 @@ ununicode s = LE.encodeUtf8 $ replace $ LE.decodeUtf8 s where
              "\\u2014"] :: [L.Text]
 
 
+toCP1251 :: Text -> Text
+toCP1251 = undefined
 
 
 toOptions :: [(Text, Text)] -> Options
@@ -284,18 +288,6 @@ type Target = String
 type UserId = String
 type Path   = String
 
--- data Umail = Umail
---     {
---       umailAction :: Action
---     , target :: Target
---     } deriving (Show)
-
--- data User = User
---     {
---       userAction :: Action
---     , uid :: UserId
---     } deriving (Show)
-
 data Commands 
     = Umail  {
         umailAction :: Action
@@ -321,7 +313,7 @@ data Commands
     -- } deriving (Show)
 
 applyOptions :: [(Text, String)] -> [(Text, Text)]
-applyOptions = map (\(x, y) -> (x, T.pack y)) . filter (\(x, y) -> y /= "self")
+applyOptions = map (\(x, y) -> (x, T.pack $ y)) . filter (\(x, y) -> y /= "self")
 
 mainOptParse :: IO ()
 mainOptParse = do 
