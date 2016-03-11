@@ -36,7 +36,7 @@ import GHC.Generics (Generic)
 -- import qualified Control.Exception as E.
 
 import Network.Wreq hiding (Auth, auth)
-import qualified Network.Wreq.Types as NWTP (FormValue, renderFormValue)
+import qualified Network.Wreq.Types as NWTP (FormValue, renderFormValue, params)
 import Options.Applicative
 
 
@@ -81,10 +81,10 @@ instance NWTP.FormValue DiaryText where
 -- all data needed for requests to api
 data  ClientCredentials =  ClientCredentials {
       password :: B.ByteString,
-      appkey  :: Text,
-      sid     :: Either Integer Text,
-      username    :: Text,  
-      secret  :: B.ByteString
+      appkey   :: Text,
+      sid      :: Either Integer Text,
+      username :: Text,  
+      secret   :: B.ByteString
       } deriving Show
 
 type Environment a = ReaderT ClientCredentials IO a
@@ -149,7 +149,7 @@ toCP1251 = replace . T.unpack where
 
 
 toOptions :: [(Text, Text)] -> Options
-toOptions x = defaults & foldr (\(x, y) p -> p . set (param x) [y]) id x -- (\x f-> defaults x . f)
+toOptions x = defaults {NWTP.params = x} -- & foldr (\(x, y) p -> p . set (param x) [y]) id x -- (\x f-> defaults x . f)
 
 toForm :: [(Text, Text)] -> [FormParam]
 toForm = map (\(x, y) -> (encodeUtf8 x) := DiaryText y)
@@ -237,15 +237,36 @@ umailGet env params = apiGet env (("method", "umail.get"):params)
 
                      
 --authRequest :: Environment (IO ClientCredentials)--B.ByteString -> B.ByteString -> B.ByteString -> B.ByteString -> IO (Response B.ByteString)
+-- authRequest :: ClientCredentials -> IO ClientCredentials
+-- authRequest env = do
+--   --r <- getWith params "http://www.diary.ru/api"
+--   -- let x = password env + 2
+--   let params = defaults & param "appkey" .~ [appkey env]
+--                         & param "password" .~ [keyHash (password env) (secret env)]
+--                         & param "username" .~ [username env ]
+--                         & param "method" .~  ["user.auth"]
+--   r <- getWith params "http://www.diary.ru/api" -- >>= return 
+--   --let r =  
+--   -- r <- getWith params "http://www.diary.ru/api"                         
+--   return $ env { sid = (authParse r)} where --authParse $ getWith $ params
+--     -- authParse :: IO String -> Text
+--     -- authParse :: IO a -> IO b
+--     authParse response = case response  ^? responseBody . key "result" of
+--             (Just "0") -> Right $ (response ^. responseBody . key "sid" . _String)
+--             (Just  x)  -> Left $ (\(Right a) -> fst a)
+--                                $ decimal
+--                                $ (response ^. responseBody . key "result" . _String)
+--             Nothing    -> Left $ (-1)
+
 authRequest :: ClientCredentials -> IO ClientCredentials
 authRequest env = do
   --r <- getWith params "http://www.diary.ru/api"
   -- let x = password env + 2
-  let params = defaults & param "appkey" .~ [appkey env]
-                        & param "password" .~ [keyHash (password env) (secret env)]
-                        & param "username" .~ [username env ]
-                        & param "method" .~  ["user.auth"]
-  r <- getWith params "http://www.diary.ru/api" -- >>= return 
+  let params = toForm [("appkey", appkey env),
+                       ("password", keyHash (password env) (secret env)),
+                       ("username", username env),
+                       ("method",  "user.auth")]
+  r <- post "http://www.diary.ru/api" params -- >>= return 
   --let r =  
   -- r <- getWith params "http://www.diary.ru/api"                         
   return $ env { sid = (authParse r)} where --authParse $ getWith $ params
@@ -257,8 +278,6 @@ authRequest env = do
                                $ decimal
                                $ (response ^. responseBody . key "result" . _String)
             Nothing    -> Left $ (-1)
-
-
 
 instance FromJSON GetBody
 
