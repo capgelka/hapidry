@@ -373,15 +373,14 @@ mainOptParse = do
   command <- execParser $ (parseArgs 
                           `withInfo` "diary.ru API client") -- >>= print
 
-  let client = ClientCredentials {
+  client <- authRequest $ ClientCredentials {
                 password = "1234123",
                 appkey  = "6e5f8970828d967595661329239df3b5",
                 sid     = Right "",
                 username    = "hastest",  
                 secret  = "a503505ae803ee7f4fd477f01c1958b1"
               } & updateCreds $ command & auth
-  -- print command
-  -- let ap = (applyOptions [("message", command & blog),
+  -- print command  -- let ap = (applyOptions [("message", command & blog),
   --                      ("target", command & target),
   --                      ("title", command & title)])
   -- print ap
