@@ -35,7 +35,7 @@ import qualified Data.Char as Char
 import GHC.Generics (Generic)
 -- import qualified Control.Exception as E.
 
-import Network.Wreq
+import Network.Wreq hiding (Auth, auth)
 import qualified Network.Wreq.Types as NWTP (FormValue, renderFormValue)
 import Options.Applicative
 
@@ -307,6 +307,9 @@ type Action = String
 type Target = String
 type UserId = String
 type Path   = String
+data Auth   = Auth String String deriving (Show)
+
+data Args = Args { auth :: Auth, commands :: Commands} deriving (Show)
 
 data Commands 
     = Umail  {
@@ -335,24 +338,32 @@ data Commands
 applyOptions :: [(Text, String)] -> [(Text, Text)]
 applyOptions = map (\(x, y) -> (x, T.pack $ y)) . filter (\(x, y) -> y /= "self")
 
+updateCreds :: ClientCredentials -> Auth -> ClientCredentials
+updateCreds  client (Auth "self" "self") = client
+updateCreds  client (Auth "self" x)      = client { password = B.pack x } 
+updateCreds  client (Auth x "self") = client { username = T.pack x }
+updateCreds  client (Auth x y)      = client { username = T.pack x, password = B.pack y } 
+
 mainOptParse :: IO ()
 mainOptParse = do 
+
+  command <- execParser $ (parseArgs 
+                          `withInfo` "diary.ru API client") -- >>= print
+
   let client = ClientCredentials {
                 password = "1234123",
                 appkey  = "6e5f8970828d967595661329239df3b5",
-                sid     = Right "111",
+                sid     = Right "",
                 username    = "hastest",  
                 secret  = "a503505ae803ee7f4fd477f01c1958b1"
-              }
-  command <- execParser $ (parseCommands 
-                          `withInfo` "Interact with the Heroku Build API") -- >>= print
+              } & updateCreds $ command & auth
   print command
-  let ap = (applyOptions [("message", command & blog),
-                       ("target", command & target),
-                       ("title", command & title)])
-  print ap
-  print $ toForm ap
-  parseOpt command client >>= print where
+  -- let ap = (applyOptions [("message", command & blog),
+  --                      ("target", command & target),
+  --                      ("title", command & title)])
+  -- print ap
+  -- print $ toForm ap
+  parseOpt (command & commands) client >>= print where
       --parseOpt ::
       parseOpt (Umail "get" _) client = umailGet client []  -- >>= (\(Right x) -> x ^? key "umail")
       parseOpt (Post "create" target f m title)
@@ -370,32 +381,23 @@ parseCommands = subparser $
     command "umail" (parseUmail   `withInfo` "get/send umails") <>
     command "user"  (parseUser  `withInfo` "get user info") <>
     command "post" (parsePost `withInfo` "read/write posts in selected blog")
--- parseCommands :: ParserInfo Commands
--- parseCommands = info (helper <*> prsr) mod
---     where prsr = subparser
---              -- create clone and commit as subparsers
---             (command "umail" parseUmail)
---             <> subparser (command "user" parseUser)
---           mod = fullDesc <> footer "footer"
 
-    -- where prsr = Commands
-    --          -- create clone and commit as subparsers
-    --          <$> subparser (command "umail" parseUmail)
-    --          <*> subparser (command "user" parseUser)
-    --       mod = fullDesc <> footer "footer"
+parseArgs :: Parser Args
+parseArgs = Args <$> parseAuth <*> parseCommands
 
--- parseCommands :: Parser Commands
--- parseCommands = subparser
---        ( command "umail" 
---          (info parseUmail
---                (progDesc "Print greeting"))
---       <> command "user"
---          (info parseUser
---                (progDesc "Say goodbye"))
---        )
-
--- opts :: ParserInfo Commands
--- opts = info (parseCommands <**> helper) idm
+parseAuth :: Parser Auth
+parseAuth = Auth <$> (strOption $
+              short 'u'
+              <> long "user"
+              <> value "self"
+              <> metavar "LOGIN"
+              <> help "user login")
+            <*> (strOption $
+                 short 'p'
+                 <> long "password"
+                 <> value  "self"
+                 <> metavar "PASSWORD"
+                 <> help "user password")
 
 withInfo :: Parser a -> String -> ParserInfo a
 withInfo opts desc = info (helper <*> opts) $ progDesc desc
@@ -404,26 +406,13 @@ parseUser :: Parser Commands
 parseUser = User 
     <$> argument str (metavar "USER_ACTION")
     <*> argument str (metavar "USER_UID")
--- parseUser = flip info mod . (helper <*>) $ User
---     <$> flag False True
---         (  short 'd'
---         <> long "dry-run"
---         <> help "dry run"
---         )
---     <*> strOption
---         (  short 'a'
---         <> long "author"
---         <> help "override author for commit"
---         <> metavar "<author>"
---         )
---     where mod = fullDesc
---              <> footer "commit footer"
+
 
 parseUmail :: Parser Commands
 parseUmail = Umail 
     <$> argument str (metavar "UMAIL_ACTION")
     <*> (strOption $
-        short 'u'
+        short 'U'
         <> long "user"
         <> value "self"
         <> metavar "UMAIL_TARGET")
@@ -451,21 +440,6 @@ parsePost = Post
         <> long "title"
         <> value "self"
         <> metavar "POST_MESSAGE_TITLE")
---Info Umail
--- parseUmail = flip info mod . (helper <*>) $ Umail
---     <$> option auto -- flag False True
---         (  short 'b'
---         <> long "bare"
---         <> help "create a bare repository"
---         )
---     <*> option auto
---         (  short 'c'
---         <> long "count"
---         <> help "count of last umails to show"
---         <> metavar "<depth>"
---         )
---     where mod = fullDesc
---              <> footer "clone footer"
 
 main :: IO ()
 main = do
