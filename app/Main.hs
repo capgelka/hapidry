@@ -41,36 +41,6 @@ import Options.Applicative
 import qualified Data.String.Utils as SU (replace)
 
 
-
-
--- This Haskell type corresponds to the structure of a response body
--- from httpbin.org.
-
-data GetBody = GetBody {
-    headers :: Map Text Text
-  , args :: Map Text Text
-  , origin :: Text
-  , url :: Text
-  } deriving (Show, Generic)
-
--- data UmailData = UmailData {
---     umailid :: Integer,
---     from_username :: Text,
---     dateline :: Text,
---     read :: Text, 
---     no_smilies :: Text,
---     title :: Text,
---     message_html :: Text
--- } deriving (Show, Generic)
-
--- data Umail = Umail {
---     count :: Integer,
---     umail :: UmailData
--- } deriving (Show, Generic)
-
-
--- instance FromJSON Umail
--- instance FromJSON UmailData
 newtype DiaryText = DiaryText Text
 instance NWTP.FormValue DiaryText where
     renderFormValue (DiaryText t) = toCP1251 t
@@ -127,15 +97,7 @@ ununicode s = LE.encodeUtf8 $ replace $ LE.decodeUtf8 s where
 
 toCP1251 :: Text -> B.ByteString
 toCP1251 x = B.pack $ SU.replace rus cpCodes (T.unpack x) where
-  -- r = T.foldr (\(x, y) -> Map. ) ""
-  -- replace "" = ""
-  -- replace str = case (Map.lookup (head str) table) of
-  --           (Just x) -> B.cons x (replace $ tail str)
-  --           -- _        -> "-3"
-  --           (Nothing) -> B.cons (head str) (replace $ tail str) where
 
-
-  -- table = Map.fromList $ zip rus cpCodes
   cpCodes = map toEnum (168:184:[192 .. 255]) :: [Char]
   rus =  ['Ё', 'ё', 'А', 'Б', 'В', 'Г', 'Д', 'Е', 'Ж', 'З', 'И', 'Й', 'К', 'Л', 'М',
          'Н', 'О', 'П', 'Р', 'С', 'Т', 'У', 'Ф', 'Х', 'Ц', 'Ч', 'Ш', 'Щ', 'Ъ', 'Ы',
@@ -145,37 +107,8 @@ toCP1251 x = B.pack $ SU.replace rus cpCodes (T.unpack x) where
 
 
 
-
-toOptions :: [(Text, Text)] -> Options
-toOptions x = defaults {NWTP.params = x} -- & foldr (\(x, y) p -> p . set (param x) [y]) id x -- (\x f-> defaults x . f)
-
 toForm :: [(Text, Text)] -> [FormParam]
 toForm = map (\(x, y) -> (encodeUtf8 x) := DiaryText y)
-
-apiGet :: ClientCredentials -> [(Text, Text)] -> IO (Either Integer BL.ByteString)
-apiGet env p = apiGet' env (toOptions p) where
-    apiGet' :: ClientCredentials -> Options -> IO (Either Integer BL.ByteString)
-    apiGet' e params = case e & sid of
-        (Left _)  -> return $ Left $ (-1)
-        (Right x) -> apiGet'' $ params & param "sid" .~ [x] where -- & param "sid" .~ [x] where
-            apiGet'' :: Options -> IO (Either Integer BL.ByteString)
-            apiGet'' params = do
-                -- print params
-                r <- getWith params "http://www.diary.ru/api"
-                -- print $ r ^? responseBody 
-                -- print $ r ^? responseBody . key "result"
-                -- print $ r ^? responseBody . key "result" . _String
-                -- print $ r ^? responseBody . key "result" . _Integer
-                -- print $ r ^? responseBody . key "result" . _String
-                -- print $ r ^? responseBody . _String
-                case r ^? responseBody . key "result" . _String of
-                   (Just "0")  -> return $ Right $ ununicode $ r ^. responseBody
-                   (Just "12") -> authRequest e >>= (\newEnv -> apiGet' newEnv params) 
-                   (Just x)  -> return $ Left
-                                       $ (\(Right a) -> fst a)
-                                       $ decimal
-                                       $ x -- $ x
-                   Nothing   -> return $ Left (-1)
 
 apiPost :: ClientCredentials -> [(Text, Text)] -> IO (Either Integer BL.ByteString)
 apiPost env p = apiPost' env p where
@@ -216,11 +149,11 @@ postCreate :: ClientCredentials -> [(Text, Text)] -> IO (Either Integer BL.ByteS
 postCreate env p = apiPost env (("method", "post.create"):p)
 
 userGet :: ClientCredentials -> [(Text, Text)] -> IO (Either Integer BL.ByteString)
-userGet env params = apiGet env (("method", "user.get"):params)
+userGet env params = apiPost env (("method", "user.get"):params)
 
 
 umailGet :: ClientCredentials -> [(Text, Text)] -> IO (Either Integer BL.ByteString)
-umailGet env params = apiGet env (("method", "umail.get"):params)
+umailGet env params = apiPost env (("method", "umail.get"):params)
     -- r <- apiGet env (("method", "umail.get"):params)
     -- x <- return $ case r of
     --       (Right a) -> a
@@ -235,28 +168,6 @@ umailGet env params = apiGet env (("method", "umail.get"):params)
     --   --(x & eitherDecode :: Either Umail) & "umail" -- Right $ decode x  -- :: Maybe Umail)
     --   (Left x) -> Left $ x
 
-                     
---authRequest :: Environment (IO ClientCredentials)--B.ByteString -> B.ByteString -> B.ByteString -> B.ByteString -> IO (Response B.ByteString)
--- authRequest :: ClientCredentials -> IO ClientCredentials
--- authRequest env = do
---   --r <- getWith params "http://www.diary.ru/api"
---   -- let x = password env + 2
---   let params = defaults & param "appkey" .~ [appkey env]
---                         & param "password" .~ [keyHash (password env) (secret env)]
---                         & param "username" .~ [username env ]
---                         & param "method" .~  ["user.auth"]
---   r <- getWith params "http://www.diary.ru/api" -- >>= return 
---   --let r =  
---   -- r <- getWith params "http://www.diary.ru/api"                         
---   return $ env { sid = (authParse r)} where --authParse $ getWith $ params
---     -- authParse :: IO String -> Text
---     -- authParse :: IO a -> IO b
---     authParse response = case response  ^? responseBody . key "result" of
---             (Just "0") -> Right $ (response ^. responseBody . key "sid" . _String)
---             (Just  x)  -> Left $ (\(Right a) -> fst a)
---                                $ decimal
---                                $ (response ^. responseBody . key "result" . _String)
---             Nothing    -> Left $ (-1)
 
 authRequest :: ClientCredentials -> IO ClientCredentials
 authRequest env = do
@@ -280,48 +191,6 @@ authRequest env = do
                                $ decimal
                                $ (response ^. responseBody . key "result" . _String)
             Nothing    -> Left $ (-1)
-
-instance FromJSON GetBody
-
-
-
--- We expect this to succeed.
-
-basic_asJSON :: IO ()
-basic_asJSON = do
-  let opts = defaults & param "foo" .~ ["bar"]
-  r <- asJSON =<< getWith opts "http://httpbin.org/get"
-
-  -- The fact that we want a GetBody here will be inferred by our use
-  -- of the "headers" accessor function.
-
-  putStrLn $ "args: " ++ show (args (r ^. responseBody))
-
-
-
-
--- The lens package defines some handy combinators for use with the
--- aeson package, with which we can easily traverse parts of a JSON
--- response.
-
-lens_aeson :: IO ()
-lens_aeson = do
-  r <- get "http://httpbin.org/get"
-  print $ r ^? responseBody . key "headers" . key "User-Agent"
-
-  -- If we maintain the ResponseBody as a ByteString, the lens
-  -- combinators will have to convert the body to a Value every time
-  -- we start a new traversal.
-
-  -- When we need to poke at several parts of a response, it's more
-  -- efficient to use asValue to perform the conversion to a Value
-  -- once.
-
-  let opts = defaults & param "baz" .~ ["quux"]
-  v <- asValue =<< getWith opts "http://httpbin.org/get"
-  print $ v ^? responseBody . key "args" . key "baz"
-
-
 
 
 type Action = String
