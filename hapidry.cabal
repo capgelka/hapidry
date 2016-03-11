@@ -28,7 +28,7 @@ executable hapidry-exe
                      , wreq
                      , ConfigFile
                      , aeson
-                     , lens
+                     , lens 
                      , cryptohash
                      , binary
                      , mtl
@@ -39,6 +39,7 @@ executable hapidry-exe
                      , lens-aeson
                      , data-default
                      , optparse-applicative
+                     , MissingH
   default-language:    Haskell2010
 
 test-suite hapidry-test

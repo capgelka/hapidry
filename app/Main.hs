@@ -38,10 +38,7 @@ import GHC.Generics (Generic)
 import Network.Wreq hiding (Auth, auth)
 import qualified Network.Wreq.Types as NWTP (FormValue, renderFormValue, params)
 import Options.Applicative
-
-
-
-
+import qualified Data.String.Utils as SU (replace)
 
 
 
@@ -129,15 +126,16 @@ ununicode s = LE.encodeUtf8 $ replace $ LE.decodeUtf8 s where
 
 
 toCP1251 :: Text -> B.ByteString
-toCP1251 = replace . T.unpack where
-  replace "" = ""
-  replace str = case (Map.lookup (head str) table) of
-            (Just x) -> B.cons x (replace $ tail str)
-            -- _        -> "-3"
-            (Nothing) -> B.cons (head str) (replace $ tail str) where
+toCP1251 x = B.pack $ SU.replace rus cpCodes (T.unpack x) where
+  -- r = T.foldr (\(x, y) -> Map. ) ""
+  -- replace "" = ""
+  -- replace str = case (Map.lookup (head str) table) of
+  --           (Just x) -> B.cons x (replace $ tail str)
+  --           -- _        -> "-3"
+  --           (Nothing) -> B.cons (head str) (replace $ tail str) where
 
 
-  table = Map.fromList $ zip rus cpCodes
+  -- table = Map.fromList $ zip rus cpCodes
   cpCodes = map toEnum (168:184:[192 .. 255]) :: [Char]
   rus =  ['Ё', 'ё', 'А', 'Б', 'В', 'Г', 'Д', 'Е', 'Ж', 'З', 'И', 'Й', 'К', 'Л', 'М',
          'Н', 'О', 'П', 'Р', 'С', 'Т', 'У', 'Ф', 'Х', 'Ц', 'Ч', 'Ш', 'Щ', 'Ъ', 'Ы',
@@ -352,11 +350,7 @@ data Commands
       , blog :: String
       , title :: String
       } deriving (Show)
-    -- deriving (Show)
-    -- {
-    --   umail  :: Umail
-    -- , user :: User
-    -- } deriving (Show)
+
 
 applyOptions :: [(Text, String)] -> [(Text, Text)]
 applyOptions = map (\(x, y) -> (x, T.pack $ y)) . filter (\(x, y) -> y /= "self")
@@ -369,7 +363,6 @@ updateCreds  client (Auth x y)      = client { username = T.pack x, password = B
 
 mainOptParse :: IO ()
 mainOptParse = do 
-
   command <- execParser $ (parseArgs 
                           `withInfo` "diary.ru API client") -- >>= print
 
