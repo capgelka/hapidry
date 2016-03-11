@@ -173,7 +173,7 @@ apiGet env p = apiGet' env (toOptions p) where
                 case r ^? responseBody . key "result" . _String of
                    (Just "0")  -> return $ Right $ ununicode $ r ^. responseBody
                    (Just "12") -> authRequest e >>= (\newEnv -> apiGet' newEnv params) 
-                   (Just _)  -> return $ Left
+                   (Just x)  -> return $ Left
                                        $ (\(Right a) -> fst a)
                                        $ decimal
                                        $ x -- $ x
@@ -193,9 +193,9 @@ apiPost env p = apiPost' env p where
         --                                         else tail params) where
             -- apiPost'' :: [FormParam] -> IO (Either Integer BL.ByteString)
             apiPost'' params = do
-                print "Phh"
-                print params
-                print "UU(("
+                -- print "Phh"
+                -- print params
+                -- print "UU(("
                 r <- post "http://www.diary.ru/api" $ toForm params
                 -- print $ r ^? responseBody 
                 -- print $ r ^? responseBody . key "result"
@@ -206,8 +206,10 @@ apiPost env p = apiPost' env p where
                 case r ^? responseBody . key "result" . _String of
                    (Just "0")  -> return $ Right $ ununicode $ r ^. responseBody
                    (Just "12") -> authRequest e >>= (\newEnv -> apiPost' newEnv params)
-                   (Just _)  -> return $ Left
-                                       $ (\(Right a) -> fst a)
+                   (Just x)  -> return $ Left
+                                       $ (\x -> case x of
+                                              (Right a) -> fst a
+                                              (Left a) -> 0)
                                        $ decimal
                                        $ x -- $ x
                    Nothing   -> return $ Left (-1)
@@ -274,7 +276,9 @@ authRequest env = do
     -- authParse :: IO a -> IO b
     authParse response = case response  ^? responseBody . key "result" of
             (Just "0") -> Right $ (response ^. responseBody . key "sid" . _String)
-            (Just  x)  -> Left $ (\(Right a) -> fst a)
+            (Just  x)  -> Left $ (\x -> case x of
+                                      (Right a) -> fst a
+                                      (Left _) -> 0)
                                $ decimal
                                $ (response ^. responseBody . key "result" . _String)
             Nothing    -> Left $ (-1)
@@ -376,7 +380,7 @@ mainOptParse = do
                 username    = "hastest",  
                 secret  = "a503505ae803ee7f4fd477f01c1958b1"
               } & updateCreds $ command & auth
-  print command
+  -- print command
   -- let ap = (applyOptions [("message", command & blog),
   --                      ("target", command & target),
   --                      ("title", command & title)])
