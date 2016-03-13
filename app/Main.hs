@@ -40,8 +40,8 @@ import qualified Network.Wreq.Types as NWTP (FormValue, renderFormValue, params)
 import Options.Applicative
 import qualified Data.String.Utils as SU (replace)
 
-import Data.Configurator
-import Data.Configurator.Types (Value)
+import qualified Data.Configurator as C
+import qualified Data.Configurator.Types as CT
 
 
 
@@ -236,16 +236,30 @@ updateCreds  client (Auth "self" x)      = client { password = B.pack x }
 updateCreds  client (Auth x "self") = client { username = T.pack x }
 updateCreds  client (Auth x y)      = client { username = T.pack x, password = B.pack y } 
 
+readOption :: CT.Config -> CT.Name -> IO Text
+readOption conf opt = (readOption' <$> (C.lookup conf opt) ) where
+    readOption' (Just x) = x
+    readOption' Nothing  = ""
+      -- (Just x) -> x
+      -- Nothing  -> ""
+
+readOptionB :: CT.Config -> CT.Name -> IO B.ByteString
+readOptionB conf opt = encodeUtf8 <$> readOption conf opt
+
+-- mergeCreds :: ClientCredentials -> ClientCredentials -> ClientCredentials
 mainOptParse :: IO ()
 mainOptParse = do 
   command <- execParser $ (parseArgs 
                           `withInfo` "diary.ru API client") -- >>= print
-  print $ command & config
+  cfg <- C.load [C.Required (command & config)]
+  -- lookup c
+  password <- readOptionB cfg "password"
+  username <- readOption cfg "username"
   client <- authRequest $ ClientCredentials {
-                password = "1234123",
+                password = password,
                 appkey  = "6e5f8970828d967595661329239df3b5",
                 sid     = Right "",
-                username    = "hastest",  
+                username    = username,  
                 secret  = "a503505ae803ee7f4fd477f01c1958b1"
               } & updateCreds $ command & auth
   -- print command  -- let ap = (applyOptions [("message", command & blog),
@@ -270,7 +284,7 @@ parseCommands :: Parser Commands
 parseCommands = subparser $
     command "umail" (parseUmail   `withInfo` "get/send umails") <>
     command "user"  (parseUser  `withInfo` "get user info") <>
-    command "post" (parsePost `withInfo` "read/write posts in selected blog")
+    command "post"  (parsePost `withInfo` "read/write posts in selected blog")
 
 parseArgs :: Parser Args
 parseArgs = Args <$> parseAuth <*> parseConfig <*> parseCommands
@@ -279,7 +293,7 @@ parseConfig :: Parser ConfigPath
 parseConfig = (strOption $
               short 'c'
               <> long "config"
-              <> value "~/.hapidry"
+              <> value "$(HOME)/.hapidry"
               <> metavar "CONFIG"
               <> help "path to config file")
 
