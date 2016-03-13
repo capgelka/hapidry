@@ -40,6 +40,10 @@ import qualified Network.Wreq.Types as NWTP (FormValue, renderFormValue, params)
 import Options.Applicative
 import qualified Data.String.Utils as SU (replace)
 
+import Data.Configurator
+import Data.Configurator.Types (Value)
+
+
 
 newtype DiaryText = DiaryText Text
 instance NWTP.FormValue DiaryText where
@@ -198,8 +202,10 @@ type Target = String
 type UserId = String
 type Path   = String
 data Auth   = Auth String String deriving (Show)
+type ConfigPath = String
+-- newtype ConfigPath = ConfigPath { comfigPath :: String } deriving (Show)
 
-data Args = Args { auth :: Auth, commands :: Commands} deriving (Show)
+data Args = Args { auth :: Auth, config :: ConfigPath, commands :: Commands } deriving (Show)
 
 data Commands 
     = Umail  {
@@ -234,7 +240,7 @@ mainOptParse :: IO ()
 mainOptParse = do 
   command <- execParser $ (parseArgs 
                           `withInfo` "diary.ru API client") -- >>= print
-
+  print $ command & config
   client <- authRequest $ ClientCredentials {
                 password = "1234123",
                 appkey  = "6e5f8970828d967595661329239df3b5",
@@ -267,7 +273,15 @@ parseCommands = subparser $
     command "post" (parsePost `withInfo` "read/write posts in selected blog")
 
 parseArgs :: Parser Args
-parseArgs = Args <$> parseAuth <*> parseCommands
+parseArgs = Args <$> parseAuth <*> parseConfig <*> parseCommands
+
+parseConfig :: Parser ConfigPath
+parseConfig = (strOption $
+              short 'c'
+              <> long "config"
+              <> value "~/.hapidry"
+              <> metavar "CONFIG"
+              <> help "path to config file")
 
 parseAuth :: Parser Auth
 parseAuth = Auth <$> (strOption $
