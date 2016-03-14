@@ -3,9 +3,9 @@
 
 
 import Data.Text (Text)
-import qualified Data.Text as T (pack)
+import qualified Data.Text as T (pack, unpack)
 
-import Data.Text.Encoding (encodeUtf8)
+import Data.Text.Encoding (encodeUtf8, decodeUtf8)
 import qualified Data.ByteString.Char8 as B
 
 import qualified Data.ByteString.Lazy.Char8 as BL (ByteString)
@@ -16,6 +16,7 @@ import Options.Applicative
 import qualified Data.Configurator as C
 import qualified Data.Configurator.Types as CT
 import Control.Lens ((&))
+import Text.Editor (runUserEditor)
 import Api
 
 
@@ -87,10 +88,15 @@ createPost (Post _ title _ True) client = do
   postCreate client  (applyOptions
                       [("message", Just text),
                        ("title", title)])
+createPost (Post Nothing title Nothing False) client = do 
+  text <- T.unpack <$> decodeUtf8 <$> runUserEditor
+  postCreate client  (applyOptions
+                      [("message", Just text),
+                       ("title", title)])
 createPost (Post text title _ _) client = postCreate client 
                                                     (applyOptions
                                                      [("message", text),
-                                                      ("title", title)])                                                
+                                                      ("title", title)])
 
 
 sendUmail :: Commands -> ClientCredentials -> IO (Either Integer BL.ByteString)
@@ -106,11 +112,18 @@ sendUmail (Send user _ title _ True) client = do
                         [("username", Just user),
                          ("message", Just text),
                          ("title", title)])
+sendUmail (Send user Nothing title Nothing False) client = do 
+    text <- T.unpack <$> decodeUtf8 <$> runUserEditor
+    umailSend client  (applyOptions
+                        [("username", Just user),
+                         ("message", Just text),
+                         ("title", title)])  
 sendUmail (Send user text title _ _) client = umailSend client 
                                                     (applyOptions
                                                      [("username", Just user),
                                                       ("message", text),
-                                                      ("title", title)])   
+                                                      ("title", title)])
+ 
 
 mainOptParse :: IO ()
 mainOptParse = do 
@@ -121,10 +134,10 @@ mainOptParse = do
   username <- readOption cfg "username"
   client <- authRequest $ ClientCredentials {
                 password = password,
-                appkey  = "6e5f8970828d967595661329239df3b5",
+                appkey  = "5ab793910e36584cd81622e5eb77d3d1",
                 sid     = Right "",
                 username    = username,  
-                secret  = "a503505ae803ee7f4fd477f01c1958b1"
+                secret  = "8543db8deccb4b0fcb753291c53f8f4f"
               } & updateCreds $ command & auth
   print command                     
   parseOpt (command & commands) client >>= print where
