@@ -1,7 +1,3 @@
--- Examples of handling for JSON responses
---
--- This library provides several ways to handle JSON responses
-
 {-# LANGUAGE DeriveGeneric, OverloadedStrings #-}
 {-# OPTIONS_GHC -fno-warn-unused-binds #-}
 
@@ -60,17 +56,11 @@ data  ClientCredentials =  ClientCredentials {
 type Environment a = ReaderT ClientCredentials IO a
 
 keyHash :: B.ByteString -> B.ByteString -> Text
--- keyHash pass key = read $ "\"" ++ show (md5 $ B.append key pass) ++ "\"" ::Text
-keyHash pass key = decodeLatin1 $ B16.encode $ MD5.hash $ B.append key pass --need fix  to CP1251
-                   -- in case hash of
-                   --      (MD5Digest h) -> h
--- Get GHC to derive a FromJSON instance for us.
-
--- apiGet :: IO (Response B.ByteString)
--- sid :: Reader (\x -> replace (BL.pack x))) 
--- ununicode :: BL.ByteString -> B                -- 
+keyHash pass key = decodeLatin1 $ B16.encode $ MD5.hash $ B.append key pass 
+   
+ununicode :: BL.ByteString -> BL.ByteString               
 ununicode s = LE.encodeUtf8 $ replace $ LE.decodeUtf8 s where 
-  -- replace :: BL.ByteString -> BL.ByteString
+  replace :: L.Text -> L.Text
   replace "" = ""
   replace str = case (Map.lookup (L.take 6 str) table) of
           (Just x) -> L.append x (replace $ L.drop 6 str)
@@ -120,26 +110,12 @@ apiPost :: ClientCredentials -> [(Text, Text)] -> IO (Either Integer BL.ByteStri
 apiPost env p = apiPost' env p where
     updateSid :: Text -> [(Text, Text)] -> [(Text, Text)]
     updateSid sid params = ("sid", sid):(filter (\(x, y) -> x /= "sid") params)
-    --apiPost' :: ClientCredentials -> [FormParam] -> IO (Either Integer BL.ByteString)
+    apiPost' :: ClientCredentials -> [(Text, Text)] -> IO (Either Integer BL.ByteString)
     apiPost' e params = case e & sid of
         (Left _)  -> return $ Left $ (-1)
-        -- _ -> return $ Left $ (-1)
         (Right x) ->  apiPost'' $ updateSid x params where
-        -- (Right x) ->  apiPost'' $ ("sid" := x):(if length params < 5
-        --                                         then params
-        --                                         else tail params) where
-            -- apiPost'' :: [FormParam] -> IO (Either Integer BL.ByteString)
             apiPost'' params = do
-                -- print "Phh"
-                -- print params
-                -- print "UU(("
                 r <- post "http://www.diary.ru/api" $ toForm params
-                -- print $ r ^? responseBody 
-                -- print $ r ^? responseBody . key "result"
-                -- print $ r ^? responseBody . key "result" . _String
-                -- print $ r ^? responseBody . key "result" . _Integer
-                -- print $ r ^? responseBody . key "result" . _String
-                -- print $ r ^? responseBody . _String
                 case r ^? responseBody . key "result" . _String of
                    (Just "0")  -> return $ Right $ ununicode $ r ^. responseBody
                    (Just "12") -> authRequest e >>= (\newEnv -> apiPost' newEnv params)
@@ -148,7 +124,7 @@ apiPost env p = apiPost' env p where
                                               (Right a) -> fst a
                                               (Left a) -> 0)
                                        $ decimal
-                                       $ x -- $ x
+                                       $ x 
                    Nothing   -> return $ Left (-1)
 
 postCreate :: ClientCredentials -> [(Text, Text)] -> IO (Either Integer BL.ByteString)
@@ -169,18 +145,14 @@ umailSend env params = apiPost env (("method", "umail.send"):params)
 
 authRequest :: ClientCredentials -> IO ClientCredentials
 authRequest env = do
-  --r <- getWith params "http://www.diary.ru/api"
-  -- let x = password env + 2
   let params = toForm [("appkey", appkey env),
                        ("password", keyHash (password env) (secret env)),
                        ("username", username env),
                        ("method",  "user.auth")]
-  r <- post "http://www.diary.ru/api" params -- >>= return 
-  --let r =  
-  -- r <- getWith params "http://www.diary.ru/api"                         
-  return $ env { sid = (authParse r)} where --authParse $ getWith $ params
-    -- authParse :: IO String -> Text
-    -- authParse :: IO a -> IO b
+  r <- post "http://www.diary.ru/api" params 
+             
+  return $ env { sid = (authParse r)} where 
+    authParse :: Response BL.ByteString -> Either Integer Text
     authParse response = case response  ^? responseBody . key "result" of
             (Just "0") -> Right $ (response ^. responseBody . key "sid" . _String)
             (Just  x)  -> Left $ (\x -> case x of
@@ -197,7 +169,6 @@ type UserId = String
 type Path   = String
 data Auth   = Auth (Maybe String) (Maybe String) deriving (Show)
 type ConfigPath = String
--- newtype ConfigPath = ConfigPath { comfigPath :: String } deriving (Show)
 
 data Args = Args { auth :: Auth, config :: ConfigPath, commands :: Commands } deriving (Show)
 
@@ -217,11 +188,6 @@ data Commands
         title :: Maybe String,
         file :: Maybe Path,
         pipe :: Bool
-        --   action :: Action
-        -- , target :: Target
-        -- , file :: Path
-        -- , blog :: String
-        -- , title :: String
       }
     | Send
       {
@@ -295,7 +261,6 @@ mainOptParse = do
   command <- execParser $ (parseArgs 
                           `withInfo` "diary.ru API client") -- >>= print
   cfg <- C.load [C.Required (command & config)]
-  -- lookup c
   password <- readOptionB cfg "password"
   username <- readOption cfg "username"
   client <- authRequest $ ClientCredentials {
@@ -305,25 +270,13 @@ mainOptParse = do
                 username    = username,  
                 secret  = "a503505ae803ee7f4fd477f01c1958b1"
               } & updateCreds $ command & auth
-  print command    --                      ("target", command & target),
-  --                      ("title", command & title)])
-  -- print ap
-  -- print $ toForm ap
+  print command                     
   parseOpt (command & commands) client >>= print where
-      --parseOpt ::
-      parseOpt (Umail "get" _) client = umailGet client []  -- >>= (\(Right x) -> x ^? key "umail")
+      parseOpt :: Commands -> ClientCredentials -> IO (Either Integer BL.ByteString)
+      parseOpt (Umail "get" _) client = umailGet client []  
       parseOpt p@(Post _ _ _ _) client = createPost p client
-               -- client  = postcreate client 
-               --                      (applyoptions [("message", text),
-               --                                     -- ("target", target),
-               --                                     ("title", title)])
       parseOpt s@(Send _ _ _ _ _) client = sendUmail s client
       parseOpt _  client              = umailGet client [] 
-
-      --  >>= (\(Right x) -> x ^? key "umail") 
-  -- print $ case command of
-  --   (Umail "get" _) -> umailGet client [] >>= (\(Right x) -> x ^? key "umail")  --- >>= return -- & members
-  --   _               -> umailGet client [] >>= (\(Right x) -> x ^? key "umail") --  >>= return 
 
 parseCommands :: Parser Commands
 parseCommands = subparser $
@@ -414,51 +367,6 @@ parsePost = Post
 
 main :: IO ()
 main = do
-  -- print $ toCP1251 "абвг0абвг&abcd"
-             
-  let client = ClientCredentials {
-                password = "1234123",
-                appkey  = "6e5f8970828d967595661329239df3b5",
-                sid     = Right "",
-                username    = "hastest",  
-                secret  = "a503505ae803ee7f4fd477f01c1958b1"
-             }
+
   print "OK"
   mainOptParse
-
-  -- r <- authRequest client
-  -- print r
-  -- print "\\u041d\\u0430\\u0438\\u0431\\u043e\\u043b\\"
-  -- print $ ununicode "\\u041d\\u0430\\u0438\\u0431\\u043e\\u043b\\"
-  -- let letters = BL.concat $ ["\\u0401", "\\u0451", "\\u0410", "\\u0411", "\\u0412", "\\u0413", 
-  --                            "\\u0414", "\\u0415", "\\u0416", "\\u0417", "\\u0418", "\\u0419",
-  --                            "\\u041a", "\\u041b", "\\u041c", "\\u041d", "\\u041e", "\\u041f",
-  --                            "\\u0420", "\\u0421", "\\u0422", "\\u0423", "\\u0424", "\\u0425",
-  --                            "\\u0426", "\\u0427", "\\u0428", "\\u0429", "\\u042a", "\\u042b",
-  --                            "\\u042c", "\\u042d", "\\u042e", "\\u042f", "\\u0430", "\\u0431",
-  --                            "\\u0432", "\\u0433", "\\u0434", "\\u0435", "\\u0436", "\\u0437",
-  --                            "\\u0438", "\\u0439", "\\u043a", "\\u043b", "\\u043c", "\\u043d",
-  --                            "\\u043e", "\\u043f", "\\u0440", "\\u0441", "\\u0442", "\\u0443",
-  --                            "\\u0444", "\\u0445", "\\u0446", "\\u0447", "\\u0448", "\\u0449",
-  --                            "\\u044a", "\\u044b", "\\u044c", "\\u044d", "\\u044e", "\\u044f"]
-
-  -- print letters
-  -- r2 <- umailGet client []
-  -- -- print $ r2
-  -- r3 <- apiGet client (("method", "umail.get"):[])
-  -- let z = ((\(Right x) -> x) r2) ^? key "count" 
-  -- print $ ((\(Right x) -> x) r2) ^? key "umail"  -- . _Object
-  -- -- print r3
-  -- putStrLn $ BL.unpack r2
-  -- let p = "\\u0414\\u043e\\u0431\\u0440\\u043e \\u043f\\u043e\\u0436 Diary"
-  -- print p
-  -- putStrLn $ B.unpack $ ununicode' $ p
-  -- print $ r ^? responseBody . key "sid"
-  -- -- (authorize appkey skey "hastest" "12341230") + 2
-  -- a <- authorize appkey skey "hastest" "12341230"
-  -- print $ a
-  -- aa <- authorize appkey skey "hastest" "1234123"
-  -- print $ aa
-  -- print v
-  -- print authRequest
-  -- lens_aeson
