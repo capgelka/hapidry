@@ -2,7 +2,5 @@ flags: {}
 extra-package-dbs: []
 packages:
 - '.'
-extra-deps:
-- argparser-0.3.4
-- text-1.2.2.0
-resolver: lts-5.3
+extra-deps: []
+resolver: lts-5.6

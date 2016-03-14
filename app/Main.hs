@@ -1,272 +1,241 @@
--- Examples of handling for JSON responses
---
--- This library provides several ways to handle JSON responses
-
-{-# LANGUAGE DeriveGeneric, OverloadedStrings#-}
+{-# LANGUAGE  OverloadedStrings #-}
 {-# OPTIONS_GHC -fno-warn-unused-binds #-}
 
-import Control.Lens ((&), (^.), (^?), (.~), set)
-import Data.Aeson (FromJSON, fromJSON, decode)
-import Data.Aeson.Encode (encodeToTextBuilder, encodeToBuilder)
-import Data.Aeson.Lens (key, _String, _Integer)
-import Data.Map (Map)
-import Data.Maybe (fromMaybe)
-import Data.Either
+
 import Data.Text (Text)
-import qualified Data.Text.Lazy as L (toStrict)
-import qualified Data.Text.Lazy.Encoding as LE (decodeLatin1)
-import qualified Data.Text.Lazy.Builder as LB (toLazyText)
-import Data.Text.Encoding (decodeLatin1)
-import Data.Text.Read (decimal)
-import Data.Binary (encode)
-import qualified Data.ByteString.Base16 as B16 (encode)
+import qualified Data.Text as T (pack, unpack)
+
+import Data.Text.Encoding (encodeUtf8, decodeUtf8)
 import qualified Data.ByteString.Char8 as B
-import Data.ByteString.Lazy (toStrict)
-import Data.ByteString.Builder (toLazyByteString)
-import qualified Crypto.Hash.MD5 as MD5
-import Control.Monad.Reader
-import qualified Data.ByteString.Lazy.Char8 as BL --(ByteString)
 
-import GHC.Generics (Generic)
-import qualified Control.Exception as E
+import qualified Data.ByteString.Lazy.Char8 as BL (ByteString)
 
-import Network.Wreq
+-- import Network.Wreq hiding (Auth, auth)
+import Options.Applicative
 
-
--- This Haskell type corresponds to the structure of a response body
--- from httpbin.org.
-
-data GetBody = GetBody {
-    headers :: Map Text Text
-  , args :: Map Text Text
-  , origin :: Text
-  , url :: Text
-  } deriving (Show, Generic)
-
-data UmailData = UmailData {
-    umailid :: Integer,
-    from_username :: Text,
-    dateline :: Text,
-    read :: Text, 
-    no_smilies :: Text,
-    title :: Text,
-    message_html :: Text
-} deriving (Show, Generic)
-
-data Umail = Umail {
-    count :: Integer,
-    umail :: UmailData
-} deriving (Show, Generic)
-
-
-instance FromJSON Umail
-instance FromJSON UmailData
-
--- all data needed for requests to api
-data  ClientCredentials =  ClientCredentials {
-      password :: B.ByteString,
-      appkey  :: Text,
-      sid     :: Either Integer Text,
-      user    :: Text,  
-      secret  :: B.ByteString
-      } deriving Show
-
-type Environment a = ReaderT ClientCredentials IO a
-
-keyHash :: B.ByteString -> B.ByteString -> Text
--- keyHash pass key = read $ "\"" ++ show (md5 $ B.append key pass) ++ "\"" ::Text
-keyHash pass key = decodeLatin1 $ B16.encode $ MD5.hash $ B.append key pass --need fix  to CP1251
-                   -- in case hash of
-                   --      (MD5Digest h) -> h
--- Get GHC to derive a FromJSON instance for us.
-
--- apiGet :: IO (Response B.ByteString)
--- sid :: Reader                  -- 
-
-toOptions :: [(Text, Text)] -> Options
-toOptions x = defaults & foldr (\(x, y) p -> p . set (param x) [y]) id x -- (\x f-> defaults x . f)
-
-apiGet :: ClientCredentials -> [(Text, Text)] -> IO (Either Integer BL.ByteString)
-apiGet env p = apiGet' env (toOptions p) where
-    apiGet' :: ClientCredentials -> Options -> IO (Either Integer BL.ByteString)
-    apiGet' e params = case e & sid of
-        (Left _)  -> return $ Left $ (-1)
-        (Right x) -> apiGet'' $ params & param "sid" .~ [x] where -- & param "sid" .~ [x] where
-            apiGet'' :: Options -> IO (Either Integer BL.ByteString)
-            apiGet'' params = do
-                print params
-                r <- getWith params "http://www.diary.ru/api"
-                print $ r ^? responseBody 
-                -- print $ r ^? responseBody . key "result"
-                -- print $ r ^? responseBody . key "result" . _String
-                -- print $ r ^? responseBody . key "result" . _Integer
-                -- print $ r ^? responseBody . key "result" . _String
-                print $ r ^? responseBody . _String
-                case r ^? responseBody . key "result" . _String of
-                   (Just "0")  -> return $ Right $ r ^. responseBody
-                   (Just "12") -> authRequest e >>= (\newEnv -> apiGet' newEnv params) 
-                   (Just x)  -> return $ Left (-1) -- $ x
-                   Nothing   -> return $ Left (-11)
-
-userGet :: ClientCredentials -> [(Text, Text)] -> IO (Either Integer BL.ByteString)
-userGet env params = apiGet env (("method", "user.get"):params)
-
-
-umailGet :: ClientCredentials -> [(Text, Text)] -> IO (Either Integer (Maybe Umail))
-umailGet env params = do
-    r <- apiGet env (("method", "umail.get"):params)
-    return $ case r of
-      (Right x) -> Right $ (decode x :: Maybe Umail)
-      (Left x) -> Left $ x
-
-                     
---authRequest :: Environment (IO ClientCredentials)--B.ByteString -> B.ByteString -> B.ByteString -> B.ByteString -> IO (Response B.ByteString)
-authRequest :: ClientCredentials -> IO ClientCredentials
-authRequest env = do
-  --r <- getWith params "http://www.diary.ru/api"
-  -- let x = password env + 2
-  let params = defaults
-                            & param "appkey" .~ [appkey env]
-                            & param "password" .~ [keyHash (password env) (secret env)]
-                            & param "username" .~ [user env ]
-                            & param "method" .~  ["user.auth"]
-  r <- getWith params "http://www.diary.ru/api" -- >>= return 
-  --let r =  
-  -- r <- getWith params "http://www.diary.ru/api"                         
-  return $ env { sid = (authParse r)} where --authParse $ getWith $ params
-    -- authParse :: IO String -> Text
-    -- authParse :: IO a -> IO b
-    authParse response = case response  ^? responseBody . key "result" of
-            (Just "0") -> Right  $ (response ^. responseBody . key "sid" . _String)
-            (Just  x)  -> Left $ (\(Right a) -> fst a)
-                               $ decimal
-                               $ (response ^. responseBody . key "result" . _String)
-            Nothing    -> Left $  (-1)
+import qualified Data.Configurator as C
+import qualified Data.Configurator.Types as CT
+import Control.Lens ((&))
+import Text.Editor (runUserEditor)
+import Api
 
 
 
-instance FromJSON GetBody
+
+type Action = String
+type Target = String
+type UserId = String
+type Path   = String
+data Auth   = Auth (Maybe String) (Maybe String) deriving (Show)
+type ConfigPath = String
+
+data Args = Args { auth :: Auth, config :: ConfigPath, commands :: Commands } deriving (Show)
+
+data Commands 
+    = Umail  {
+        umailAction :: Action
+      , target :: Maybe Target
+      }
+    | User
+      {
+        userAction :: Action
+      , uid :: UserId
+      } 
+    | Post 
+      {
+        text :: Maybe String,
+        title :: Maybe String,
+        file :: Maybe Path,
+        pipe :: Bool
+      }
+    | Send
+      {
+        user :: String,
+        title :: Maybe String,
+        text :: Maybe String,
+        file :: Maybe Path,
+        pipe :: Bool
+      } deriving (Show)
 
 
+applyOptions :: [(Text, Maybe String)] -> [(Text, Text)]
+applyOptions = map (\(x, Just y) -> (x, T.pack $ y)) . filter (\(_, y) -> y /= Nothing)
 
--- We expect this to succeed.
+updateCreds :: ClientCredentials -> Auth -> ClientCredentials
+updateCreds  client (Auth Nothing Nothing)   = client
+updateCreds  client (Auth Nothing (Just x))  = client { password = B.pack x } 
+updateCreds  client (Auth (Just x) Nothing)  = client { username = T.pack x }
+updateCreds  client (Auth (Just x) (Just y)) = client { username = T.pack x,
+                                                        password = B.pack y } 
 
-basic_asJSON :: IO ()
-basic_asJSON = do
-  let opts = defaults & param "foo" .~ ["bar"]
-  r <- asJSON =<< getWith opts "http://httpbin.org/get"
+readOption :: CT.Config -> CT.Name -> IO Text
+readOption conf opt = (readOption' <$> (C.lookup conf opt) ) where
+    readOption' (Just x) = x
+    readOption' Nothing  = ""
 
-  -- The fact that we want a GetBody here will be inferred by our use
-  -- of the "headers" accessor function.
-
-  putStrLn $ "args: " ++ show (args (r ^. responseBody))
-
-
-
--- The response we expect here is valid JSON, but cannot be converted
--- to an [Int], so this will throw a JSONError.
-
--- failing_asJSON :: IO ()
--- failing_asJSON = do
---   (r :: Response [Int]) <- asJSON =<< get "http://httpbin.org/get"
---   putStrLn $ "response: " ++ show (r ^. responseBody)
+readOptionB :: CT.Config -> CT.Name -> IO B.ByteString
+readOptionB conf opt = encodeUtf8 <$> readOption conf opt
 
 
-
--- -- This demonstrates how to catch a JSONError.
-
--- failing_asJSON_catch :: IO ()
--- failing_asJSON_catch =
---   failing_asJSON `E.catch` \(e :: JSONError) -> print e
-
-
-
--- Because asJSON is parameterized over MonadThrow, we can use it with
--- other instances.
---
--- Here, instead of throwing an exception in the IO monad, we instead
--- evaluate the result as an Either:
---
--- * if the conversion fails, the Left constructor will contain
---   whatever exception describes the error
---
--- * if the conversion succeeds, the Right constructor will contain
---   the converted response
-
--- either_asJSON :: IO ()
--- either_asJSON = do
---   r <- get "http://httpbin.org/get"
-
---   -- This first conversion attempt will fail, but because we're using
---   -- Either, it will not throw an exception that kills execution.
---   let failing = asJSON r :: Either E.SomeException (Response [Int])
---   print failing
-
---   -- Our second conversion attempt will succeed.
---   let succeeding = asJSON r :: Either E.SomeException (Response GetBody)
---   print succeeding
+createPost :: Commands -> ClientCredentials -> IO (Either Integer BL.ByteString)
+createPost (Post _ title (Just x) False) client = do
+    text <- readFile x
+    postCreate client (applyOptions
+                      [("message", Just text),
+                       ("title", title)])    
+createPost (Post _ title _ True) client = do 
+  text <- getContents
+  postCreate client  (applyOptions
+                      [("message", Just text),
+                       ("title", title)])
+createPost (Post Nothing title Nothing False) client = do 
+  text <- T.unpack <$> decodeUtf8 <$> runUserEditor
+  postCreate client  (applyOptions
+                      [("message", Just text),
+                       ("title", title)])
+createPost (Post text title _ _) client = postCreate client 
+                                                    (applyOptions
+                                                     [("message", text),
+                                                      ("title", title)])
 
 
+sendUmail :: Commands -> ClientCredentials -> IO (Either Integer BL.ByteString)
+sendUmail (Send user _ title (Just x) False) client = do
+    text <- readFile x
+    umailSend client (applyOptions
+                      [("username", Just user),
+                       ("message", Just text),
+                       ("title", title)])    
+sendUmail (Send user _ title _ True) client = do 
+    text <- getContents
+    umailSend client  (applyOptions
+                        [("username", Just user),
+                         ("message", Just text),
+                         ("title", title)])
+sendUmail (Send user Nothing title Nothing False) client = do 
+    text <- T.unpack <$> decodeUtf8 <$> runUserEditor
+    umailSend client  (applyOptions
+                        [("username", Just user),
+                         ("message", Just text),
+                         ("title", title)])  
+sendUmail (Send user text title _ _) client = umailSend client 
+                                                    (applyOptions
+                                                     [("username", Just user),
+                                                      ("message", text),
+                                                      ("title", title)])
+ 
 
--- The lens package defines some handy combinators for use with the
--- aeson package, with which we can easily traverse parts of a JSON
--- response.
+mainOptParse :: IO ()
+mainOptParse = do 
+  command <- execParser $ (parseArgs 
+                          `withInfo` "diary.ru API client") 
+  cfg <- C.load [C.Required (command & config)]
+  password <- readOptionB cfg "password"
+  username <- readOption cfg "username"
+  client <- authRequest $ ClientCredentials {
+                password = password,
+                appkey  = "5ab793910e36584cd81622e5eb77d3d1",
+                sid     = Right "",
+                username    = username,  
+                secret  = "8543db8deccb4b0fcb753291c53f8f4f"
+              } & updateCreds $ command & auth
+  print command                     
+  parseOpt (command & commands) client >>= print where
+      parseOpt :: Commands -> ClientCredentials -> IO (Either Integer BL.ByteString)
+      parseOpt (Umail "get" _) client = umailGet client []  
+      parseOpt p@(Post _ _ _ _) client = createPost p client
+      parseOpt s@(Send _ _ _ _ _) client = sendUmail s client
+      parseOpt _  client              = umailGet client [] 
 
-lens_aeson :: IO ()
-lens_aeson = do
-  r <- get "http://httpbin.org/get"
-  print $ r ^? responseBody . key "headers" . key "User-Agent"
+parseCommands :: Parser Commands
+parseCommands = subparser $
+    command "umail" (parseUmail `withInfo` "get/send umails") <>
+    command "user"  (parseUser  `withInfo` "get user info") <>
+    command "post"  (parsePost  `withInfo` "create new post") <>
+    command "send"  (parseSend  `withInfo` "send new umail")
 
-  -- If we maintain the ResponseBody as a ByteString, the lens
-  -- combinators will have to convert the body to a Value every time
-  -- we start a new traversal.
+parseArgs :: Parser Args
+parseArgs = Args <$> parseAuth <*> parseConfig <*> parseCommands
 
-  -- When we need to poke at several parts of a response, it's more
-  -- efficient to use asValue to perform the conversion to a Value
-  -- once.
+parseConfig :: Parser ConfigPath
+parseConfig = (strOption $
+              short 'c'
+              <> long "config"
+              <> value "$(HOME)/.hapidry"
+              <> metavar "CONFIG"
+              <> help "path to config file")
 
-  let opts = defaults & param "baz" .~ ["quux"]
-  v <- asValue =<< getWith opts "http://httpbin.org/get"
-  print $ v ^? responseBody . key "args" . key "baz"
+parseAuth :: Parser Auth
+parseAuth = Auth <$> (optional $ strOption $
+              short 'u'
+              <> long "user"
+              <> metavar "LOGIN"
+              <> help "user login")
+            <*> (optional $ strOption $
+                 short 'p'
+                 <> long "password"
+                 <> metavar "PASSWORD"
+                 <> help "user password")
 
+withInfo :: Parser a -> String -> ParserInfo a
+withInfo opts desc = info (helper <*> opts) $ progDesc desc
+
+parseUser :: Parser Commands
+parseUser = User 
+    <$> argument str (metavar "USER_ACTION")
+    <*> argument str (metavar "USER_UID")
+
+
+parseUmail :: Parser Commands
+parseUmail = Umail 
+    <$> argument str (metavar "UMAIL_ACTION")
+    <*> (optional $ strOption $
+        short 'U'
+        <> long "user"
+        <> metavar "UMAIL_TARGET")
+
+parseSend :: Parser Commands
+parseSend = Send
+    <$> argument str (metavar "UMAIL_USERNAME")
+    <*> (optional $ strOption $
+        short 'm'
+        <> long "message"
+        <> metavar "UMAIL_MESSAGE")
+    <*> (optional $ strOption $
+        short 't'
+        <> long "title"
+        <> metavar "UMAIL_MESSAGE_TITLE")
+    <*> (optional $ strOption $
+        short 'f'
+        <> long "file"
+        <> metavar "UMAIL_MESSAGE_FILE")
+    <*> (switch
+      (long "pipe"
+       <> short 'p'
+       <> help "get text from stdout"))
+
+parsePost :: Parser Commands
+parsePost = Post 
+    <$> (optional $ strOption $
+        short 'm'
+        <> long "message"
+        <> metavar "POST_MESSAGE")
+    <*> (optional $ strOption $
+        short 't'
+        <> long "title"
+        <> metavar "POST_MESSAGE_TITLE")
+    <*> (optional $ strOption $
+        short 'f'
+        <> long "file"
+        <> metavar "POST_MESSAGE_FILE")
+    <*> (switch
+      (long "pipe"
+       <> short 'p'
+       <> help "get text from stdout"))
 
 
 main :: IO ()
 main = do
-  -- basic_asJSON
-  -- failing_asJSON_catch
-  -- either_asJSON
-  -- print skey
-  -- print $ keyHash "1234123" skey
- -- print $ authRequest appkey skey "hastest" "1234123"
-  -- let config = runReader ClientCredentials ClientCredentials {
-  --               password = "1234123",
-  --               appkey  = "6e5f8970828d967595661329239df3b5",
-  --               sid     = "",
-  --               user    = "hastest",  
-  --               secret  = "a503505ae803ee7f4fd477f01c1958b1"
-  --            }
-             
-  let client = ClientCredentials {
-                password = "1234123",
-                appkey  = "6e5f8970828d967595661329239df3b5",
-                sid     = Right "",
-                user    = "hastest",  
-                secret  = "a503505ae803ee7f4fd477f01c1958b1"
-             }
-             
-  r <- authRequest client
-  print r
-  r2 <- umailGet r []
-  print $ r2
-  r3 <- apiGet r (("method", "umail.get"):[])
-  print $ r3
-  -- print $ r ^? responseBody . key "sid"
-  -- -- (authorize appkey skey "hastest" "12341230") + 2
-  -- a <- authorize appkey skey "hastest" "12341230"
-  -- print $ a
-  -- aa <- authorize appkey skey "hastest" "1234123"
-  -- print $ aa
-  -- print v
-  -- print authRequest
-  -- lens_aeson
+
+  print "OK"
+  mainOptParse
