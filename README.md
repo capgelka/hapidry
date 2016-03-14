@@ -1,6 +1,6 @@
 # hapidry
 
-hapidry is a command line client for diary.ru apiwith interface in unix spirit. Feel free to open issues if something is done some other ugly way.
+hapidry is a command line client for diary.ru apiтwith interface in unix spirit. Feel free to open issues if something is done some other ugly way.
 
 Currently it supports 2 actions.
 
@@ -19,7 +19,9 @@ To start usage you should create config file, the default path is ~/.hapidry, bu
 
 Config has simple key/value format
 
+```
 password = "password"
 username = "diaryusername"
+```
 
 If you need to make actions from different user for one time, don't edit config, just add -u username -p password via commandline.
