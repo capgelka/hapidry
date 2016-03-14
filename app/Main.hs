@@ -160,19 +160,11 @@ userGet env params = apiPost env (("method", "user.get"):params)
 
 umailGet :: ClientCredentials -> [(Text, Text)] -> IO (Either Integer BL.ByteString)
 umailGet env params = apiPost env (("method", "umail.get"):params)
-    -- r <- apiGet env (("method", "umail.get"):params)
-    -- x <- return $ case r of
-    --       (Right a) -> a
-    --       (Left a)  ->  ""
-    -- return $ x -- ^? key "count" . _String
-    --(decode x :: Maybe Umail)
-    -- return $ case r of
-    --   (Right x) -> Right $ (decode x :: Maybe Umail )-- >>= (\u -> u & umail >>= return)
-    --              -- do :: Maybe
-    --              --  u <- decode x
-    --              --  return $ u & umail 
-    --   --(x & eitherDecode :: Either Umail) & "umail" -- Right $ decode x  -- :: Maybe Umail)
-    --   (Left x) -> Left $ x
+
+
+umailSend :: ClientCredentials -> [(Text, Text)] -> IO (Either Integer BL.ByteString)
+umailSend env params = apiPost env (("method", "umail.send"):params)
+ 
 
 
 authRequest :: ClientCredentials -> IO ClientCredentials
@@ -230,6 +222,14 @@ data Commands
         -- , file :: Path
         -- , blog :: String
         -- , title :: String
+      }
+    | Send
+      {
+        user :: String,
+        title :: Maybe String,
+        text :: Maybe String,
+        file :: Maybe Path,
+        pipe :: Bool
       } deriving (Show)
 
 
@@ -269,7 +269,26 @@ createPost (Post text title _ _) client = postCreate client
                                                     (applyOptions
                                                      [("message", text),
                                                       ("title", title)])                                                
-                                                                                                  
+
+
+sendUmail :: Commands -> ClientCredentials -> IO (Either Integer BL.ByteString)
+sendUmail (Send user _ title (Just x) False) client = do
+    text <- readFile x
+    umailSend client (applyOptions
+                      [("username", Just user),
+                       ("message", Just text),
+                       ("title", title)])    
+sendUmail (Send user _ title _ True) client = do 
+    text <- getContents
+    umailSend client  (applyOptions
+                        [("username", Just user),
+                         ("message", Just text),
+                         ("title", title)])
+sendUmail (Send user text title _ _) client = umailSend client 
+                                                    (applyOptions
+                                                     [("username", Just user),
+                                                      ("message", text),
+                                                      ("title", title)])   
 
 mainOptParse :: IO ()
 mainOptParse = do 
@@ -298,16 +317,20 @@ mainOptParse = do
                --                      (applyoptions [("message", text),
                --                                     -- ("target", target),
                --                                     ("title", title)])
-      parseOpt _  client              = umailGet client [] --  >>= (\(Right x) -> x ^? key "umail") 
+      parseOpt s@(Send _ _ _ _ _) client = sendUmail s client
+      parseOpt _  client              = umailGet client [] 
+
+      --  >>= (\(Right x) -> x ^? key "umail") 
   -- print $ case command of
   --   (Umail "get" _) -> umailGet client [] >>= (\(Right x) -> x ^? key "umail")  --- >>= return -- & members
   --   _               -> umailGet client [] >>= (\(Right x) -> x ^? key "umail") --  >>= return 
 
 parseCommands :: Parser Commands
 parseCommands = subparser $
-    command "umail" (parseUmail   `withInfo` "get/send umails") <>
+    command "umail" (parseUmail `withInfo` "get/send umails") <>
     command "user"  (parseUser  `withInfo` "get user info") <>
-    command "post"  (parsePost `withInfo` "create new post")
+    command "post"  (parsePost  `withInfo` "create new post") <>
+    command "send"  (parseSend  `withInfo` "send new umail")
 
 parseArgs :: Parser Args
 parseArgs = Args <$> parseAuth <*> parseConfig <*> parseCommands
@@ -349,14 +372,28 @@ parseUmail = Umail
         <> long "user"
         <> metavar "UMAIL_TARGET")
 
+parseSend :: Parser Commands
+parseSend = Send
+    <$> argument str (metavar "UMAIL_USERNAME")
+    <*> (optional $ strOption $
+        short 'm'
+        <> long "message"
+        <> metavar "UMAIL_MESSAGE")
+    <*> (optional $ strOption $
+        short 't'
+        <> long "title"
+        <> metavar "UMAIL_MESSAGE_TITLE")
+    <*> (optional $ strOption $
+        short 'f'
+        <> long "file"
+        <> metavar "UMAIL_MESSAGE_FILE")
+    <*> (switch
+      (long "pipe"
+       <> short 'p'
+       <> help "get text from stdout"))
+
 parsePost :: Parser Commands
 parsePost = Post 
-    -- <$> argument str (metavar "TEXT")
-    -- <*> (strOption $
-    --     short 'b'
-    --     <> long "blog"
-    --     <> value Nothing
-    --     <> metavar "POST_BLOG")
     <$> (optional $ strOption $
         short 'm'
         <> long "message"
@@ -373,8 +410,7 @@ parsePost = Post
       (long "pipe"
        <> short 'p'
        <> help "get text from stdout"))
-    -- <> value False
---    <> help "Retain all intermediate temporary files" )
+
 
 main :: IO ()
 main = do
