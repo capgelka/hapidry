@@ -1,38 +1,23 @@
-{-# LANGUAGE DeriveGeneric, OverloadedStrings #-}
+{-# LANGUAGE  OverloadedStrings #-}
 {-# OPTIONS_GHC -fno-warn-unused-binds #-}
 
-import Control.Lens ((&), (^.), (^?), (.~), set)
-import Data.Aeson (FromJSON, fromJSON, decode, eitherDecode)
-import Data.Aeson.Encode (encodeToTextBuilder, encodeToBuilder)
-import Data.Aeson.Lens (key, _String, _Integer, _Object, members)
-import Data.Map (Map)
-import Data.Maybe (fromMaybe)
-import Data.Either
+import Control.Lens ((&), (^.), (^?))
+import Data.Aeson.Lens (key, _String)
 import Data.Text (Text)
-import qualified Data.Text as T (append, cons, tail, head, take, drop, pack, unpack, foldr, map)
-import qualified Data.Text.Lazy as L (toStrict, append, cons, tail, head,
+import qualified Data.Text as T (pack, unpack, map)
+import qualified Data.Text.Lazy as L (append, cons, tail, head,
                                       take, drop, Text)
-import qualified Data.Text.Lazy.Encoding as LE (decodeLatin1, decodeUtf8, encodeUtf8)
-import qualified Data.Text.Lazy.Builder as LB (toLazyText)
-import Data.Text.Encoding (decodeLatin1, decodeUtf8, encodeUtf8)
+import qualified Data.Text.Lazy.Encoding as LE (decodeUtf8, encodeUtf8)
+import Data.Text.Encoding (decodeLatin1, encodeUtf8)
 import Data.Text.Read (decimal)
-import Data.Binary (encode)
 import qualified Data.ByteString.Base16 as B16 (encode)
 import qualified Data.ByteString.Char8 as B
-import Data.ByteString.Lazy (toStrict)
-import Data.ByteString.Builder (toLazyByteString, int8)
 import qualified Crypto.Hash.MD5 as MD5
-import Control.Monad.Reader
-import qualified Data.ByteString.Lazy.Char8 as BL --(ByteString)
-import Numeric (showHex)
+import qualified Data.ByteString.Lazy.Char8 as BL 
 import qualified Data.Map as Map
-import qualified Data.Char as Char
-
-import GHC.Generics (Generic)
--- import qualified Control.Exception as E.
 
 import Network.Wreq hiding (Auth, auth)
-import qualified Network.Wreq.Types as NWTP (FormValue, renderFormValue, params)
+import qualified Network.Wreq.Types as NWTP (FormValue, renderFormValue)
 import Options.Applicative
 
 import qualified Data.Configurator as C
@@ -53,7 +38,6 @@ data  ClientCredentials =  ClientCredentials {
       secret   :: B.ByteString
       } deriving Show
 
-type Environment a = ReaderT ClientCredentials IO a
 
 keyHash :: B.ByteString -> B.ByteString -> Text
 keyHash pass key = decodeLatin1 $ B16.encode $ MD5.hash $ B.append key pass 
@@ -62,9 +46,9 @@ ununicode :: BL.ByteString -> BL.ByteString
 ununicode s = LE.encodeUtf8 $ replace $ LE.decodeUtf8 s where 
   replace :: L.Text -> L.Text
   replace "" = ""
-  replace str = case (Map.lookup (L.take 6 str) table) of
-          (Just x) -> L.append x (replace $ L.drop 6 str)
-          (Nothing) -> L.cons (L.head str) (replace $ L.tail str)
+  replace string = case (Map.lookup (L.take 6 string) table) of
+          (Just x)  -> L.append x (replace $ L.drop 6 string)
+          (Nothing) -> L.cons (L.head string) (replace $ L.tail string)
 
   table = Map.fromList $ zip letters rus
 
@@ -109,7 +93,7 @@ toForm = map (\(x, y) -> (encodeUtf8 x) := DiaryText y)
 apiPost :: ClientCredentials -> [(Text, Text)] -> IO (Either Integer BL.ByteString)
 apiPost env p = apiPost' env p where
     updateSid :: Text -> [(Text, Text)] -> [(Text, Text)]
-    updateSid sid params = ("sid", sid):(filter (\(x, y) -> x /= "sid") params)
+    updateSid sid params = ("sid", sid):(filter (\(x, _) -> x /= "sid") params)
     apiPost' :: ClientCredentials -> [(Text, Text)] -> IO (Either Integer BL.ByteString)
     apiPost' e params = case e & sid of
         (Left _)  -> return $ Left $ (-1)
@@ -120,9 +104,9 @@ apiPost env p = apiPost' env p where
                    (Just "0")  -> return $ Right $ ununicode $ r ^. responseBody
                    (Just "12") -> authRequest e >>= (\newEnv -> apiPost' newEnv params)
                    (Just x)  -> return $ Left
-                                       $ (\x -> case x of
+                                       $ (\y -> case y of
                                               (Right a) -> fst a
-                                              (Left a) -> 0)
+                                              (Left _) -> (-1))
                                        $ decimal
                                        $ x 
                    Nothing   -> return $ Left (-1)
@@ -155,7 +139,7 @@ authRequest env = do
     authParse :: Response BL.ByteString -> Either Integer Text
     authParse response = case response  ^? responseBody . key "result" of
             (Just "0") -> Right $ (response ^. responseBody . key "sid" . _String)
-            (Just  x)  -> Left $ (\x -> case x of
+            (Just  _)  -> Left $ (\x -> case x of
                                       (Right a) -> fst a
                                       (Left _) -> 0)
                                $ decimal
@@ -200,7 +184,7 @@ data Commands
 
 
 applyOptions :: [(Text, Maybe String)] -> [(Text, Text)]
-applyOptions = map (\(x, Just y) -> (x, T.pack $ y)) . filter (\(x, y) -> y /= Nothing)
+applyOptions = map (\(x, Just y) -> (x, T.pack $ y)) . filter (\(_, y) -> y /= Nothing)
 
 updateCreds :: ClientCredentials -> Auth -> ClientCredentials
 updateCreds  client (Auth Nothing Nothing)   = client
@@ -213,8 +197,6 @@ readOption :: CT.Config -> CT.Name -> IO Text
 readOption conf opt = (readOption' <$> (C.lookup conf opt) ) where
     readOption' (Just x) = x
     readOption' Nothing  = ""
-      -- (Just x) -> x
-      -- Nothing  -> ""
 
 readOptionB :: CT.Config -> CT.Name -> IO B.ByteString
 readOptionB conf opt = encodeUtf8 <$> readOption conf opt
@@ -259,7 +241,7 @@ sendUmail (Send user text title _ _) client = umailSend client
 mainOptParse :: IO ()
 mainOptParse = do 
   command <- execParser $ (parseArgs 
-                          `withInfo` "diary.ru API client") -- >>= print
+                          `withInfo` "diary.ru API client") 
   cfg <- C.load [C.Required (command & config)]
   password <- readOptionB cfg "password"
   username <- readOption cfg "username"
