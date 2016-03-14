@@ -13,7 +13,7 @@ import Data.Map (Map)
 import Data.Maybe (fromMaybe)
 import Data.Either
 import Data.Text (Text)
-import qualified Data.Text as T (append, cons, tail, head, take, drop, pack, unpack)
+import qualified Data.Text as T (append, cons, tail, head, take, drop, pack, unpack, foldr, map)
 import qualified Data.Text.Lazy as L (toStrict, append, cons, tail, head,
                                       take, drop, Text)
 import qualified Data.Text.Lazy.Encoding as LE (decodeLatin1, decodeUtf8, encodeUtf8)
@@ -38,7 +38,6 @@ import GHC.Generics (Generic)
 import Network.Wreq hiding (Auth, auth)
 import qualified Network.Wreq.Types as NWTP (FormValue, renderFormValue, params)
 import Options.Applicative
-import qualified Data.String.Utils as SU (replace)
 
 import qualified Data.Configurator as C
 import qualified Data.Configurator.Types as CT
@@ -100,18 +99,11 @@ ununicode s = LE.encodeUtf8 $ replace $ LE.decodeUtf8 s where
 
 
 toCP1251 :: Text -> B.ByteString
-toCP1251 x = B.pack $ SU.replace rus cpCodes (T.unpack x) where
+toCP1251 = B.pack . T.unpack . T.map replace where
 
-  -- r = B.foldr (\(x, y) -> B.cons (x r' y) ) "" where
-  --   r' l = case (Map.lookup l table) of
-  --     (Just x) -> x
-  --     (Nothing) -> l
-
-  replace "" = ""
-  replace str = case (Map.lookup (head str) table) of
-            (Just x) -> B.cons x (replace $ tail str)
-            -- _        -> "-3"
-            (Nothing) -> B.cons (head str) (replace $ tail str) where
+  replace l = case (Map.lookup l table) of
+      (Just x) -> x
+      (Nothing) -> l
 
   table = Map.fromList $ zip rus cpCodes
   cpCodes = map toEnum (168:184:[192 .. 255]) :: [Char]
@@ -120,8 +112,6 @@ toCP1251 x = B.pack $ SU.replace rus cpCodes (T.unpack x) where
          'Ь', 'Э', 'Ю', 'Я', 'а', 'б', 'в', 'г', 'д', 'е', 'ж', 'з', 'и', 'й', 'к',
          'л', 'м', 'н', 'о', 'п', 'р', 'с', 'т', 'у', 'ф', 'х', 'ц', 'ч', 'ш', 'щ',
          'ъ', 'ы', 'ь', 'э', 'ю', 'я']  :: [Char]
-
-
 
 toForm :: [(Text, Text)] -> [FormParam]
 toForm = map (\(x, y) -> (encodeUtf8 x) := DiaryText y)
@@ -282,7 +272,7 @@ mainOptParse = do
                 username    = username,  
                 secret  = "a503505ae803ee7f4fd477f01c1958b1"
               } & updateCreds $ command & auth
-  --  print command    --                      ("target", command & target),
+  print command    --                      ("target", command & target),
   --                      ("title", command & title)])
   -- print ap
   -- print $ toForm ap
