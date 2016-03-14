@@ -224,7 +224,7 @@ data Commands
         text :: Maybe String,
         title :: Maybe String,
         file :: Maybe Path,
-        pipe :: Maybe Bool
+        pipe :: Bool
         --   action :: Action
         -- , target :: Target
         -- , file :: Path
@@ -254,8 +254,22 @@ readOptionB :: CT.Config -> CT.Name -> IO B.ByteString
 readOptionB conf opt = encodeUtf8 <$> readOption conf opt
 
 
--- createPost :: ClientCredentials -> Commands -> 
--- createPost (Post text title file pipe)
+createPost :: Commands -> ClientCredentials -> IO (Either Integer BL.ByteString)
+createPost (Post _ title (Just x) False) client = do
+    text <- readFile x
+    postCreate client (applyOptions
+                      [("message", Just text),
+                       ("title", title)])    
+createPost (Post _ title _ True) client = do 
+  text <- getContents
+  postCreate client  (applyOptions
+                      [("message", Just text),
+                       ("title", title)])
+createPost (Post text title _ _) client = postCreate client 
+                                                    (applyOptions
+                                                     [("message", text),
+                                                      ("title", title)])                                                
+                                                                                                  
 
 mainOptParse :: IO ()
 mainOptParse = do 
@@ -279,11 +293,11 @@ mainOptParse = do
   parseOpt (command & commands) client >>= print where
       --parseOpt ::
       parseOpt (Umail "get" _) client = umailGet client []  -- >>= (\(Right x) -> x ^? key "umail")
-      parseOpt (Post text title file pipe)
-               client  = postCreate client 
-                                    (applyOptions [("message", text),
-                                                   -- ("target", target),
-                                                   ("title", title)])
+      parseOpt p@(Post _ _ _ _) client = createPost p client
+               -- client  = postcreate client 
+               --                      (applyoptions [("message", text),
+               --                                     -- ("target", target),
+               --                                     ("title", title)])
       parseOpt _  client              = umailGet client [] --  >>= (\(Right x) -> x ^? key "umail") 
   -- print $ case command of
   --   (Umail "get" _) -> umailGet client [] >>= (\(Right x) -> x ^? key "umail")  --- >>= return -- & members
@@ -355,7 +369,7 @@ parsePost = Post
         short 'f'
         <> long "file"
         <> metavar "POST_MESSAGE_FILE")
-    <*> (optional $ switch
+    <*> (switch
       (long "pipe"
        <> short 'p'
        <> help "get text from stdout"))
