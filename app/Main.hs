@@ -102,6 +102,18 @@ ununicode s = LE.encodeUtf8 $ replace $ LE.decodeUtf8 s where
 toCP1251 :: Text -> B.ByteString
 toCP1251 x = B.pack $ SU.replace rus cpCodes (T.unpack x) where
 
+  -- r = B.foldr (\(x, y) -> B.cons (x r' y) ) "" where
+  --   r' l = case (Map.lookup l table) of
+  --     (Just x) -> x
+  --     (Nothing) -> l
+
+  replace "" = ""
+  replace str = case (Map.lookup (head str) table) of
+            (Just x) -> B.cons x (replace $ tail str)
+            -- _        -> "-3"
+            (Nothing) -> B.cons (head str) (replace $ tail str) where
+
+  table = Map.fromList $ zip rus cpCodes
   cpCodes = map toEnum (168:184:[192 .. 255]) :: [Char]
   rus =  ['Ё', 'ё', 'А', 'Б', 'В', 'Г', 'Д', 'Е', 'Ж', 'З', 'И', 'Й', 'К', 'Л', 'М',
          'Н', 'О', 'П', 'Р', 'С', 'Т', 'У', 'Ф', 'Х', 'Ц', 'Ч', 'Ш', 'Щ', 'Ъ', 'Ы',
@@ -201,7 +213,7 @@ type Action = String
 type Target = String
 type UserId = String
 type Path   = String
-data Auth   = Auth String String deriving (Show)
+data Auth   = Auth (Maybe String) (Maybe String) deriving (Show)
 type ConfigPath = String
 -- newtype ConfigPath = ConfigPath { comfigPath :: String } deriving (Show)
 
@@ -210,7 +222,7 @@ data Args = Args { auth :: Auth, config :: ConfigPath, commands :: Commands } de
 data Commands 
     = Umail  {
         umailAction :: Action
-      , target :: Target
+      , target :: Maybe Target
       }
     | User
       {
@@ -219,22 +231,27 @@ data Commands
       } 
     | Post 
       {
-        action :: Action
-      , target :: Target
-      , file :: Path
-      , blog :: String
-      , title :: String
+        text :: Maybe String,
+        title :: Maybe String,
+        file :: Maybe Path,
+        pipe :: Maybe Bool
+        --   action :: Action
+        -- , target :: Target
+        -- , file :: Path
+        -- , blog :: String
+        -- , title :: String
       } deriving (Show)
 
 
-applyOptions :: [(Text, String)] -> [(Text, Text)]
-applyOptions = map (\(x, y) -> (x, T.pack $ y)) . filter (\(x, y) -> y /= "self")
+applyOptions :: [(Text, Maybe String)] -> [(Text, Text)]
+applyOptions = map (\(x, Just y) -> (x, T.pack $ y)) . filter (\(x, y) -> y /= Nothing)
 
 updateCreds :: ClientCredentials -> Auth -> ClientCredentials
-updateCreds  client (Auth "self" "self") = client
-updateCreds  client (Auth "self" x)      = client { password = B.pack x } 
-updateCreds  client (Auth x "self") = client { username = T.pack x }
-updateCreds  client (Auth x y)      = client { username = T.pack x, password = B.pack y } 
+updateCreds  client (Auth Nothing Nothing)   = client
+updateCreds  client (Auth Nothing (Just x))  = client { password = B.pack x } 
+updateCreds  client (Auth (Just x) Nothing)  = client { username = T.pack x }
+updateCreds  client (Auth (Just x) (Just y)) = client { username = T.pack x,
+                                                        password = B.pack y } 
 
 readOption :: CT.Config -> CT.Name -> IO Text
 readOption conf opt = (readOption' <$> (C.lookup conf opt) ) where
@@ -246,7 +263,10 @@ readOption conf opt = (readOption' <$> (C.lookup conf opt) ) where
 readOptionB :: CT.Config -> CT.Name -> IO B.ByteString
 readOptionB conf opt = encodeUtf8 <$> readOption conf opt
 
--- mergeCreds :: ClientCredentials -> ClientCredentials -> ClientCredentials
+
+-- createPost :: ClientCredentials -> Commands -> 
+-- createPost (Post text title file pipe)
+
 mainOptParse :: IO ()
 mainOptParse = do 
   command <- execParser $ (parseArgs 
@@ -262,18 +282,17 @@ mainOptParse = do
                 username    = username,  
                 secret  = "a503505ae803ee7f4fd477f01c1958b1"
               } & updateCreds $ command & auth
-  -- print command  -- let ap = (applyOptions [("message", command & blog),
-  --                      ("target", command & target),
+  --  print command    --                      ("target", command & target),
   --                      ("title", command & title)])
   -- print ap
   -- print $ toForm ap
   parseOpt (command & commands) client >>= print where
       --parseOpt ::
       parseOpt (Umail "get" _) client = umailGet client []  -- >>= (\(Right x) -> x ^? key "umail")
-      parseOpt (Post "create" target f m title)
+      parseOpt (Post text title file pipe)
                client  = postCreate client 
-                                    (applyOptions [("message", m),
-                                                   ("target", target),
+                                    (applyOptions [("message", text),
+                                                   -- ("target", target),
                                                    ("title", title)])
       parseOpt _  client              = umailGet client [] --  >>= (\(Right x) -> x ^? key "umail") 
   -- print $ case command of
@@ -284,7 +303,7 @@ parseCommands :: Parser Commands
 parseCommands = subparser $
     command "umail" (parseUmail   `withInfo` "get/send umails") <>
     command "user"  (parseUser  `withInfo` "get user info") <>
-    command "post"  (parsePost `withInfo` "read/write posts in selected blog")
+    command "post"  (parsePost `withInfo` "create new post")
 
 parseArgs :: Parser Args
 parseArgs = Args <$> parseAuth <*> parseConfig <*> parseCommands
@@ -298,16 +317,14 @@ parseConfig = (strOption $
               <> help "path to config file")
 
 parseAuth :: Parser Auth
-parseAuth = Auth <$> (strOption $
+parseAuth = Auth <$> (optional $ strOption $
               short 'u'
               <> long "user"
-              <> value "self"
               <> metavar "LOGIN"
               <> help "user login")
-            <*> (strOption $
+            <*> (optional $ strOption $
                  short 'p'
                  <> long "password"
-                 <> value  "self"
                  <> metavar "PASSWORD"
                  <> help "user password")
 
@@ -323,35 +340,37 @@ parseUser = User
 parseUmail :: Parser Commands
 parseUmail = Umail 
     <$> argument str (metavar "UMAIL_ACTION")
-    <*> (strOption $
+    <*> (optional $ strOption $
         short 'U'
         <> long "user"
-        <> value "self"
         <> metavar "UMAIL_TARGET")
 
 parsePost :: Parser Commands
 parsePost = Post 
-    <$> argument str (metavar "POST_ACTION")
-    <*> (strOption $
-        short 'b'
-        <> long "blog"
-        <> value "self"
-        <> metavar "POST_BLOG")
-    <*> (strOption $
-        short 'f'
-        <> long "file"
-        <> value "self"
-        <> metavar "POST_MESSAGE_FILE")
-    <*> (strOption $
+    -- <$> argument str (metavar "TEXT")
+    -- <*> (strOption $
+    --     short 'b'
+    --     <> long "blog"
+    --     <> value Nothing
+    --     <> metavar "POST_BLOG")
+    <$> (optional $ strOption $
         short 'm'
         <> long "message"
-        <> value "self"
         <> metavar "POST_MESSAGE")
-    <*> (strOption $
+    <*> (optional $ strOption $
         short 't'
         <> long "title"
-        <> value "self"
         <> metavar "POST_MESSAGE_TITLE")
+    <*> (optional $ strOption $
+        short 'f'
+        <> long "file"
+        <> metavar "POST_MESSAGE_FILE")
+    <*> (optional $ switch
+      (long "pipe"
+       <> short 'p'
+       <> help "get text from stdout"))
+    -- <> value False
+--    <> help "Retain all intermediate temporary files" )
 
 main :: IO ()
 main = do
