@@ -1,6 +1,6 @@
 # hapidry
 
-hapidry is a command line client for diary.ru apiтwith interface in unix spirit. Feel free to open issues if something is done some other ugly way.
+hapidry (haskell api diary) is a command line client for diary.ru api with interface in unix spirit. Feel free to open issues if something is done some other ugly way.
 
 Currently it supports 2 actions.
 
