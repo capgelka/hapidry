@@ -79,7 +79,7 @@ ununicode s = LE.encodeUtf8 $ replace $ LE.decodeUtf8 s where
              "\\u2014"] :: [L.Text]
 
 {- 
-don't want dinamically linked icu, encoding lib dosn't compile 
+don't want dinamically linked icu, encoding lib doesn't compile 
 http://stackoverflow.com/questions/35905276/cant-compile-haskell-encoding-lib-couldnt-find-haxml-modules
 -}
 toCP1251 :: Text -> B.ByteString
@@ -119,22 +119,6 @@ apiPost env p = apiPost' env p where
                                        $ decimal
                                        $ x 
                    Nothing   -> return $ Left (-1)
-
--- postCreate :: ClientCredentials -> [(Text, Text)] -> IO (Either Integer BL.ByteString)
--- postCreate env p = apiPost env (("method", "post.create"):p)
-
--- userGet :: ClientCredentials -> [(Text, Text)] -> IO (Either Integer BL.ByteString)
--- userGet env params = apiPost env (("method", "user.get"):params)
-
-
--- umailGet :: ClientCredentials -> [(Text, Text)] -> IO (Either Integer BL.ByteString)
--- umailGet env params = apiPost env (("method", "umail.get"):params)
-
-
--- umailSend :: ClientCredentials -> [(Text, Text)] -> IO (Either Integer BL.ByteString)
--- umailSend env params = apiPost env (("method", "umail.send"):params)
- 
-
 
 authRequest :: ClientCredentials -> IO ClientCredentials
 authRequest env = do
