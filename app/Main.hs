@@ -10,7 +10,6 @@ import qualified Data.ByteString.Char8 as B
 
 import qualified Data.ByteString.Lazy.Char8 as BL (ByteString)
 
--- import Network.Wreq hiding (Auth, auth)
 import Options.Applicative
 
 import qualified Data.Configurator as C
@@ -212,7 +211,7 @@ parseSend = Send
     <*> (switch
       (long "pipe"
        <> short 'p'
-       <> help "get text from stdout"))
+       <> help "get text from stdin"))
 
 parsePost :: Parser Commands
 parsePost = Post 
@@ -231,7 +230,7 @@ parsePost = Post
     <*> (switch
       (long "pipe"
        <> short 'p'
-       <> help "get text from stdout"))
+       <> help "get text from stdin"))
 
 
 main :: IO ()

@@ -45,6 +45,8 @@ data  ClientCredentials =  ClientCredentials {
 keyHash :: B.ByteString -> B.ByteString -> Text
 keyHash pass key = decodeLatin1 $ B16.encode $ MD5.hash $ B.append key pass 
    
+{- to solve problem http://stackoverflow.com/questions/35687685/haskell-convert-unicode-sequence-to-utf-8
+ no lib find -}
 ununicode :: BL.ByteString -> BL.ByteString               
 ununicode s = LE.encodeUtf8 $ replace $ LE.decodeUtf8 s where 
   replace :: L.Text -> L.Text
@@ -74,7 +76,10 @@ ununicode s = LE.encodeUtf8 $ replace $ LE.decodeUtf8 s where
              "\\u044a", "\\u044b", "\\u044c", "\\u044d", "\\u044e", "\\u044f",
              "\\u2014"] :: [L.Text]
 
-
+{- 
+don't want dinamically linked icu, encoding lib dosn't compile 
+http://stackoverflow.com/questions/35905276/cant-compile-haskell-encoding-lib-couldnt-find-haxml-modules
+-}
 toCP1251 :: Text -> B.ByteString
 toCP1251 = B.pack . T.unpack . T.map replace where
   replace l = case (Map.lookup l table) of

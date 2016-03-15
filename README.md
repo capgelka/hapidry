@@ -15,7 +15,7 @@ Currently it supports 2 actions.
 	* cat prepared_post.md | markdown | hapidry send someone -p -t subject
 	* hapidry send someone -t subject (write message in your favorite $EDITOR)
 
-To start usage you should create config file, the default path is ~/.hapidry, bu you can choose another via -c option.
+To start usage you should create config file, the default path is ~/.hapidry, but you can choose another via -c option.
 
 Config has simple key/value format
 
