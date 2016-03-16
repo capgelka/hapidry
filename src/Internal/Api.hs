@@ -122,12 +122,12 @@ apiPost env p = apiPost' env p where
 
 authRequest :: ClientCredentials -> IO ClientCredentials
 authRequest env = do
-  let params = toForm [("appkey", appkey env),
-                       ("password", keyHash (password env) (secret env)),
-                       ("username", username env),
-                       ("method",  "user.auth")]
-  r <- post "http://www.diary.ru/api" params 
-             
+  r <- post "http://www.diary.ru/api" $ toForm [("appkey", appkey env),
+                                                ("password", keyHash (password env)
+                                                                     (secret env)),
+                                                ("username", username env),
+                                                ("method",  "user.auth")]
+        
   return $ env { sid = (authParse r)} where 
     authParse :: Response BL.ByteString -> Either Integer Text
     authParse response = case response  ^? responseBody . key "result" of
