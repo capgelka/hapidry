@@ -27,4 +27,4 @@ umailGet env params = apiPost env (("method", "umail.get"):params)
 
 
 umailSend :: ClientCredentials -> [(Text, Text)] -> IO (Either Integer BL.ByteString)
-umailSend env params = apiPost env (("method", "umail.send"):params)
+umailSend env params = apiPost env (("method", "umail.send"):("save_copy", "1"):params)
