@@ -15,7 +15,7 @@ cabal-version:       >=1.10
 
 library
   hs-source-dirs:      src
-  exposed-modules:     Api, Internal.Api
+  exposed-modules:     Api, Options, Internal.Api
   build-depends:       base
                      , lens
                      , lens-aeson
@@ -25,6 +25,7 @@ library
                      , wreq
                      , bytestring
                      , text
+                     , optparse-applicative
   default-language:    Haskell2010
 
 executable hapidry

@@ -1,14 +1,14 @@
 {-# LANGUAGE  OverloadedStrings #-}
 
 module Internal.Api
-    ( ClientCredentials(..),
-      authRequest,
-      keyHash,
-      ununicode,
-      toCP1251,
-      toForm,
-      apiPost,
-      DiaryText(..)
+    ( ClientCredentials(..)
+      , authRequest
+      , keyHash
+      , ununicode
+      , toCP1251
+      , toForm
+      , apiPost
+      , DiaryText(..)
     ) where
 
 

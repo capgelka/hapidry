@@ -1,13 +1,13 @@
 {-# LANGUAGE  OverloadedStrings #-}
 
 module Api
-    ( ClientCredentials(..),
-      postCreate,
-      userGet,
-      umailGet,
-      umailSend,
-      authRequest,
-    ) where
+  ( ClientCredentials(..)
+  , postCreate
+  , userGet
+  , umailGet
+  , umailSend
+  , authRequest
+  ) where
 
 
 import qualified Data.ByteString.Lazy.Char8 as BL (ByteString)
