@@ -105,7 +105,7 @@ apiPost env p = apiPost' env p where
     updateSid sid params = ("sid", sid):(filter (\(x, _) -> x /= "sid") params)
     apiPost' :: ClientCredentials -> [(Text, Text)] -> IO (Either Integer BL.ByteString)
     apiPost' e params = case e & sid of
-        (Left _)  -> return $ Left $ (-1)
+        (Left x)  -> return $ Left $ x
         (Right x) ->  apiPost'' $ updateSid x params where
             apiPost'' params = do
                 r <- post "http://www.diary.ru/api" $ toForm params
