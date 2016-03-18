@@ -35,7 +35,7 @@ mainOptParse = do
   parseOpt (command & commands) client >>= print where
       parseOpt :: Commands -> ClientCredentials -> IO (Either Integer BL.ByteString)
       parseOpt (Umail "get" _) client = umailGet client []  
-      parseOpt p@(Post _ _ _ _) client = createPost p client
+      parseOpt p@(Post _ _ _ _ _) client = createPost p client
       parseOpt s@(Send _ _ _ _ _) client = sendUmail s client
       parseOpt _  client              = umailGet client [] 
 
