@@ -11,7 +11,7 @@ import Api
 
 import Options
 import Utils
-
+import Data.Maybe (fromJust)
 
 
 
@@ -31,7 +31,9 @@ mainOptParse = do
                 username    = username,  
                 secret  = "8543db8deccb4b0fcb753291c53f8f4f"
               } & updateCreds $ command & auth
-  print command                     
+  print command
+  n <- nameById client "1"                    
+  print n
   parseOpt (command & commands) client >>= print where
       parseOpt :: Commands -> ClientCredentials -> IO (Either Integer BL.ByteString)
       parseOpt (Umail "get" _) client = umailGet client []  
