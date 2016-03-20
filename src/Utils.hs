@@ -67,27 +67,26 @@ createPost (Post blogs text title _ _) client = postsCreate client
 
 
 
-sendUmail :: Commands -> ClientCredentials -> IO (Either Integer BL.ByteString)
-sendUmail (Send user _ title (Just x) False) client = do
+sendUmail :: Commands -> ClientCredentials -> IO (Either Integer [BL.ByteString])
+sendUmail (Send users _ title (Just x) False) client = do
     text <- readFile x
-    umailSend client (applyOptions
-                      [("username", Just user),
-                       ("message", Just text),
-                       ("title", title)])    
-sendUmail (Send user _ title _ True) client = do 
+    umailsSend client (applyOptions
+                      [("message", Just text),
+                       ("title", title)])
+               (map T.pack users)
+sendUmail (Send users _ title _ True) client = do 
     text <- getContents
-    umailSend client  (applyOptions
-                        [("username", Just user),
-                         ("message", Just text),
+    umailsSend client (applyOptions
+                        [("message", Just text),
                          ("title", title)])
-sendUmail (Send user Nothing title Nothing False) client = do 
+               (map T.pack users)
+sendUmail (Send users Nothing title Nothing False) client = do 
     text <- T.unpack <$> decodeUtf8 <$> runUserEditor
-    umailSend client  (applyOptions
-                        [("username", Just user),
-                         ("message", Just text),
-                         ("title", title)])  
-sendUmail (Send user text title _ _) client = umailSend client 
-                                                    (applyOptions
-                                                     [("username", Just user),
-                                                      ("message", text),
-                                                      ("title", title)])
+    umailsSend client (applyOptions
+                        [("message", Just text),
+                         ("title", title)])
+               (map T.pack users)
+sendUmail (Send users text title _ _) client = umailsSend client 
+                                                          (applyOptions [("message", text),
+                                                                         ("title", title)]) 
+                                                          (map T.pack users)

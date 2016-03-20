@@ -39,7 +39,7 @@ data Commands
       }
     | Send
       {
-        user :: String,
+        user :: [Target],
         title :: Maybe String,
         text :: Maybe String,
         file :: Maybe Path,
@@ -99,7 +99,7 @@ parseUmail = Umail
 
 parseSend :: Parser Commands
 parseSend = Send
-    <$> argument str (metavar "UMAIL_USERNAME")
+    <$> many (argument str (metavar "UMAIL_USERNAME"))
     <*> (optional $ strOption $
         short 'm'
         <> long "message"
