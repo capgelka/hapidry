@@ -4,7 +4,7 @@ hapidry (haskell api diary) is a command line client for diary.ru api with inter
 
 Currently it supports 2 actions.
 
-* Create new post in yout blog
+* Create new post in your blog
 	* hapidry post -m message -t subject
 	* hapidry post -f '~/prepared_post.txt' -t subject
 	* cat prepared_post.md | markdown | hapidry post -p -t subject
@@ -15,7 +15,7 @@ Currently it supports 2 actions.
 	* cat prepared_post.md | markdown | hapidry send someone -p -t subject
 	* hapidry send someone -t subject (write message in your favorite $EDITOR)
 
-To start usage you should create config file, the default path is ~/.hapidry, but you can choose another via -c option.
+To start usage you should create config file. The default path is ~/.hapidry, but you can choose another via -c option.
 
 Config has simple key/value format
 

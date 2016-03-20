@@ -32,6 +32,8 @@ updateCreds  client (Auth Nothing (Just x))  = client { password = B.pack x }
 updateCreds  client (Auth (Just x) Nothing)  = client { username = T.pack x }
 updateCreds  client (Auth (Just x) (Just y)) = client { username = T.pack x,
                                                         password = B.pack y } 
+convertTags :: [String] -> [(Text, Text)]
+convertTags = map (\t -> ("tags_data[]", T.pack t))
 
 readOption :: CT.Config -> CT.Name -> IO Text
 readOption conf opt = (readOption' <$> (C.lookup conf opt) ) where
@@ -41,50 +43,53 @@ readOption conf opt = (readOption' <$> (C.lookup conf opt) ) where
 readOptionB :: CT.Config -> CT.Name -> IO B.ByteString
 readOptionB conf opt = encodeUtf8 <$> readOption conf opt
 
-
-createPost :: Commands -> ClientCredentials -> IO (Either Integer BL.ByteString)
-createPost (Post blogs _ title (Just x) False) client = do
+createPost :: Commands -> ClientCredentials -> IO (Either Integer [BL.ByteString])
+createPost (Post blogs _ title (Just x) False tags) client = do
     text <- readFile x
-    postCreate client (applyOptions
+    postsCreate client (applyOptions
                       [("message", Just text),
-                       ("title", title)])    
-createPost (Post blogs _ title _ True) client = do 
+                       ("title", title)] ++ convertTags tags)
+                (map T.pack blogs)    
+createPost (Post blogs _ title _ True tags) client = do 
   text <- getContents
-  postCreate client  (applyOptions
+  postsCreate client  (applyOptions
                       [("message", Just text),
-                       ("title", title)])
-createPost (Post blogs Nothing title Nothing False) client = do 
+                       ("title", title)] ++ convertTags tags)
+              (map T.pack blogs)
+createPost (Post blogs Nothing title Nothing False tags) client = do 
   text <- T.unpack <$> decodeUtf8 <$> runUserEditor
-  postCreate client  (applyOptions
+  postsCreate client  (applyOptions
+                      [("message", Just text),
+                       ("title", title)] ++ convertTags tags)
+              (map T.pack blogs)
+createPost (Post blogs text title _ _ tags) client = postsCreate client
+                                                           (applyOptions [("message", text),
+                                                                          ("title", title)]
+                                                            ++ convertTags tags)
+                                                           (map T.pack blogs)
+
+
+
+sendUmail :: Commands -> ClientCredentials -> IO (Either Integer [BL.ByteString])
+sendUmail (Send users _ title (Just x) False) client = do
+    text <- readFile x
+    umailsSend client (applyOptions
                       [("message", Just text),
                        ("title", title)])
-createPost (Post blogs text title _ _) client = postCreate client 
-                                                    (applyOptions
-                                                     [("message", text),
-                                                      ("title", title)])
-
-
-sendUmail :: Commands -> ClientCredentials -> IO (Either Integer BL.ByteString)
-sendUmail (Send user _ title (Just x) False) client = do
-    text <- readFile x
-    umailSend client (applyOptions
-                      [("username", Just user),
-                       ("message", Just text),
-                       ("title", title)])    
-sendUmail (Send user _ title _ True) client = do 
+               (map T.pack users)
+sendUmail (Send users _ title _ True) client = do 
     text <- getContents
-    umailSend client  (applyOptions
-                        [("username", Just user),
-                         ("message", Just text),
+    umailsSend client (applyOptions
+                        [("message", Just text),
                          ("title", title)])
-sendUmail (Send user Nothing title Nothing False) client = do 
+               (map T.pack users)
+sendUmail (Send users Nothing title Nothing False) client = do 
     text <- T.unpack <$> decodeUtf8 <$> runUserEditor
-    umailSend client  (applyOptions
-                        [("username", Just user),
-                         ("message", Just text),
-                         ("title", title)])  
-sendUmail (Send user text title _ _) client = umailSend client 
-                                                    (applyOptions
-                                                     [("username", Just user),
-                                                      ("message", text),
-                                                      ("title", title)])
+    umailsSend client (applyOptions
+                        [("message", Just text),
+                         ("title", title)])
+               (map T.pack users)
+sendUmail (Send users text title _ _) client = umailsSend client 
+                                                          (applyOptions [("message", text),
+                                                                         ("title", title)]) 
+                                                          (map T.pack users)
