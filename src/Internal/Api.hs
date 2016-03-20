@@ -138,3 +138,6 @@ authRequest env = do
                                $ decimal
                                $ (response ^. responseBody . key "result" . _String)
             Nothing    -> Left $ (-1)
+
+convertTags :: [Text] -> [(Text, Text)]
+convertTags = map (\t -> ("tags_data[]", t))

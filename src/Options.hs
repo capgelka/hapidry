@@ -9,6 +9,9 @@ module Options
     ) where
 
 import Options.Applicative
+import Data.List.Split (splitOn)
+import Data.Char (isSpace)
+
 
 type Action = String
 type Target = String
@@ -35,7 +38,8 @@ data Commands
         text :: Maybe String,
         title :: Maybe String,
         file :: Maybe Path,
-        pipe :: Bool
+        pipe :: Bool,
+        themes :: [String]
       }
     | Send
       {
@@ -136,3 +140,14 @@ parsePost = Post
       (long "pipe"
        <> short 'p'
        <> help "get text from stdin"))
+    <*> (multiString $
+        short 'T'
+        <> long "tags"
+        <> metavar "POST_MESSAGE_TAGS")
+      
+
+multiString desc = concat <$> many single where 
+  single = option (str >>= return . map trim . (splitOn ",")) desc
+  trim :: String -> String
+  trim = f . f
+  f = reverse . dropWhile isSpace

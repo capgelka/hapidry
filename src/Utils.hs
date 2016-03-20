@@ -32,6 +32,8 @@ updateCreds  client (Auth Nothing (Just x))  = client { password = B.pack x }
 updateCreds  client (Auth (Just x) Nothing)  = client { username = T.pack x }
 updateCreds  client (Auth (Just x) (Just y)) = client { username = T.pack x,
                                                         password = B.pack y } 
+convertTags :: [String] -> [(Text, Text)]
+convertTags = map (\t -> ("tags_data[]", T.pack t))
 
 readOption :: CT.Config -> CT.Name -> IO Text
 readOption conf opt = (readOption' <$> (C.lookup conf opt) ) where
@@ -42,27 +44,28 @@ readOptionB :: CT.Config -> CT.Name -> IO B.ByteString
 readOptionB conf opt = encodeUtf8 <$> readOption conf opt
 
 createPost :: Commands -> ClientCredentials -> IO (Either Integer [BL.ByteString])
-createPost (Post blogs _ title (Just x) False) client = do
+createPost (Post blogs _ title (Just x) False tags) client = do
     text <- readFile x
     postsCreate client (applyOptions
                       [("message", Just text),
-                       ("title", title)])
+                       ("title", title)] ++ convertTags tags)
                 (map T.pack blogs)    
-createPost (Post blogs _ title _ True) client = do 
+createPost (Post blogs _ title _ True tags) client = do 
   text <- getContents
   postsCreate client  (applyOptions
                       [("message", Just text),
-                       ("title", title)])
+                       ("title", title)] ++ convertTags tags)
               (map T.pack blogs)
-createPost (Post blogs Nothing title Nothing False) client = do 
+createPost (Post blogs Nothing title Nothing False tags) client = do 
   text <- T.unpack <$> decodeUtf8 <$> runUserEditor
   postsCreate client  (applyOptions
                       [("message", Just text),
-                       ("title", title)])
+                       ("title", title)] ++ convertTags tags)
               (map T.pack blogs)
-createPost (Post blogs text title _ _) client = postsCreate client
+createPost (Post blogs text title _ _ tags) client = postsCreate client
                                                            (applyOptions [("message", text),
-                                                                          ("title", title)])
+                                                                          ("title", title)]
+                                                            ++ convertTags tags)
                                                            (map T.pack blogs)
 
 

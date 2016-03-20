@@ -23,6 +23,3 @@ spec = do
   describe "Journal" $ do
     it "decodes correctly" $ do
       decode exampleJournal `shouldBe` Just Journal {userid = "1", shortname = "root"}
-  -- describe "Journal" $ do
-  --   it "decodes correctly" $ do
-  --     decodeStrict exampleJournal `shouldBe` Just JJournal {journal = Journal {userid = "1", shortname = "root"}}
