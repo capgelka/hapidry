@@ -15,6 +15,11 @@ Currently it supports 2 actions.
 	* cat prepared_post.md | markdown | hapidry send someone -p -t subject
 	* hapidry send someone -t subject (write message in your favorite $EDITOR)
 
+There are also some additional features
+    * hapidry post -m message --tags "tagone, tag2,othertag" (creates new post with 3 tags)
+    * hapidry post blog1 blog2 -m message (add new post in 2 blogs with given names!)
+    * hapidry send user1 user2 -m message (send message to 2 users)
+
 To start usage you should create config file. The default path is ~/.hapidry, but you can choose another via -c option.
 
 Config has simple key/value format
