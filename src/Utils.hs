@@ -41,27 +41,30 @@ readOption conf opt = (readOption' <$> (C.lookup conf opt) ) where
 readOptionB :: CT.Config -> CT.Name -> IO B.ByteString
 readOptionB conf opt = encodeUtf8 <$> readOption conf opt
 
-
-createPost :: Commands -> ClientCredentials -> IO (Either Integer BL.ByteString)
+createPost :: Commands -> ClientCredentials -> IO (Either Integer [BL.ByteString])
 createPost (Post blogs _ title (Just x) False) client = do
     text <- readFile x
-    postCreate client (applyOptions
+    postsCreate client (applyOptions
                       [("message", Just text),
-                       ("title", title)])    
+                       ("title", title)])
+                (map T.pack blogs)    
 createPost (Post blogs _ title _ True) client = do 
   text <- getContents
-  postCreate client  (applyOptions
+  postsCreate client  (applyOptions
                       [("message", Just text),
                        ("title", title)])
+              (map T.pack blogs)
 createPost (Post blogs Nothing title Nothing False) client = do 
   text <- T.unpack <$> decodeUtf8 <$> runUserEditor
-  postCreate client  (applyOptions
+  postsCreate client  (applyOptions
                       [("message", Just text),
                        ("title", title)])
-createPost (Post blogs text title _ _) client = postCreate client 
-                                                    (applyOptions
-                                                     [("message", text),
-                                                      ("title", title)])
+              (map T.pack blogs)
+createPost (Post blogs text title _ _) client = postsCreate client
+                                                           (applyOptions [("message", text),
+                                                                          ("title", title)])
+                                                           (map T.pack blogs)
+
 
 
 sendUmail :: Commands -> ClientCredentials -> IO (Either Integer BL.ByteString)

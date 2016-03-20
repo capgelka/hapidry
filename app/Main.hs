@@ -32,14 +32,14 @@ mainOptParse = do
                 secret  = "8543db8deccb4b0fcb753291c53f8f4f"
               } & updateCreds $ command & auth
   print command
-  n <- nameById client "1"                    
+  n <- idByName client "root"                    
   print n
   parseOpt (command & commands) client >>= print where
-      parseOpt :: Commands -> ClientCredentials -> IO (Either Integer BL.ByteString)
-      parseOpt (Umail "get" _) client = umailGet client []  
+--      parseOpt :: Commands -> ClientCredentials -> IO (Either Integer BL.ByteString)
+      -- parseOpt (Umail "get" _) client = umailGet client []  
       parseOpt p@(Post _ _ _ _ _) client = createPost p client
-      parseOpt s@(Send _ _ _ _ _) client = sendUmail s client
-      parseOpt _  client              = umailGet client [] 
+      -- parseOpt s@(Send _ _ _ _ _) client = sendUmail s client
+      -- parseOpt _  client              = umailGet client [] 
 
 
 
