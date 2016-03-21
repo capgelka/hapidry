@@ -27,5 +27,5 @@ main = do
                 secret  = "8543db8deccb4b0fcb753291c53f8f4f"
               } & updateCreds $ command & auth
   parseOpt (command & commands) client >>= print where
-      parseOpt p@(Post _ _ _ _ _ _) client = createPost p client
-      parseOpt s@(Send _ _ _ _ _) client = sendUmail s client
+      parseOpt p@(Post {}) client = createPost p client
+      parseOpt s@(Send {}) client = sendUmail s client
