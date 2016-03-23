@@ -13,7 +13,9 @@ import Data.Text (Text, pack)
 import Control.Applicative
 import Control.Monad (mzero)
 import qualified Data.HashMap.Strict as HMS
+-- import Data.Text.Read
 
+-- Text
 
 type Preview = Text
 type Id = Text

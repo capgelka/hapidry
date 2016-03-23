@@ -100,9 +100,9 @@ data Notifications = Notifications {
 
 instance FromJSON Notifications where   
   parseJSON = withObject "notifications" $ \n -> do
-    umailCount    <- n .: "umail_count"
-    commentsCount <- n .: "comments_count"
-    discussCount  <- n .: "discuss_count"
+    umailCount    <- (\x -> read x :: Integer) <$> n .: "umail_count"
+    commentsCount <- (\x -> read x :: Integer) <$> n .: "comments_count"
+    discussCount  <- (\x -> read x :: Integer) <$> n .: "discuss_count"
     (comments :: CommentList)  <- parseJSON =<< n .: "comments"
     (umails :: UmailList)  <- parseJSON =<< n .: "umail"  
     (discussions :: DiscussionList)  <- parseJSON =<< n .: "discuss" 
