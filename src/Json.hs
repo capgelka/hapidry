@@ -1,17 +1,18 @@
-{-# LANGUAGE DeriveGeneric, OverloadedStrings, ScopedTypeVariables #-}
+{-# LANGUAGE OverloadedStrings, ScopedTypeVariables #-}
 
 module Json
     (
       Journal(..)
+    , Notifications(..)
     ) where
 
-import Data.Aeson.Lens (key, _String)
+-- import Data.Aeson.Lens (key, _String)
 import Data.Aeson
 import Data.Text (Text, pack)
-import GHC.Generics
 import Control.Applicative
 import Control.Monad
 import qualified Data.HashMap.Strict as HMS
+import Internal.Json
 
 -- discuss_count - общее число непрочитанных комментариев в дискуссиях;
 -- discuss - дискусии:
@@ -34,38 +35,31 @@ import qualified Data.HashMap.Strict as HMS
 -- umail.title - заголовок письма;
 -- umail.folder - идентификатор папки.
 
-type Preview = Text
-type Id = Text
-type JournalName = Text
-type Title = Text
-type Username = Text
-data Discussion = Discussion JournalName Id Preview deriving (Show, Eq)
-data Umail = Umail Username Title Preview deriving (Show, Eq)
-data Comment = Comment Id Preview deriving (Show, Eq)
-
-data CommentInfo = CommentInfo { cid :: Text, cprev :: Text }
-
-instance FromJSON CommentInfo where
-  parseJSON (Object v) = CommentInfo <$> v .: "postid" <*> v .: "message_txt"
-  parseJSON _ = mzero
 
 
-instance FromJSON Umail where
-  parseJSON (Object v) = Umail <$> v .: "from_username" 
-                               <*> v .: "title" 
-                               <*> v .: "message_txt"
-  parseJSON _ = mzero
+-- data CommentInfo = CommentInfo { cid :: Text, cprev :: Text }
 
-instance FromJSON Discussion where
-  parseJSON (Object v) = Discussion <$> v .: "journal_name" 
-                                    <*> v .: "postid" 
-                                    <*> v .: "message_txt"
-  parseJSON _ = mzero
+-- instance FromJSON CommentInfo where
+--   parseJSON (Object v) = CommentInfo <$> v .: "postid" <*> v .: "message_txt"
+--   parseJSON _ = mzero
+
+
+-- instance FromJSON Umail where
+--   parseJSON (Object v) = Umail <$> v .: "from_username" 
+--                                <*> v .: "title" 
+--                                <*> v .: "message_txt"
+--   parseJSON _ = mzero
+
+-- instance FromJSON Discussion where
+--   parseJSON (Object v) = Discussion <$> v .: "journal_name" 
+--                                     <*> v .: "postid" 
+--                                     <*> v .: "message_txt"
+--   parseJSON _ = mzero
 
 data Journal = Journal {
     userid    :: Text
   , shortname :: Text
-  } deriving (Show, Generic, Eq)
+  } deriving (Show, Eq)
 
 data Notifications = Notifications {
     umailCount    :: Integer
@@ -74,35 +68,35 @@ data Notifications = Notifications {
   , discussions :: DiscussionList
   , umails :: UmailList
   , comments :: CommentList --[Comment]
-  } deriving (Show, Generic, Eq)
+  } deriving (Show, Eq)
 
 
-newtype CommentList = CommentList [Comment] deriving (Show, Eq)
+-- newtype CommentList = CommentList [Comment] deriving (Show, Eq)
 
-instance FromJSON CommentList where
-  parseJSON (Object v) = CommentList <$> HMS.foldrWithKey go (pure []) v
-    where
-      go i x r = (\(CommentInfo pid msg) rest -> Comment i msg : rest) <$>
-                     parseJSON x <*> r
-  parseJSON _ = empty
+-- instance FromJSON CommentList where
+--   parseJSON (Object v) = CommentList <$> HMS.foldrWithKey go (pure []) v
+--     where
+--       go i x r = (\(CommentInfo pid msg) rest -> Comment i msg : rest) <$>
+--                      parseJSON x <*> r
+--   parseJSON _ = empty
 
-newtype UmailList = UmailList [Umail] deriving (Show, Eq)
+-- newtype UmailList = UmailList [Umail] deriving (Show, Eq)
 
-instance FromJSON UmailList where
-  parseJSON (Object v) = UmailList <$> HMS.foldrWithKey go (pure []) v
-    where
-      go i x r = (\(Umail u t msg) rest -> Umail u t msg : rest) <$>
-                     parseJSON x <*> r
-  parseJSON _ = empty
+-- instance FromJSON UmailList where
+--   parseJSON (Object v) = UmailList <$> HMS.foldrWithKey go (pure []) v
+--     where
+--       go i x r = (\(Umail u t msg) rest -> Umail u t msg : rest) <$>
+--                      parseJSON x <*> r
+--   parseJSON _ = empty
 
-newtype DiscussionList = DiscussionList [Discussion] deriving (Show, Eq)
+-- newtype DiscussionList = DiscussionList [Discussion] deriving (Show, Eq)
 
-instance FromJSON DiscussionList where
-  parseJSON (Object v) = DiscussionList <$> HMS.foldrWithKey go (pure []) v
-    where
-      go i x r = (\(Discussion j _ msg) rest -> Discussion j i msg : rest) <$>
-                     parseJSON x <*> r
-  parseJSON _ = empty
+-- instance FromJSON DiscussionList where
+--   parseJSON (Object v) = DiscussionList <$> HMS.foldrWithKey go (pure []) v
+--     where
+--       go i x r = (\(Discussion j _ msg) rest -> Discussion j i msg : rest) <$>
+--                      parseJSON x <*> r
+--   parseJSON _ = empty
 
 instance FromJSON Notifications where   
   parseJSON = withObject "notifications" $ \n -> do
