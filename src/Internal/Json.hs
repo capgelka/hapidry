@@ -5,6 +5,7 @@ module Internal.Json
       UmailList(..)
     , CommentList(..)
     , DiscussionList(..)
+    , Discussion(..)
     ) where
 
 -- import Data.Aeson.Lens (key, _String)
@@ -13,6 +14,7 @@ import Data.Text (Text, pack)
 import Control.Applicative
 import Control.Monad (mzero)
 import qualified Data.HashMap.Strict as HMS
+import qualified Data.Map as M
 -- import Data.Text.Read
 
 -- Text
@@ -67,8 +69,12 @@ instance FromJSON UmailList where
 newtype DiscussionList = DiscussionList [Discussion] deriving (Show, Eq)
 
 instance FromJSON DiscussionList where
-  parseJSON (Object v) = DiscussionList <$> HMS.foldrWithKey go (pure []) v
-    where
-      go i x r = (\(Discussion j _ msg) rest -> Discussion j i msg : rest) <$>
-                     parseJSON x <*> r
-  parseJSON _ = empty
+    parseJSON v = fmap (DiscussionList . map (\(pid, Discussion j p m) -> 
+                    Discussion j p m) . M.toList) $ parseJSON v
+
+-- instance FromJSON DiscussionList where
+--   parseJSON (Object v) = DiscussionList <$> HMS.foldrWithKey go (pure []) v
+--     where
+--       go i x r = (\(Discussion j _ msg) rest -> Discussion j i msg : rest) <$>
+--                      parseJSON x <*> r
+--   parseJSON _ = empty

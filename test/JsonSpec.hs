@@ -51,8 +51,25 @@ exampleNotifications = "{\"discuss_count\":\"0\",\"discuss\":[],\"comments_count
 -- \31\\u044f \\u0434\\u0432\\u0430 \\u0443\\u043c\\u044b\\u043b\\u0430\",\"title\":\"\\u04\
 -- \4d\\u0442\\u043e \\u0442\\u0435\\u0441\\u0442\",\"folder\":\"1\"}},\"result\":\"0\"}"
 
+disc :: BL.ByteString
+disc = "{\"journal_name\": \"1\", \"postid\": \"12\", \"message_txt\":\"TEST\"}"
+
+dlist ::  BL.ByteString
+dlist = "[{\"journal_name\": \"1\", \"postid\": \"12\", \"message_txt\":\"TEST\"}]"
+
 spec :: Spec
 spec = do
+  describe "Internals" $ do
+    it "decodes Discussion" $ do
+        eitherDecode disc  `shouldBe` (Right (Discussion "1" "12" "TEST"))
+    it "decodes empty DiscussionList " $ do
+        eitherDecode "[]"  `shouldBe` (Right (DiscussionList []))
+    -- it "decodes DiscussionList" $ do
+        -- let c = eitherDecode dlist
+        -- eitherDecode exampleJournal `shouldBe` Right Journal {userid = "1", shortname = "root"}
+        --eitherDecode dlist `shouldBe` Right []
+    it "decodes DiscussionList" $ do
+        (eitherDecode dlist) `shouldBe` (Right (DiscussionList [Discussion "1" "root" "Xeeee"]))
   describe "Journal" $ do
     it "decodes correctly" $ do
         eitherDecode exampleJournal `shouldBe` Right Journal {userid = "1", shortname = "root"}
