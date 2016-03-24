@@ -19,12 +19,13 @@ import qualified Data.Configurator as C
 import qualified Data.Configurator.Types as CT
 import Control.Lens ((&))
 import Text.Editor (runUserEditor)
+import Data.Maybe (isJust)
 import Api
 
 import Options
 
 applyOptions :: [(Text, Maybe String)] -> [(Text, Text)]
-applyOptions = map (\(x, Just y) -> (x, T.pack $ y)) . filter (\(_, y) -> y /= Nothing)
+applyOptions = map (\(x, Just y) -> (x, T.pack y)) . filter (\(_, y) -> isJust y)
 
 updateCreds :: ClientCredentials -> Auth -> ClientCredentials
 updateCreds  client (Auth Nothing Nothing)   = client
@@ -36,7 +37,7 @@ convertTags :: [String] -> [(Text, Text)]
 convertTags = map (\t -> ("tags_data[]", T.pack t))
 
 readOption :: CT.Config -> CT.Name -> IO Text
-readOption conf opt = (readOption' <$> (C.lookup conf opt) ) where
+readOption conf opt = readOption' <$> C.lookup conf opt where
     readOption' (Just x) = x
     readOption' Nothing  = ""
 

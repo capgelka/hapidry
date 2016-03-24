@@ -15,7 +15,7 @@ import Utils
 
 main :: IO ()
 main = do
-  command <- execParser $ mainParser 
+  command <- execParser mainParser 
   cfg <- C.load [C.Required (command & config)]
   password <- readOptionB cfg "password"
   username <- readOption cfg "username"
@@ -27,5 +27,5 @@ main = do
                 secret  = "8543db8deccb4b0fcb753291c53f8f4f"
               } & updateCreds $ command & auth
   parseOpt (command & commands) client >>= print where
-      parseOpt p@(Post {}) client = createPost p client
-      parseOpt s@(Send {}) client = sendUmail s client
+      parseOpt p@Post {} client = createPost p client
+      parseOpt s@Send {} client = sendUmail s client

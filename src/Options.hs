@@ -57,29 +57,31 @@ parseArgs :: Parser Args
 parseArgs = Args <$> parseAuth <*> parseConfig <*> parseCommands
 
 parseConfig :: Parser ConfigPath
-parseConfig = (strOption $
-              short 'c'
-              <> long "config"
-              <> value "$(HOME)/.hapidry"
-              <> metavar "CONFIG"
-              <> help "path to config file")
+parseConfig = strOption $
+                short 'c'
+                <> long "config"
+                <> value "$(HOME)/.hapidry"
+                <> metavar "CONFIG"
+                <> help "path to config file"
 
 parseAuth :: Parser Auth
-parseAuth = Auth <$> (optional $ strOption $
-              short 'u'
-              <> long "user"
-              <> metavar "LOGIN"
-              <> help "user login")
-            <*> (optional $ strOption $
-                 short 'p'
-                 <> long "password"
-                 <> metavar "PASSWORD"
-                 <> help "user password")
+parseAuth = Auth <$> optional 
+              (strOption $
+                short 'u'
+                <> long "user"
+                <> metavar "LOGIN"
+                <> help "user login")
+              <*> optional 
+                   (strOption $
+                     short 'p'
+                     <> long "password"
+                     <> metavar "PASSWORD"
+                     <> help "user password")
 
 parseCommands :: Parser Commands
 parseCommands = subparser $
-    command "umail" (parseUmail `withInfo` "get/send umails") <>
-    command "user"  (parseUser  `withInfo` "get user info") <>
+    -- command "umail" (parseUmail `withInfo` "get/send umails") <>
+    -- command "user"  (parseUser  `withInfo` "get user info") <>
     command "post"  (parsePost  `withInfo` "create new post") <>
     command "send"  (parseSend  `withInfo` "send new umail")
 
@@ -93,13 +95,13 @@ parseUser = User
     <*> argument str (metavar "USER_UID")
 
 
-parseUmail :: Parser Commands
-parseUmail = Umail 
-    <$> argument str (metavar "UMAIL_ACTION")
-    <*> (optional $ strOption $
-        short 'U'
-        <> long "user"
-        <> metavar "UMAIL_TARGET")
+-- parseUmail :: Parser Commands
+-- parseUmail = Umail 
+--     <$> argument str (metavar "UMAIL_ACTION")
+--     <*> (optional $ strOption $
+--         short 'U'
+--         <> long "user"
+--         <> metavar "UMAIL_TARGET")
 
 parseSend :: Parser Commands
 parseSend = Send
@@ -147,7 +149,7 @@ parsePost = Post
       
 
 multiString desc = concat <$> many single where 
-  single = option (str >>= return . map trim . (splitOn ",")) desc
+  single = option ((map trim . splitOn ",") <$> str) desc
   trim :: String -> String
   trim = f . f
   f = reverse . dropWhile isSpace
