@@ -54,8 +54,12 @@ exampleNotifications = "{\"discuss_count\":\"0\",\"discuss\":[],\"comments_count
 disc :: BL.ByteString
 disc = "{\"journal_name\": \"1\", \"postid\": \"12\", \"message_txt\":\"TEST\"}"
 
-dlist ::  BL.ByteString
-dlist = "[{\"journal_name\": \"1\", \"postid\": \"12\", \"message_txt\":\"TEST\"}]"
+-- dlist ::  bl.bytestring
+-- dlist = "[{\"journal_name\": \"1\", \"postid\": \"12\", \"message_txt\":\"test\"}]"
+
+discList :: BL.ByteString
+discList = "{\"1233\" : {\"journal_name\": \"1\", \"postid\": \"12\", \"message_txt\":\"TEST\"}\
+\, \"2423535\" : {\"journal_name\": \"1\", \"postid\": \"12\", \"message_txt\":\"TEST\"}}"
 
 spec :: Spec
 spec = do
@@ -64,18 +68,21 @@ spec = do
         eitherDecode disc  `shouldBe` (Right (Discussion "1" "12" "TEST"))
     it "decodes empty DiscussionList " $ do
         eitherDecode "[]"  `shouldBe` (Right (DiscussionList []))
+    it "decodes DiscussionList " $ do
+        eitherDecode discList `shouldBe` Right (DiscussionList [Discussion "1" "2423535" "TEST",
+                                                                Discussion "1" "1233" "TEST"])
     -- it "decodes DiscussionList" $ do
         -- let c = eitherDecode dlist
         -- eitherDecode exampleJournal `shouldBe` Right Journal {userid = "1", shortname = "root"}
         --eitherDecode dlist `shouldBe` Right []
-    it "decodes DiscussionList" $ do
-        (eitherDecode dlist) `shouldBe` (Right (DiscussionList [Discussion "1" "root" "Xeeee"]))
+    -- it "decodes DiscussionList" $ do
+    --     (eitherDecode dlist) `shouldBe` (Right (DiscussionList [Discussion "1" "root" "Xeeee"]))
   describe "Journal" $ do
     it "decodes correctly" $ do
         eitherDecode exampleJournal `shouldBe` Right Journal {userid = "1", shortname = "root"}
   describe "Notifications" $ do
     it "decodes correctly" $ do
-        eitherDecode exampleNotifications `shouldBe` Right Notifications { umailCount = 0,
+        eitherDecode exampleNotifications `shouldBe` Right Notifications { umailCount = 5,
                                                                     commentsCount = 0,
                                                                     discussCount = 0,
                                                                     comments = CommentList [],

@@ -10,6 +10,7 @@ module Internal.Json
 
 -- import Data.Aeson.Lens (key, _String)
 import Data.Aeson
+-- import Data.Aeson.Types
 import Data.Text (Text, pack)
 import Control.Applicative
 import Control.Monad (mzero)
@@ -55,7 +56,7 @@ instance FromJSON CommentList where
     where
       go i x r = (\(Comment pid msg) rest -> Comment i msg : rest) <$>
                      parseJSON x <*> r
-  parseJSON _ = empty
+  parseJSON _ = return $ CommentList []
 
 newtype UmailList = UmailList [Umail] deriving (Show, Eq)
 
@@ -64,17 +65,17 @@ instance FromJSON UmailList where
     where
       go i x r = (\(Umail u t msg) rest -> Umail u t msg : rest) <$>
                      parseJSON x <*> r
-  parseJSON _ = empty
+  parseJSON _ = return $ UmailList []
 
 newtype DiscussionList = DiscussionList [Discussion] deriving (Show, Eq)
 
-instance FromJSON DiscussionList where
-    parseJSON v = fmap (DiscussionList . map (\(pid, Discussion j p m) -> 
-                    Discussion j p m) . M.toList) $ parseJSON v
-
 -- instance FromJSON DiscussionList where
---   parseJSON (Object v) = DiscussionList <$> HMS.foldrWithKey go (pure []) v
---     where
---       go i x r = (\(Discussion j _ msg) rest -> Discussion j i msg : rest) <$>
---                      parseJSON x <*> r
---   parseJSON _ = empty
+--     parseJSON v = fmap (DiscussionList . map (\(pid, Discussion j p m) -> 
+--                     Discussion j p m) . M.toList) -- $ parseJSON v
+
+instance FromJSON DiscussionList where
+  parseJSON (Object v) = DiscussionList <$> HMS.foldrWithKey go (pure []) v
+    where
+      go i x r = (\(Discussion j _ msg) rest -> Discussion j i msg : rest) <$>
+                     parseJSON x <*> r
+  parseJSON _ = return $ DiscussionList []
