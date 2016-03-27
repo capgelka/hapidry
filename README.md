@@ -14,6 +14,8 @@ Currently it supports 2 actions.
 	* hapidry send someone -m message -t subject
 	* cat prepared_post.md | markdown | hapidry send someone -p -t subject
 	* hapidry send someone -t subject (write message in your favorite $EDITOR)
+* get notifications for umails, discussions and comments. There also an example bash script in examples folder to wrap it, but it's better to use cron for this.
+    * hapidry notify
 
 * There are also some additional features
     * hapidry post -m message --tags "tagone, tag2,othertag" (creates new post with 3 tags)

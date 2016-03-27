@@ -1,3 +1,9 @@
+0.2.2
+New feateres:
+* Notificastions support (hapidry notify)
+* deleted unusefull output
+* added bash example
+
 0.2.1
 New feateres:
 * hapidry post -m message --tags "tagone, tag2,othertag" (creates new post with 3 tags)

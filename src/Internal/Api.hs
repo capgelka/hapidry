@@ -19,7 +19,6 @@ import qualified Crypto.Hash.MD5 as MD5
 import qualified Data.ByteString.Char8 as B
 import qualified Data.ByteString.Lazy.Char8 as BL (ByteString)
 import qualified Data.ByteString.Base16 as B16 (encode)
-import Data.Text.Encoding (encodeUtf8)
 import qualified Data.Text.Lazy as L (append, cons, tail, head,
                                       take, drop, Text)
 import qualified Data.Text as T (unpack, map)
@@ -53,9 +52,9 @@ ununicode :: BL.ByteString -> BL.ByteString
 ununicode s = LE.encodeUtf8 $ replace $ LE.decodeUtf8 s where 
   replace :: L.Text -> L.Text
   replace "" = ""
-  replace string = case (Map.lookup (L.take 6 string) table) of
+  replace string = case Map.lookup (L.take 6 string) table of
           (Just x)  -> L.append x (replace $ L.drop 6 string)
-          (Nothing) -> L.cons (L.head string) (replace $ L.tail string)
+          Nothing   -> L.cons (L.head string) (replace $ L.tail string)
 
   table = Map.fromList $ zip letters rus
 
@@ -84,41 +83,42 @@ http://stackoverflow.com/questions/35905276/cant-compile-haskell-encoding-lib-co
 -}
 toCP1251 :: Text -> B.ByteString
 toCP1251 = B.pack . T.unpack . T.map replace where
-  replace l = case (Map.lookup l table) of
+  replace l = case Map.lookup l table of
       (Just x) -> x
-      (Nothing) -> l
+      Nothing  -> l
 
   table = Map.fromList $ zip rus cpCodes
-  cpCodes = map toEnum (168:184:[192 .. 255]) :: [Char]
+  cpCodes = map toEnum (168:184:[192 .. 255]) :: String
   rus =  ['Ё', 'ё', 'А', 'Б', 'В', 'Г', 'Д', 'Е', 'Ж', 'З', 'И', 'Й', 'К', 'Л', 'М',
          'Н', 'О', 'П', 'Р', 'С', 'Т', 'У', 'Ф', 'Х', 'Ц', 'Ч', 'Ш', 'Щ', 'Ъ', 'Ы',
          'Ь', 'Э', 'Ю', 'Я', 'а', 'б', 'в', 'г', 'д', 'е', 'ж', 'з', 'и', 'й', 'к',
          'л', 'м', 'н', 'о', 'п', 'р', 'с', 'т', 'у', 'ф', 'х', 'ц', 'ч', 'ш', 'щ',
-         'ъ', 'ы', 'ь', 'э', 'ю', 'я']  :: [Char]
+         'ъ', 'ы', 'ь', 'э', 'ю', 'я']  :: String
 
 toForm :: [(Text, Text)] -> [FormParam]
-toForm = map (\(x, y) -> (encodeUtf8 x) := DiaryText y)
+toForm = map (\(x, y) -> encodeUtf8 x := DiaryText y)
 
 apiPost :: ClientCredentials -> [(Text, Text)] -> IO (Either Integer BL.ByteString)
-apiPost env p = apiPost' env p where
-    updateSid :: Text -> [(Text, Text)] -> [(Text, Text)]
-    updateSid sid params = ("sid", sid):(filter (\(x, _) -> x /= "sid") params)
-    apiPost' :: ClientCredentials -> [(Text, Text)] -> IO (Either Integer BL.ByteString)
-    apiPost' e params = case e & sid of
-        (Left x)  -> return $ Left $ x
-        (Right x) ->  apiPost'' $ updateSid x params where
-            apiPost'' params = do
-                r <- post "http://www.diary.ru/api" $ toForm params
-                case r ^? responseBody . key "result" . _String of
-                   (Just "0")  -> return $ Right $ ununicode $ r ^. responseBody
-                   (Just "12") -> authRequest e >>= (\newEnv -> apiPost' newEnv params)
-                   (Just x)  -> return $ Left
-                                       $ (\y -> case y of
-                                              (Right a) -> fst a
-                                              (Left _) -> (-1))
-                                       $ decimal
-                                       $ x 
-                   Nothing   -> return $ Left (-1)
+apiPost e params = case e & sid of
+    (Left x)  -> return $ Left x
+    (Right x) ->  apiPost' $ updateSid x params where
+        updateSid :: Text -> [(Text, Text)] -> [(Text, Text)]
+        updateSid sid params = ("sid", sid):filter (\(x, _) -> x /= "sid") params
+    -- apiPost' :: ClientCredentials -> [(Text, Text)] -> IO (Either Integer BL.ByteString)
+    -- apiPost' e params = case e & sid of
+    --     (Left x)  -> return $ Left x
+    --     (Right x) ->  apiPost'' $ updateSid x params where
+        apiPost' params = do
+            r <- post "http://www.diary.ru/api" $ toForm params
+            case r ^? responseBody . key "result" . _String of
+               (Just "0")  -> return $ Right $ ununicode $ r ^. responseBody
+               (Just "12") -> authRequest e >>= (`apiPost` params)
+               (Just x)  -> return $ Left
+                                   $ (\y -> case y of
+                                          (Right a) -> fst a
+                                          (Left _) -> (-1))
+                                   $ decimal x 
+               Nothing   -> return $ Left (-1)
 
 authRequest :: ClientCredentials -> IO ClientCredentials
 authRequest env = do
@@ -128,7 +128,7 @@ authRequest env = do
                                                 ("username", username env),
                                                 ("method",  "user.auth")]
         
-  return $ env { sid = (authParse r)} where 
+  return $ env { sid = authParse r } where 
     authParse :: Response BL.ByteString -> Either Integer Text
     authParse response = case response  ^? responseBody . key "result" of
             (Just "0") -> Right $ (response ^. responseBody . key "sid" . _String)
@@ -136,8 +136,8 @@ authRequest env = do
                                       (Right a) -> fst a
                                       (Left _) -> 0)
                                $ decimal
-                               $ (response ^. responseBody . key "result" . _String)
-            Nothing    -> Left $ (-1)
+                               $ response ^. responseBody . key "result" . _String
+            Nothing    -> Left (-1)
 
 convertTags :: [Text] -> [(Text, Text)]
 convertTags = map (\t -> ("tags_data[]", t))
