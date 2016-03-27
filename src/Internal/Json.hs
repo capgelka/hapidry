@@ -6,6 +6,8 @@ module Internal.Json
     , CommentList(..)
     , DiscussionList(..)
     , Discussion(..)
+    , Umail(..)
+    , Comment(..)
     ) where
 
 -- import Data.Aeson.Lens (key, _String)
