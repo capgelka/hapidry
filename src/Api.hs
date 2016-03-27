@@ -10,6 +10,7 @@ module Api
   , idByName
   , postsCreate
   , umailsSend
+  , notificationGet
   ) where
 
 
@@ -31,7 +32,7 @@ type Name = Text
 type Id = Text
 
 postsCreate :: ClientCredentials -> [(Text, Text)] -> [Name] -> IO (Either Integer [BL.ByteString])
-postsCreate env p [] = sequence <$> liftM (\x -> [x]) (postCreate env p)
+postsCreate env p [] = sequence <$> (: []) <$> (postCreate env p)
 postsCreate env p names = do
   uids <- catMaybes <$> mapM (idByName env) names
   sequence <$> mapM (\u -> postCreate env (("juserid", u):p)) uids
@@ -42,18 +43,20 @@ postCreate env p = apiPost env (("method", "post.create"):p)
 userGet :: ClientCredentials -> [(Text, Text)] -> IO (Either Integer BL.ByteString)
 userGet env params = apiPost env (("method", "user.get"):params)
 
-
 umailGet :: ClientCredentials -> [(Text, Text)] -> IO (Either Integer BL.ByteString)
 umailGet env params = apiPost env (("method", "umail.get"):params)
 
 
 umailsSend :: ClientCredentials -> [(Text, Text)] -> [Name] -> IO (Either Integer [BL.ByteString])
-umailsSend env p [] = sequence <$> liftM (\x -> [x]) (umailSend env p)
+umailsSend env p [] = sequence <$> (: []) <$> (umailSend env p)
 umailsSend env p names = sequence <$> mapM (\u -> umailSend env (("username", u):p)) names
 
 
 umailSend :: ClientCredentials -> [(Text, Text)] -> IO (Either Integer BL.ByteString)
 umailSend env params = apiPost env (("method", "umail.send"):("save_copy", "1"):params)
+
+notificationGet :: ClientCredentials -> [(Text, Text)] -> IO (Either Integer BL.ByteString)
+notificationGet env params = apiPost env (("method", "notification.get"):params)
 
 
 idByName :: ClientCredentials -> Name -> IO (Maybe Id)

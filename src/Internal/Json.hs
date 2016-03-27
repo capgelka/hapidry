@@ -1,4 +1,4 @@
-{-# LANGUAGE OverloadedStrings, ScopedTypeVariables #-}
+{-# LANGUAGE OverloadedStrings #-}
 
 module Internal.Json
     (
@@ -10,17 +10,12 @@ module Internal.Json
     , Comment(..)
     ) where
 
--- import Data.Aeson.Lens (key, _String)
 import Data.Aeson
--- import Data.Aeson.Types
 import Data.Text (Text, pack)
 import Control.Applicative
 import Control.Monad (mzero)
 import qualified Data.HashMap.Strict as HMS
 import qualified Data.Map as M
--- import Data.Text.Read
-
--- Text
 
 type Preview = Text
 type Id = Text
@@ -31,10 +26,8 @@ data Discussion = Discussion JournalName Id Preview deriving (Show, Eq)
 data Umail = Umail Username Title Preview deriving (Show, Eq)
 data Comment = Comment Id Preview deriving (Show, Eq)
 
+
 newtype CommentList = CommentList [Comment] deriving (Show, Eq)
-
-
--- data CommentInfo = CommentInfo { cid :: Text, cprev :: Text }
 
 instance FromJSON Comment where
   parseJSON (Object v) = Comment <$> v .: "postid" <*> v .: "message_txt"
@@ -70,10 +63,6 @@ instance FromJSON UmailList where
   parseJSON _ = return $ UmailList []
 
 newtype DiscussionList = DiscussionList [Discussion] deriving (Show, Eq)
-
--- instance FromJSON DiscussionList where
---     parseJSON v = fmap (DiscussionList . map (\(pid, Discussion j p m) -> 
---                     Discussion j p m) . M.toList) -- $ parseJSON v
 
 instance FromJSON DiscussionList where
   parseJSON (Object v) = DiscussionList <$> HMS.foldrWithKey go (pure []) v

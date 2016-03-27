@@ -5,11 +5,13 @@ module Utils
   , readOptionB
   , updateCreds
   , createPost
-  , sendUmail 
+  , sendUmail
+  , getNotifications 
   ) where
 
 import Data.Text (Text)
-import qualified Data.Text as T (pack, unpack)
+import qualified Data.Text.IO as T
+import qualified Data.Text as T (pack, unpack, concat)
 
 import Data.Text.Encoding (encodeUtf8, decodeUtf8)
 import qualified Data.ByteString.Char8 as B
@@ -21,7 +23,8 @@ import Control.Lens ((&))
 import Text.Editor (runUserEditor)
 import Data.Maybe (isJust)
 import Api
-
+import Data.Aeson
+import Json
 import Options
 
 applyOptions :: [(Text, Maybe String)] -> [(Text, Text)]
@@ -94,3 +97,27 @@ sendUmail (Send users text title _ _) client = umailsSend client
                                                           (applyOptions [("message", text),
                                                                          ("title", title)]) 
                                                           (map T.pack users)
+
+getNotifications :: Commands -> ClientCredentials -> IO ()
+getNotifications opt client = do 
+  notifications <- notificationsFromJson <$> notificationGet client []
+  case notifications of
+      Nothing  -> error "error can't read notifications"
+      (Just n) -> getNotifications' opt n where
+          getNotifications' :: Commands -> Notifications -> IO ()
+          -- getNotifications' (Notify q c umails comments disk a)  
+          getNotifications' _ nt = do
+            let uc = nt & umailCount
+            let cc = nt & commentsCount
+            let dc =  nt & discussCount
+            if uc > 0 then T.putStrLn $ T.concat ["you have ", (T.pack $ show uc), " unread umails"]
+                      else T.putStr ""
+            if cc > 0 then T.putStrLn $ T.concat ["you have ", (T.pack $ show cc), " unread omments"]
+                      else T.putStr ""
+            if dc > 0 then T.putStrLn $ T.concat ["you have ", (T.pack $ show dc), " unread umails"]
+                      else T.putStr ""
+
+
+notificationsFromJson :: Either Integer BL.ByteString -> Maybe Notifications
+notificationsFromJson (Right json) = decode json
+notificationsFromJson (Left _)     = Nothing

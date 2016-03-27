@@ -23,15 +23,15 @@ type ConfigPath = String
 data Args = Args { auth :: Auth, config :: ConfigPath, commands :: Commands } deriving (Show)
 
 data Commands 
-    = Umail  {
-        umailAction :: Action
-      , target :: Maybe Target
-      }
-    | User
+    = Notify
       {
-        userAction :: Action
-      , uid :: UserId
-      } 
+        quiet :: Bool,
+        all  :: Bool,
+        umail :: Bool,
+        discussion :: Bool,
+        comment :: Bool,
+        count :: Bool
+      }
     | Post 
       { 
         blog :: [Target],
@@ -80,8 +80,7 @@ parseAuth = Auth <$> optional
 
 parseCommands :: Parser Commands
 parseCommands = subparser $
-    -- command "umail" (parseUmail `withInfo` "get/send umails") <>
-    -- command "user"  (parseUser  `withInfo` "get user info") <>
+    command "notify" (parseNotify `withInfo` "get notification data") <>
     command "post"  (parsePost  `withInfo` "create new post") <>
     command "send"  (parseSend  `withInfo` "send new umail")
 
@@ -89,19 +88,37 @@ parseCommands = subparser $
 withInfo :: Parser a -> String -> ParserInfo a
 withInfo opts desc = info (helper <*> opts) $ progDesc desc
 
-parseUser :: Parser Commands
-parseUser = User 
-    <$> argument str (metavar "USER_ACTION")
-    <*> argument str (metavar "USER_UID")
+parseNotify :: Parser Commands
+parseNotify = Notify
+    <$> switch
+      (long "quiet"
+        <> short 'q'
+        <> help "show something only if it's count greter then 0")
+    <*> switch
+      (long "count"
+       <> short 'c'
+       <> help "show only count")
+    <*> switch
+      (long "umail"
+       <> short 'U'
+       <> help "show umails notifiactions on")
+    <*> switch
+      (long "comment"
+       <> short 'C'
+       <> help "show comments on")
+    <*> switch
+      (long "discussion"
+       <> short 'D'
+       <> help "show discussions on")
+    <*> switch
+      (long "all"
+       <> short 'a'
+       <> help "show all")
 
-
--- parseUmail :: Parser Commands
--- parseUmail = Umail 
---     <$> argument str (metavar "UMAIL_ACTION")
---     <*> (optional $ strOption $
---         short 'U'
---         <> long "user"
---         <> metavar "UMAIL_TARGET")
+-- parseUser :: Parser Commands
+-- parseUser = User 
+--     <$> argument str (metavar "USER_ACTION")
+--     <*> argument str (metavar "USER_UID")
 
 parseSend :: Parser Commands
 parseSend = Send
