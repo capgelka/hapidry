@@ -11,6 +11,7 @@ module Api
   , postsCreate
   , umailsSend
   , notificationGet
+  , commentCreate
   ) where
 
 
@@ -58,6 +59,9 @@ umailSend env params = apiPost env (("method", "umail.send"):("save_copy", "1"):
 notificationGet :: ClientCredentials -> [(Text, Text)] -> IO (Either Integer BL.ByteString)
 notificationGet env params = apiPost env (("method", "notification.get"):params)
 
+-- | api call for creating comments
+commentCreate :: ClientCredentials -> [(Text, Text)] -> IO (Either Integer BL.ByteString)
+commentCreate env params = apiPost env (("method", "comment.create"):("subscribe", "1"):params)
 
 idByName :: ClientCredentials -> Name -> IO (Maybe Id)
 idByName env name = do

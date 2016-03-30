@@ -15,7 +15,7 @@ import Data.Char (isSpace)
 
 type Action = String
 type Target = String
-type UserId = String
+type Id = String
 type Path   = String
 data Auth   = Auth (Maybe String) (Maybe String) deriving (Show)
 type ConfigPath = String
@@ -32,22 +32,29 @@ data Commands
         comment :: Bool,
         count :: Bool
       }
+    | Comment 
+      {
+        post :: Id, -- ^ post id
+        text :: Maybe String, -- ^ optional field to store message text 
+        file :: Maybe Path, -- ^ optional field for path to file with message for comment
+        pipe :: Bool -- ^ flag. read message from stdin uf set
+      }
     | Post 
       { 
-        blog :: [Target],
-        text :: Maybe String,
-        title :: Maybe String,
-        file :: Maybe Path,
-        pipe :: Bool,
-        themes :: [String]
+        blog :: [Target], -- ^ list of blognames to create post in
+        text :: Maybe String, -- ^ optional field to store message text 
+        title :: Maybe String, -- ^ optional field to store post title
+        file :: Maybe Path, -- ^ optional field for path to file with message for post
+        pipe :: Bool, -- ^ flag. read message from stdin uf set
+        themes :: [String] -- ^ list of tags for post
       }
     | Send
       {
-        user :: [Target],
-        title :: Maybe String,
-        text :: Maybe String,
-        file :: Maybe Path,
-        pipe :: Bool
+        user :: [Target], -- ^ list of u-mail receptiens
+        title :: Maybe String, -- ^ optional field to store u-mail title
+        text :: Maybe String, -- ^ optional field to store message text 
+        file :: Maybe Path, -- ^ optional field for path to file with message for u-mail
+        pipe :: Bool -- ^ flag. read message from stdin uf set
       } deriving (Show)
 
 mainParser :: ParserInfo Args
@@ -82,6 +89,7 @@ parseCommands :: Parser Commands
 parseCommands = subparser $
     command "notify" (parseNotify `withInfo` "get notification data") <>
     command "post"  (parsePost  `withInfo` "create new post") <>
+    command "comment"  (parsePost  `withInfo` "create new comment") <>
     command "send"  (parseSend  `withInfo` "send new umail")
 
 
@@ -115,10 +123,22 @@ parseNotify = Notify
        <> short 'a'
        <> help "show all")
 
--- parseUser :: Parser Commands
--- parseUser = User 
---     <$> argument str (metavar "USER_ACTION")
---     <*> argument str (metavar "USER_UID")
+-- | Subparser for hapidry comment
+parseComment :: Parser Commands
+parseComment = Comment
+    <$> argument str (metavar "POST_ID")
+    <*> (optional $ strOption $
+        short 'm'
+        <> long "message"
+        <> metavar "COMMENT_MESSAGE")
+    <*> (optional $ strOption $
+        short 'f'
+        <> long "file"
+        <> metavar "COMMENT_MESSAGE_FILE")
+    <*> (switch
+      (long "pipe"
+       <> short 'p'
+       <> help "get text from stdin"))
 
 parseSend :: Parser Commands
 parseSend = Send

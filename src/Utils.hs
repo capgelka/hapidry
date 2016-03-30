@@ -98,6 +98,20 @@ sendUmail (Send users text title _ _) client = umailsSend client
                                                                          ("title", title)]) 
                                                           (map T.pack users)
 
+createComment :: Commands -> ClientCredentials -> IO (Either Integer BL.ByteString)
+createComment (Comment pid _ (Just x) False) client = do
+    text <- readFile x
+    commentCreate client (applyOptions [("message", Just text)])
+createComment (Comment pid _ _ True) client = do 
+    text <- getContents
+    commentCreate client (applyOptions [("message", Just text)])
+createComment (Comment pid Nothing Nothing False) client = do 
+    text <- T.unpack <$> decodeUtf8 <$> runUserEditor
+    commentCreate client (applyOptions [("message", Just text)])
+createComment (Comment pid text  _ _) client = commentCreate client 
+                                                             (applyOptions [("message", text)]) 
+                                                                                                    
+
 getNotifications :: Commands -> ClientCredentials -> IO ()
 getNotifications opt client = do 
   notifications <- notificationsFromJson <$> notificationGet client []
