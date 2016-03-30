@@ -6,7 +6,8 @@ module Utils
   , updateCreds
   , createPost
   , sendUmail
-  , getNotifications 
+  , getNotifications
+  , createComment 
   ) where
 
 import Data.Text (Text)
@@ -98,18 +99,28 @@ sendUmail (Send users text title _ _) client = umailsSend client
                                                                          ("title", title)]) 
                                                           (map T.pack users)
 
-createComment :: Commands -> ClientCredentials -> IO (Either Integer BL.ByteString)
+createComment :: Commands -> ClientCredentials -> IO (Either Integer [BL.ByteString])
 createComment (Comment pid _ (Just x) False) client = do
     text <- readFile x
-    commentCreate client (applyOptions [("message", Just text)])
+    sequence <$> (: []) 
+             <$> commentCreate client (applyOptions [("message", Just text),
+                                                     ("postid", Just pid)]) 
 createComment (Comment pid _ _ True) client = do 
     text <- getContents
-    commentCreate client (applyOptions [("message", Just text)])
+    sequence <$> (: []) 
+             <$> commentCreate client (applyOptions [("message", Just text),
+                                                     ("postid", Just pid)]) 
 createComment (Comment pid Nothing Nothing False) client = do 
     text <- T.unpack <$> decodeUtf8 <$> runUserEditor
-    commentCreate client (applyOptions [("message", Just text)])
-createComment (Comment pid text  _ _) client = commentCreate client 
-                                                             (applyOptions [("message", text)]) 
+    sequence <$> (: []) 
+             <$> commentCreate client (applyOptions [("message", Just text),
+                                                     ("postid", Just pid)]) 
+createComment (Comment pid text  _ _) client = sequence <$> (: [])
+                                                        <$> commentCreate 
+                                                            client 
+                                                            (applyOptions [("message", text),
+                                                                           ("postid", Just pid)])
+                                                              
                                                                                                     
 
 getNotifications :: Commands -> ClientCredentials -> IO ()
@@ -128,7 +139,7 @@ getNotifications opt client = do
                       else T.putStr ""
             if cc > 0 then T.putStrLn $ T.concat ["you have ", (T.pack $ show cc), " unread omments"]
                       else T.putStr ""
-            if dc > 0 then T.putStrLn $ T.concat ["you have ", (T.pack $ show dc), " unread umails"]
+            if dc > 0 then T.putStrLn $ T.concat ["you have ", (T.pack $ show dc), " unread discussions"]
                       else T.putStr ""
 
 

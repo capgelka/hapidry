@@ -89,7 +89,7 @@ parseCommands :: Parser Commands
 parseCommands = subparser $
     command "notify" (parseNotify `withInfo` "get notification data") <>
     command "post"  (parsePost  `withInfo` "create new post") <>
-    command "comment"  (parsePost  `withInfo` "create new comment") <>
+    command "comment" (parseComment  `withInfo` "create new comment") <>
     command "send"  (parseSend  `withInfo` "send new umail")
 
 
