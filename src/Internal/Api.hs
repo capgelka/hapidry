@@ -21,7 +21,7 @@ import qualified Data.ByteString.Lazy.Char8 as BL (ByteString)
 import qualified Data.ByteString.Base16 as B16 (encode)
 import qualified Data.Text.Lazy as L (append, cons, tail, head,
                                       take, drop, Text)
-import qualified Data.Text as T (unpack, map)
+import qualified Data.Text as T (unpack, map, concatMap, pack, snoc, length, filter, all)
 import Data.Text (Text)
 import Data.Aeson.Lens (key, _String)
 import Control.Lens ((&), (^.), (^?))
@@ -81,11 +81,28 @@ ununicode s = LE.encodeUtf8 $ replace $ LE.decodeUtf8 s where
 don't want dinamically linked icu, encoding lib doesn't compile 
 http://stackoverflow.com/questions/35905276/cant-compile-haskell-encoding-lib-couldnt-find-haxml-modules
 -}
+-- | encodes Text as cp1251 encoded Bytestring. 
+-- it also encodes non cyrrilic unicode symbols as &#xxxx; 
+-- but is takes more time evem if only one suck sybbol exists in input
 toCP1251 :: Text -> B.ByteString
-toCP1251 = B.pack . T.unpack . T.map replace where
+toCP1251 = B.pack . T.unpack . unicodeText . T.map replace where
+
+  replace :: Char -> Char
   replace l = case Map.lookup l table of
       (Just x) -> x
       Nothing  -> l
+
+  isOneByte :: Text -> Bool
+  isOneByte x = T.all (\e -> fromEnum e <= 255) x
+
+  unicodeText :: Text -> Text
+  unicodeText txt | isOneByte txt =  txt
+                  | otherwise = T.concatMap unicode txt
+
+  unicode :: Char -> Text
+  unicode l | fromEnum l < 255 = T.pack [l]
+            | otherwise = T.pack ('&':'#':(show $ fromEnum l)) `T.snoc` ';'
+
 
   table = Map.fromList $ zip rus cpCodes
   cpCodes = map toEnum (168:184:[192 .. 255]) :: String
@@ -102,12 +119,10 @@ apiPost :: ClientCredentials -> [(Text, Text)] -> IO (Either Integer BL.ByteStri
 apiPost e params = case e & sid of
     (Left x)  -> return $ Left x
     (Right x) ->  apiPost' $ updateSid x params where
+
         updateSid :: Text -> [(Text, Text)] -> [(Text, Text)]
         updateSid sid params = ("sid", sid):filter (\(x, _) -> x /= "sid") params
-    -- apiPost' :: ClientCredentials -> [(Text, Text)] -> IO (Either Integer BL.ByteString)
-    -- apiPost' e params = case e & sid of
-    --     (Left x)  -> return $ Left x
-    --     (Right x) ->  apiPost'' $ updateSid x params where
+
         apiPost' params = do
             r <- post "http://www.diary.ru/api" $ toForm params
             case r ^? responseBody . key "result" . _String of
