@@ -56,6 +56,10 @@ spec = do
       toCP1251 "Русский текст, и ascii"
       `shouldBe` 
       "\208\243\241\241\234\232\233 \242\229\234\241\242, \232 ascii"
+    it "encodes unicode symbols as &#xxxx;" $ do
+      toCP1251 "Русский текст, и アニメ"
+      `shouldBe` 
+      "\208\243\241\241\234\232\233 \242\229\234\241\242, \232 &#12450;&#12491;&#12513;"
 
   describe "toForm" $ do
     it "converts list of pairs for post request to wreq Internal representation" $ do
