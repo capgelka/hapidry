@@ -1,3 +1,8 @@
+0.2.3
+New feateres:
+* comments sending support (hapidry comment)
+* added unicode support
+
 0.2.2
 New feateres:
 * Notificastions support (hapidry notify)
