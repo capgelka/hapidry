@@ -28,6 +28,13 @@ data Notifications = Notifications {
   , comments :: CommentList 
   } deriving (Show, Eq)
 
+data Posts = Posts {
+    postid :: Integer
+  , date :: Text
+  , commentCount :: Integer
+  , title :: Text
+  , message :: Text
+}
 
 
 instance FromJSON Notifications where   

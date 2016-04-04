@@ -19,7 +19,7 @@ import qualified Data.ByteString.Lazy.Char8 as BL (ByteString)
 import Data.Text (Text)
 import qualified Data.Text.Lazy as L (Text)
 import Internal.Api (ClientCredentials(..), apiPost, authRequest)
-import Data.Aeson.Lens (key, _String)
+--import Data.Aeson.Lens (key, _String)
 import Data.Aeson
 import Data.Text.Lazy.Encoding (encodeUtf8, decodeUtf8)
 import Control.Lens ((&), (^.), (^?))

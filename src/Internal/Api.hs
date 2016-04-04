@@ -21,7 +21,7 @@ import qualified Data.ByteString.Lazy.Char8 as BL (ByteString)
 import qualified Data.ByteString.Base16 as B16 (encode)
 import qualified Data.Text.Lazy as L (append, cons, tail, head,
                                       take, drop, Text)
-import qualified Data.Text as T (unpack, map, concatMap, pack, snoc, length, filter, all)
+import qualified Data.Text as T (unpack, map, concatMap, pack, snoc, filter, all)
 import Data.Text (Text)
 import Data.Aeson.Lens (key, _String)
 import Control.Lens ((&), (^.), (^?))

@@ -72,9 +72,9 @@ spec = do
 
   describe "authRequest" $ do
     it "returns 67 error in sid field for user with bad credentials" $ do
-      authRequest badClient >>= (\x ->  ( x & sid) `shouldBe` Left 67)
+      authRequest badClient  >>= (\x -> ( x & sid) `shouldBe` Left 67)
     it "returns Right constructor for sid in sid field for user with correct credentials" $ do
-      authRequest goodClient >>= (\x ->  ( x & sid) `shouldSatisfy` isRight)
+      authRequest goodClient >>= (\x -> ( x & sid) `shouldSatisfy` isRight)
 
   describe "apiPost" $ do 
     it "returns 67 error for request with wrong sid and login/password" $ do
