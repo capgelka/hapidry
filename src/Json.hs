@@ -4,6 +4,7 @@ module Json
     (
       Journal(..)
     , Notifications(..)
+    , PostList(..)
     ) where
 
 import Data.Aeson
@@ -28,13 +29,24 @@ data Notifications = Notifications {
   , comments :: CommentList 
   } deriving (Show, Eq)
 
-data Posts = Posts {
-    postid :: Integer
-  , date :: Text
-  , commentCount :: Integer
-  , title :: Text
-  , message :: Text
-}
+-- newtype PostList = PostList [Post] deriving (Eq, Show)
+
+
+
+-- instance FromJSON Notifications where   
+--   parseJSON = withObject "notifications" $ \n -> do
+--     umailCount    <- (\x -> read x :: Integer) <$> n .: "umail_count"
+--     commentsCount <- (\x -> read x :: Integer) <$> n .: "comments_count"
+--     discussCount  <- (\x -> read x :: Integer) <$> n .: "discuss_count"
+--     (comments :: CommentList)  <- parseJSON =<< n .: "comments"
+--     (umails :: UmailList)  <- parseJSON =<< n .: "umail"  
+--     (discussions :: DiscussionList)  <- parseJSON =<< n .: "discuss" 
+--     return Notifications { umailCount = umailCount,
+--                            commentsCount = commentsCount,
+--                            discussCount = discussCount,
+--                            comments = comments,
+--                            umails = umails,
+--                            discussions = discussions }
 
 
 instance FromJSON Notifications where   

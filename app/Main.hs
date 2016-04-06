@@ -8,10 +8,13 @@ import qualified Data.ByteString.Lazy.Char8 as BL (ByteString)
 import qualified Data.Configurator as C
 import Control.Lens ((&))
 import Api
+import Internal.Api
 
 import Options
 import Utils
 
+
+import Data.Aeson
 
 main :: IO ()
 main = do
@@ -27,7 +30,9 @@ main = do
                 secret  = "8543db8deccb4b0fcb753291c53f8f4f"
               } & updateCreds $ command & auth
   parseOpt (command & commands) client >>= print where
-      parseOpt p@Post {} client = createPost p client -- >> mempty
-      parseOpt s@Send {} client = sendUmail s client -- >> mempty
-      parseOpt c@Comment {} client = createComment c client -- >> mempty
-      parseOpt n@Notify {} client = getNotifications n client >> return (Right ["Ok"])
+      -- parseOpt p@Post {} client = createPost p client -- >> mempty
+      -- parseOpt s@Send {} client = sendUmail s client -- >> mempty
+      -- parseOpt c@Comment {} client = createComment c client -- >> mempty
+      parseOpt _ client = decode <$> apiPost client [("method", "post.get"), ("type", "favorites")]
+      --parseOpt n@Notify {} client = getNotifications n client >> return (Right ["Ok"])
+   

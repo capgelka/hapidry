@@ -8,6 +8,8 @@ module Internal.Json
     , Discussion(..)
     , Umail(..)
     , Comment(..)
+    , Post(..)
+    , PostList(..)
     ) where
 
 import Data.Aeson
@@ -70,3 +72,30 @@ instance FromJSON DiscussionList where
       go i x r = (\(Discussion j _ msg) rest -> Discussion j i msg : rest) <$>
                      parseJSON x <*> r
   parseJSON _ = return $ DiscussionList []
+
+
+data Post = Post {
+    postid :: Integer
+  , date :: Text
+  , commentCount :: Integer
+  , title :: Text
+  , message :: Text
+} deriving (Eq, Show)
+
+
+instance FromJSON Post where
+  parseJSON (Object v) = Post <$> v .: "postid" 
+                              <*> v .: "dateline_date" 
+                              <*> v .: "comments_count_data"
+                              <*> v .: "title"
+                              <*> v .: "message_html"
+  parseJSON _ = mzero
+
+newtype PostList = PostList [Post] deriving (Eq, Show)
+
+instance FromJSON PostList where
+  parseJSON (Object v) = PostList <$> HMS.foldrWithKey go (pure []) v
+    where
+      go i x r = (\(Post p d c t m) rest -> Post p d c t m : rest) <$>
+                     parseJSON x <*> r
+  parseJSON _ = return $ PostList []

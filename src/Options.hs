@@ -90,8 +90,8 @@ parseCommands = subparser $
     command "notify" (parseNotify `withInfo` "get notification data") <>
     command "post"  (parsePost  `withInfo` "create new post") <>
     command "comment" (parseComment  `withInfo` "create new comment") <>
-    command "send"  (parseSend  `withInfo` "send new umail")
-
+    command "send"  (parseSend  `withInfo` "send new umail") <>
+    command "read" (parseNotify `withInfo` "-//-")
 
 withInfo :: Parser a -> String -> ParserInfo a
 withInfo opts desc = info (helper <*> opts) $ progDesc desc

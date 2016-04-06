@@ -28,7 +28,7 @@ library
                      , aeson
                      , optparse-applicative
                      , configurator
-                     , editor-open
+                   --  , editor-open
                      , unordered-containers
                      , split
   default-language:    Haskell2010
@@ -42,6 +42,8 @@ executable hapidry
                      , lens     
                      , bytestring
                      , configurator
+                     , aeson
+                     --delete later
   default-language:    Haskell2010
 
 test-suite hapidry-test

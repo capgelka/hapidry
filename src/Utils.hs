@@ -21,7 +21,7 @@ import qualified Data.ByteString.Lazy.Char8 as BL (ByteString)
 import qualified Data.Configurator as C
 import qualified Data.Configurator.Types as CT
 import Control.Lens ((&))
-import Text.Editor (runUserEditor)
+-- import Text.Editor (runUserEditor)
 import Data.Maybe (isJust)
 import Api
 import Data.Aeson
@@ -61,12 +61,12 @@ createPost (Post blogs _ title _ True tags) client = do
                       [("message", Just text),
                        ("title", title)] ++ convertTags tags)
               (map T.pack blogs)
-createPost (Post blogs Nothing title Nothing False tags) client = do 
-  text <- T.unpack <$> decodeUtf8 <$> runUserEditor
-  postsCreate client  (applyOptions
-                      [("message", Just text),
-                       ("title", title)] ++ convertTags tags)
-              (map T.pack blogs)
+-- createPost (Post blogs Nothing title Nothing False tags) client = do 
+--   text <- T.unpack <$> decodeUtf8 <$> runUserEditor
+--   postsCreate client  (applyOptions
+--                       [("message", Just text),
+--                        ("title", title)] ++ convertTags tags)
+--               (map T.pack blogs)
 createPost (Post blogs text title _ _ tags) client = postsCreate client
                                                            (applyOptions [("message", text),
                                                                           ("title", title)]
@@ -88,12 +88,12 @@ sendUmail (Send users _ title _ True) client = do
                         [("message", Just text),
                          ("title", title)])
                (map T.pack users)
-sendUmail (Send users Nothing title Nothing False) client = do 
-    text <- T.unpack <$> decodeUtf8 <$> runUserEditor
-    umailsSend client (applyOptions
-                        [("message", Just text),
-                         ("title", title)])
-               (map T.pack users)
+-- sendUmail (Send users Nothing title Nothing False) client = do 
+--     text <- T.unpack <$> decodeUtf8 <$> runUserEditor
+--     umailsSend client (applyOptions
+--                         [("message", Just text),
+--                          ("title", title)])
+--                (map T.pack users)
 sendUmail (Send users text title _ _) client = umailsSend client 
                                                           (applyOptions [("message", text),
                                                                          ("title", title)]) 
@@ -110,11 +110,11 @@ createComment (Comment pid _ _ True) client = do
     sequence <$> (: []) 
              <$> commentCreate client (applyOptions [("message", Just text),
                                                      ("postid", Just pid)]) 
-createComment (Comment pid Nothing Nothing False) client = do 
-    text <- T.unpack <$> decodeUtf8 <$> runUserEditor
-    sequence <$> (: []) 
-             <$> commentCreate client (applyOptions [("message", Just text),
-                                                     ("postid", Just pid)]) 
+-- createComment (Comment pid Nothing Nothing False) client = do 
+--     text <- T.unpack <$> decodeUtf8 <$> runUserEditor
+--     sequence <$> (: []) 
+--              <$> commentCreate client (applyOptions [("message", Just text),
+--                                                      ("postid", Just pid)]) 
 createComment (Comment pid text  _ _) client = sequence <$> (: [])
                                                         <$> commentCreate 
                                                             client 
