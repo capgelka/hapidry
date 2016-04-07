@@ -8,6 +8,7 @@ module Utils
   , sendUmail
   , getNotifications
   , createComment 
+  , postsFromJson --delete later
   ) where
 
 import Data.Text (Text)
@@ -146,3 +147,8 @@ getNotifications opt client = do
 notificationsFromJson :: Either Integer BL.ByteString -> Maybe Notifications
 notificationsFromJson (Right json) = decode json
 notificationsFromJson (Left _)     = Nothing
+
+
+postsFromJson :: Either Integer BL.ByteString -> Maybe PostList
+postsFromJson (Right json) = decode json
+postsFromJson (Left _)     = Nothing

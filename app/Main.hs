@@ -16,6 +16,8 @@ import Utils
 
 import Data.Aeson
 
+
+
 main :: IO ()
 main = do
   command <- execParser mainParser 
@@ -33,6 +35,7 @@ main = do
       -- parseOpt p@Post {} client = createPost p client -- >> mempty
       -- parseOpt s@Send {} client = sendUmail s client -- >> mempty
       -- parseOpt c@Comment {} client = createComment c client -- >> mempty
-      parseOpt _ client = decode <$> apiPost client [("method", "post.get"), ("type", "favorites")]
+      parseOpt _ client = postsFromJson <$> apiPost client [("method", "post.get"), ("type", "favorites")]
+
       --parseOpt n@Notify {} client = getNotifications n client >> return (Right ["Ok"])
    

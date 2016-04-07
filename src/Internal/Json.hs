@@ -75,9 +75,9 @@ instance FromJSON DiscussionList where
 
 
 data Post = Post {
-    postid :: Integer
+    postid :: Text
   , date :: Text
-  , commentCount :: Integer
+  , commentCount :: Text
   , title :: Text
   , message :: Text
 } deriving (Eq, Show)
@@ -96,6 +96,6 @@ newtype PostList = PostList [Post] deriving (Eq, Show)
 instance FromJSON PostList where
   parseJSON (Object v) = PostList <$> HMS.foldrWithKey go (pure []) v
     where
-      go i x r = (\(Post p d c t m) rest -> Post p d c t m : rest) <$>
+      go i x r = (\(Post _ d c t m) rest -> Post i d c t m : rest) <$>
                      parseJSON x <*> r
   parseJSON _ = return $ PostList []
