@@ -151,4 +151,4 @@ notificationsFromJson (Left _)     = Nothing
 
 postsFromJson :: Either Integer BL.ByteString -> Maybe PostList
 postsFromJson (Right json) = decode json
-postsFromJson (Left _)     = Nothing
+postsFromJson (Left x)     = Just $ PostList []

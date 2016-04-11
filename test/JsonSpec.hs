@@ -8,7 +8,7 @@ import Internal.Api
 import Data.Text (Text)
 import qualified Data.ByteString.Lazy.Char8 as BL (ByteString)
 import qualified Data.ByteString.Char8 as B (ByteString)
-import Network.Wreq
+import Network.Wreq hiding (post)
 import Network.Wreq.Types (FormValue, renderFormValue)
 import Control.Lens ((&), (^.), (^?))
 import Data.Either (isRight)
@@ -53,6 +53,11 @@ discList :: BL.ByteString
 discList = "{\"1233\" : {\"journal_name\": \"1\", \"postid\": \"12\", \"message_txt\":\"TEST\"}\
 \, \"2423535\" : {\"journal_name\": \"1\", \"postid\": \"12\", \"message_txt\":\"TEST\"}}"
 
+
+post :: BL.ByteString
+post = "{\"dateline_date\": \"100\", \"postid\": \"12\", \"message_html\":\"TEST\",\
+\, \"title\": \"test\", \"comments_count_data\": \"12\"}"
+
 spec :: Spec
 spec = do
   describe "Internals" $ do
@@ -78,6 +83,10 @@ spec = do
     it "decodes CommentList " $ do
         eitherDecode discList `shouldBe` Right (CommentList [Comment "2423535" "TEST",
                                                              Comment "1233" "TEST"])
+
+    it "decodes Post" $ do 
+        eitherDecode post `shouldBe` Right (Post "12" "100" "12" "test" "TEST")
+
    
   describe "Journal" $ do
     it "decodes correctly" $ do
