@@ -55,8 +55,8 @@ discList = "{\"1233\" : {\"journal_name\": \"1\", \"postid\": \"12\", \"message_
 
 
 post :: BL.ByteString
-post = "{\"dateline_date\": \"100\", \"postid\": \"12\", \"message_html\":\"TEST\",\
-\, \"title\": \"test\", \"comments_count_data\": \"12\"}"
+post = "{\"dateline_date\": \"100\", \"postid\": \"12\", \"message_html\": \"TEST\",\
+\ \"title\": \"test\", \"comments_count_data\": \"12\"}"
 
 spec :: Spec
 spec = do
@@ -86,6 +86,8 @@ spec = do
 
     it "decodes Post" $ do 
         eitherDecode post `shouldBe` Right (Post "12" "100" "12" "test" "TEST")
+    it "decodes Post2" $ do 
+        eitherDecode "{\"message_html\": \"TEST\"}" `shouldBe` Right (Post "12" "100" "12" "test" "TEST")
 
    
   describe "Journal" $ do

@@ -1,4 +1,4 @@
-{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE OverloadedStrings, ScopedTypeVariables #-}
 
 module Internal.Json
     (
@@ -18,6 +18,7 @@ import Control.Applicative
 import Control.Monad (mzero)
 import qualified Data.HashMap.Strict as HMS
 import qualified Data.Map as M
+import Debug.Trace (trace, traceShow)
 
 type Preview = Text
 type Id = Text
@@ -74,16 +75,17 @@ instance FromJSON DiscussionList where
   parseJSON _ = return $ DiscussionList []
 
 
-data Post = Post {
-    postid :: Text
-  , date :: Text
-  , commentCount :: Text
-  , title :: Text
-  , message :: Text
-} deriving (Eq, Show)
-
+-- data Post = Post {
+--     postid :: Text
+--   , date :: Text
+--   , commentCount :: Text
+--   , title :: Text
+--   , message :: Text
+-- } deriving (Eq, Show)
+data Post = Post Text Text Text Text Text deriving (Eq, Show)
 
 instance FromJSON Post where
+  -- parseJSON x = traceShow (Post "w" "e" "w" "e" "Ex") (return $ Post "w" "e" "w" "e" "Ex")
   parseJSON (Object v) = Post <$> v .: "postid" 
                               <*> v .: "dateline_date" 
                               <*> v .: "comments_count_data"
@@ -94,8 +96,11 @@ instance FromJSON Post where
 newtype PostList = PostList [Post] deriving (Eq, Show)
 
 instance FromJSON PostList where
-  parseJSON (Object v) = PostList <$> HMS.foldrWithKey go (pure []) v
-    where
-      go i x r = (\(Post _ d c t m) rest -> Post i d c t m : rest) <$>
-                     parseJSON x <*> r
-  parseJSON _ = return $ PostList []
+  parseJSON = withObject "posts" $ \p -> do
+      posts <- parseJSON' =<< p .: "posts"
+      return posts where
+          parseJSON' (Object v) = PostList <$> HMS.foldrWithKey go (pure []) v
+              where
+                go i x r = (\(Post _ d c t m) rest -> Post i d c t m : rest) <$>
+                               parseJSON x <*> r
+          parseJSON' _ = return $ PostList []
