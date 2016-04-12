@@ -16,7 +16,16 @@ import Utils
 
 import Data.Aeson
 
+import Prelude hiding (putStr)
+import Data.ByteString.Char8 (putStr, pack)
+import qualified Data.Text.Encoding as E
+import Data.ByteString.UTF8 (fromString)
 
+
+import qualified Data.Text    as T
+import qualified Data.Text.IO as T
+-- main :: IO ()
+-- main = putStr $ fromString "čušpajž日本語"
 
 main :: IO ()
 main = do
@@ -31,7 +40,7 @@ main = do
                 username    = username,  
                 secret  = "8543db8deccb4b0fcb753291c53f8f4f"
               } & updateCreds $ command & auth
-  parseOpt (command & commands) client >>= print where
+  parseOpt (command & commands) client >>= (\x -> putStr $ (fromString $ show x) + 1)  where
       -- parseOpt p@Post {} client = createPost p client -- >> mempty
       -- parseOpt s@Send {} client = sendUmail s client -- >> mempty
       -- parseOpt c@Comment {} client = createComment c client -- >> mempty
