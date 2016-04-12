@@ -75,14 +75,16 @@ instance FromJSON DiscussionList where
   parseJSON _ = return $ DiscussionList []
 
 
--- data Post = Post {
---     postid :: Text
---   , date :: Text
---   , commentCount :: Text
---   , title :: Text
---   , message :: Text
--- } deriving (Eq, Show)
-data Post = Post Text Text Text Text Text deriving (Eq, Show)
+data Post = Post {
+    postid :: Text
+  , date :: Text
+  , commentCount :: Text
+  , title :: Text
+  , message :: Text
+  , shortname :: Text --- короткое имя дневника;
+  , journalname :: Maybe Text --journal_name - название дневника (для типов: last, quote, favorite); 
+} deriving (Eq, Show)
+-- data Post = Post Text Text Text Text Text deriving (Eq, Show)
 
 instance FromJSON Post where
   -- parseJSON x = traceShow (Post "w" "e" "w" "e" "Ex") (return $ Post "w" "e" "w" "e" "Ex")
@@ -91,6 +93,8 @@ instance FromJSON Post where
                               <*> v .: "comments_count_data"
                               <*> v .: "title"
                               <*> v .: "message_html"
+                              <*> v .: "shortname"
+                              <*> v .:? "journal_name"
   parseJSON _ = mzero
 
 newtype PostList = PostList [Post] deriving (Eq, Show)
@@ -101,6 +105,6 @@ instance FromJSON PostList where
       return posts where
           parseJSON' (Object v) = PostList <$> HMS.foldrWithKey go (pure []) v
               where
-                go i x r = (\(Post _ d c t m) rest -> Post i d c t m : rest) <$>
+                go i x r = (\(Post _ d c t m s j) rest -> Post i d c t m s j: rest) <$>
                                parseJSON x <*> r
           parseJSON' _ = return $ PostList []
