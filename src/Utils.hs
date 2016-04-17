@@ -9,6 +9,7 @@ module Utils
   , getNotifications
   , createComment 
   , postsFromJson --delete later
+  , umailsFromJson
   ) where
 
 import Data.Text (Text)
@@ -152,3 +153,7 @@ notificationsFromJson (Left _)     = Nothing
 postsFromJson :: Either Integer BL.ByteString -> Maybe PostList
 postsFromJson (Right json) = decode json
 postsFromJson (Left x)     = Just $ PostList []
+
+umailsFromJson :: Either Integer BL.ByteString -> Maybe UmailList
+umailsFromJson (Right json) = decode json
+umailsFromJson (Left x)     = Just $ UmailList []

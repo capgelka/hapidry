@@ -5,6 +5,7 @@ module Json
       Journal(..)
     , Notifications(..)
     , J.PostList(..)
+    , J.UmailList(..)
     ) where
 
 import Data.Aeson

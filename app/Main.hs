@@ -9,7 +9,7 @@ import qualified Data.Configurator as C
 import Control.Lens ((&))
 import Api
 import Internal.Api
-import Internal.Json --del
+import qualified Internal.Json as J--del
 
 import Options
 import Utils
@@ -30,7 +30,8 @@ import qualified Data.Text.IO as T
 -- main = putStr $ fromString "čušpajž日本語"
 
 -- extract :: PostList -> [Post]
-extract (PostList x) = x
+extractP (J.PostList x) = x
+extractU (J.UmailList x) = x
 
 main :: IO ()
 main = do
@@ -45,12 +46,13 @@ main = do
                 username    = username,  
                 secret  = "8543db8deccb4b0fcb753291c53f8f4f"
               } & updateCreds $ command & auth
-  parseOpt (command & commands) client >>= (T.putStr  . message . head)  where
+  parseOpt (command & commands) client >>= (putStr . fromString . show . J.messageHtml . head)  where
       -- parseOpt p@Post {} client = createPost p client -- >> mempty
       -- parseOpt s@Send {} client = sendUmail s client -- >> mempty
       -- parseOpt c@Comment {} client = createComment c client -- >> mempty
-      parseOpt _ client =  extract <$> fromJust <$> postsFromJson <$> apiPost client [("method", "post.get"),
-                                                            ("type", "favorites")]
+      -- parseOpt _ client =  extractP <$> fromJust <$> postsFromJson <$> apiPost client [("method", "post.get"),
+      --                                                       ("type", "favorites")]
+      parseOpt _ client =  extractU <$> fromJust <$> umailsFromJson <$> (umailGet client [])
 
       --parseOpt n@Notify {} client = getNotifications n client >> return (Right ["Ok"])
    
