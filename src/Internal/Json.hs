@@ -26,7 +26,7 @@ type JournalName = Text
 type Title = Text
 type Username = Text
 data Discussion = Discussion JournalName Id Preview deriving (Show, Eq)
--- data Umail = Umail Username Title Preview deriving (Show, Eq)
+data Umail = Umail Username Title Preview deriving (Show, Eq)
 data Comment = Comment Id Preview deriving (Show, Eq)
 
 
@@ -37,11 +37,11 @@ instance FromJSON Comment where
   parseJSON _ = mzero
 
 
--- instance FromJSON Umail where
---   parseJSON (Object v) = Umail <$> v .: "from_username" 
---                                <*> v .: "title" 
---                                <*> v .: "message_txt"
---   parseJSON _ = mzero
+instance FromJSON Umail where
+  parseJSON (Object v) = Umail <$> v .: "from_username" 
+                               <*> v .: "title" 
+                               <*> v .: "message_txt"
+  parseJSON _ = mzero
 
 instance FromJSON Discussion where
   parseJSON (Object v) = Discussion <$> v .: "journal_name" 
@@ -56,14 +56,14 @@ instance FromJSON CommentList where
                      parseJSON x <*> r
   parseJSON _ = return $ CommentList []
 
--- newtype UmailList = UmailList [Umail] deriving (Show, Eq)
+newtype UmailList = UmailList [Umail] deriving (Show, Eq)
 
--- instance FromJSON UmailList where
---   parseJSON (Object v) = UmailList <$> HMS.foldrWithKey go (pure []) v
---     where
---       go i x r = (\(Umail u t msg) rest -> Umail u t msg : rest) <$>
---                      parseJSON x <*> r
---   parseJSON _ = return $ UmailList []
+instance FromJSON UmailList where
+  parseJSON (Object v) = UmailList <$> HMS.foldrWithKey go (pure []) v
+    where
+      go i x r = (\(Umail u t msg) rest -> Umail u t msg : rest) <$>
+                     parseJSON x <*> r
+  parseJSON _ = return $ UmailList []
 
 newtype DiscussionList = DiscussionList [Discussion] deriving (Show, Eq)
 
@@ -110,48 +110,3 @@ instance FromJSON PostList where
           parseJSON' _ = return $ PostList []
 
 
-data Umail = Umail {
-    umailid :: Text
-  , dateline :: Text
-  -- , commentCount :: Text
-  , utitle :: Text
-  , messageHtml :: Text
-  , username :: Text
-  -- , journalname :: Maybe Text 
-} deriving (Eq, Show)
-        -- count - всего писем, соответствующих параметрам;
-        -- umail - набор писем: 
-
-        -- umailid - идентификатор письма, 
-        -- from_userid - идентификатор отправителя, 
-        -- from_username - логин отправителя, 
-        -- dateline - дата-время отправки письма, 
-        -- read - флаг прочтения, 
-        -- no_smilies - флаг запрета конвертации текстовых смайлов, 
-        -- title - тема письма, 
-        -- message_html - текст письма. 
-
-
-
-instance FromJSON Umail where
-
-  parseJSON (Object v) = Umail <$> v .: "umailid" 
-                              <*> v .: "dateline_date" 
-                              -- <*> v .: "count"
-                              <*> v .: "title"
-                              <*> v .: "message_html"
-                              <*> v .: "from_username"
-                              -- <*> v .:? "journal_name"
-  parseJSON _ = mzero
-
-newtype UmailList = UmailList [Umail] deriving (Eq, Show)
-
-instance FromJSON UmailList where
-  parseJSON = withObject "umails" $ \p -> do
-      umails <- parseJSON' =<< p .: "umail"
-      return umails where
-          parseJSON' (Object v) = UmailList <$> HMS.foldrWithKey go (pure []) v
-              where
-                go i x r = (\(Umail _ d t m f) rest -> Umail i d t m f: rest) <$>
-                               parseJSON x <*> r
-          parseJSON' _ = return $ UmailList []

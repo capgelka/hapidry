@@ -9,7 +9,8 @@ import qualified Data.Configurator as C
 import Control.Lens ((&))
 import Api
 import Internal.Api
-import qualified Internal.Json as J--del
+import qualified Internal.Json as IJ--del
+import qualified Json as J
 
 import Options
 import Utils
@@ -30,7 +31,7 @@ import qualified Data.Text.IO as T
 -- main = putStr $ fromString "čušpajž日本語"
 
 -- extract :: PostList -> [Post]
-extractP (J.PostList x) = x
+extractP (IJ.PostList x) = x
 extractU (J.UmailList x) = x
 
 main :: IO ()
