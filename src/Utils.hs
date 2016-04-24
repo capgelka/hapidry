@@ -49,29 +49,37 @@ readOptionB :: CT.Config -> CT.Name -> IO B.ByteString
 readOptionB conf opt = encodeUtf8 <$> readOption conf opt
 
 createPost :: Commands -> ClientCredentials -> IO (Either Integer [BL.ByteString])
-createPost (Post blogs _ title (Just x) False tags) client = do
+createPost (Post blogs _ title (Just x) False whitelist tags) client = do
     text <- readFile x
     postsCreate client (applyOptions
                       [("message", Just text),
-                       ("title", title)] ++ convertTags tags)
+                       ("title", title),
+                       ("close_access_mode", Just $ if whitelist then "4" else "0")] 
+                       ++ convertTags tags)
                 (map T.pack blogs)    
-createPost (Post blogs _ title _ True tags) client = do 
+createPost (Post blogs _ title _ True whitelist tags) client = do 
   text <- getContents
   postsCreate client  (applyOptions
                       [("message", Just text),
-                       ("title", title)] ++ convertTags tags)
+                       ("title", title),
+                       ("close_access_mode", Just $ if whitelist then "4" else "0")] 
+                       ++ convertTags tags)
               (map T.pack blogs)
-createPost (Post blogs Nothing title Nothing False tags) client = do 
+createPost (Post blogs Nothing title Nothing False whitelist tags) client = do 
   text <- T.unpack <$> decodeUtf8 <$> runUserEditor
   postsCreate client  (applyOptions
                       [("message", Just text),
-                       ("title", title)] ++ convertTags tags)
+                       ("title", title),
+                       ("close_access_mode", Just $ if whitelist then "4" else "0")]
+                       ++ convertTags tags)
               (map T.pack blogs)
-createPost (Post blogs text title _ _ tags) client = postsCreate client
-                                                           (applyOptions [("message", text),
-                                                                          ("title", title)]
-                                                            ++ convertTags tags)
-                                                           (map T.pack blogs)
+createPost (Post blogs text title _ _ whitelist tags) client = postsCreate client
+                               (applyOptions [("message", text),
+                                              ("title", title),
+                                              ("close_access_mode", 
+                                               Just $ if whitelist then "4" else "0")]
+                                ++ convertTags tags)
+                               (map T.pack blogs)
 
 
 

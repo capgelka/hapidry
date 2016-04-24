@@ -46,6 +46,7 @@ data Commands
         title :: Maybe String, -- ^ optional field to store post title
         file :: Maybe Path, -- ^ optional field for path to file with message for post
         pipe :: Bool, -- ^ flag. read message from stdin uf set
+        whitelist :: Bool, -- ^flag. close post for whitelist only if set.
         themes :: [String] -- ^ list of tags for post
       }
     | Send
@@ -178,6 +179,10 @@ parsePost = Post
     <*> (switch
       (long "pipe"
        <> short 'p'
+       <> help "get text from stdin")) 
+    <*> (switch
+      (long "whitelist"
+       <> short 'w'
        <> help "get text from stdin"))
     <*> (multiString $
         short 'T'
