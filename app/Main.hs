@@ -32,7 +32,7 @@ import qualified Data.Text.IO as T
 
 -- extract :: PostList -> [Post]
 extractP (IJ.PostList x) = x
-extractU (J.UmailList x) = x
+extractU (J.MessageList x) = x
 
 main :: IO ()
 main = do

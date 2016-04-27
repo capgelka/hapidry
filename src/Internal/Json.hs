@@ -10,6 +10,8 @@ module Internal.Json
     , Comment(..)
     , Post(..)
     , PostList(..)
+    , UmailMessage(..)
+    , MessageList(..)
     ) where
 
 import Data.Aeson
@@ -110,3 +112,48 @@ instance FromJSON PostList where
           parseJSON' _ = return $ PostList []
 
 
+data UmailMessage = UmailMessage {
+    umailid :: Text
+  , dateline :: Text
+  -- , commentCount :: Text
+  , utitle :: Text
+  , messageHtml :: Text
+  , username :: Text
+  -- , journalname :: Maybe Text 
+} deriving (Eq, Show)
+        -- count - всего писем, соответствующих параметрам;
+        -- umail - набор писем: 
+
+        -- umailid - идентификатор письма, 
+        -- from_userid - идентификатор отправителя, 
+        -- from_username - логин отправителя, 
+        -- dateline - дата-время отправки письма, 
+        -- read - флаг прочтения, 
+        -- no_smilies - флаг запрета конвертации текстовых смайлов, 
+        -- title - тема письма, 
+        -- message_html - текст письма. 
+
+
+
+instance FromJSON UmailMessage where
+
+  parseJSON (Object v) = UmailMessage <$> v .: "umailid" 
+                              <*> v .: "dateline_date" 
+                              -- <*> v .: "count"
+                              <*> v .: "title"
+                              <*> v .: "message_html"
+                              <*> v .: "from_username"
+                              -- <*> v .:? "journal_name"
+  parseJSON _ = mzero
+
+newtype MessageList = MessageList [UmailMessage] deriving (Eq, Show)
+
+instance FromJSON MessageList where
+  parseJSON = withObject "umails" $ \p -> do
+      umails <- parseJSON' =<< p .: "umail"
+      return umails where
+          parseJSON' (Object v) = MessageList <$> HMS.foldrWithKey go (pure []) v
+              where
+                go i x r = (\(UmailMessage _ d t m f) rest -> UmailMessage i d t m f: rest) <$>
+                               parseJSON x <*> r
+          parseJSON' _ = return $ MessageList []
