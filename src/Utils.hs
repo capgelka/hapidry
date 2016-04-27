@@ -28,6 +28,7 @@ import Data.Maybe (isJust)
 import Api
 import Data.Aeson
 import Json
+import qualified Internal.Json as IJ --(MessageList, UmailMessage)
 import Options
 
 applyOptions :: [(Text, Maybe String)] -> [(Text, Text)]
@@ -139,7 +140,7 @@ getNotifications opt client = do
             let dc =  nt & discussCount
             if uc > 0 then T.putStrLn $ T.concat ["you have ", (T.pack $ show uc), " unread umails"]
                       else T.putStr ""
-            if cc > 0 then T.putStrLn $ T.concat ["you have ", (T.pack $ show cc), " unread omments"]
+            if cc > 0 then T.putStrLn $ T.concat ["you have ", (T.pack $ show cc), " unread comments"]
                       else T.putStr ""
             if dc > 0 then T.putStrLn $ T.concat ["you have ", (T.pack $ show dc), " unread discussions"]
                       else T.putStr ""
@@ -154,6 +155,6 @@ postsFromJson :: Either Integer BL.ByteString -> Maybe PostList
 postsFromJson (Right json) = decode json
 postsFromJson (Left x)     = Just $ PostList []
 
-umailsFromJson :: Either Integer BL.ByteString -> Maybe UmailList
+umailsFromJson :: Either Integer BL.ByteString -> Maybe IJ.MessageList
 umailsFromJson (Right json) = decode json
-umailsFromJson (Left x)     = Just $ UmailList []
+umailsFromJson (Left x)     = Just $ IJ.MessageList []

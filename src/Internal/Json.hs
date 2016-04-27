@@ -146,14 +146,32 @@ instance FromJSON UmailMessage where
                               -- <*> v .:? "journal_name"
   parseJSON _ = mzero
 
-newtype MessageList = MessageList [UmailMessage] deriving (Eq, Show)
+data MessageList = MessageList [UmailMessage] deriving (Eq, Show)
+
+-- newtype MList = MList [UmailMessage] deriving (Eq, Show)
+
+-- instance FromJSON MList where
+--      parseJSON (Object v) = MList <$> HMS.foldrWithKey go (pure []) v
+--               where
+--                 go i x r = (\(UmailMessage _ d t m f) rest -> UmailMessage i d t m f: rest) <$>
+--                                parseJSON x <*> r
+--      parseJSON' _ = return $ MList []
+
 
 instance FromJSON MessageList where
-  parseJSON = withObject "umails" $ \p -> do
-      umails <- parseJSON' =<< p .: "umail"
-      return umails where
-          parseJSON' (Object v) = MessageList <$> HMS.foldrWithKey go (pure []) v
-              where
+    parseJSON (Object v) = do
+              x <- (v .: "umail") 
+              return $ MessageList <$> HMS.foldrWithKey go (pure []) where
                 go i x r = (\(UmailMessage _ d t m f) rest -> UmailMessage i d t m f: rest) <$>
                                parseJSON x <*> r
-          parseJSON' _ = return $ MessageList []
+    parseJSON _ = return $ MessageList []
+
+  -- parseJSON = withObject "umail" $ \u -> do
+  --     (umails :: MList) <- u .: "umail"
+  --     return umails
+  --      -- where
+  --         parseJSON' (Object v) = MessageList <$> HMS.foldrWithKey go (pure []) v
+  --             where
+  --               go i x r = (\(UmailMessage _ d t m f) rest -> UmailMessage i d t m f: rest) <$>
+  --                              parseJSON x <*> r
+  --         parseJSON' _ = return $ MessageList []

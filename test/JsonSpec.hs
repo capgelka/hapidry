@@ -59,6 +59,24 @@ post = "{\"dateline_date\": \"100\", \"postid\": \"12\", \"message_html\": \"TES
 \ \"title\": \"test\", \"comments_count_data\": \"12\", \"shortname\": \"user\",\
 \ \"journal_name\": \"user_journal\"}"
 
+posts :: BL.ByteString
+posts = "{\"posts\": {\"12\":{\"dateline_date\": \"100\", \"postid\": \"13\", \"message_html\": \"TEST\",\
+\ \"title\": \"test\", \"comments_count_data\": \"12\", \"shortname\": \"user\",\
+\ \"journal_name\": \"user_journal\"},\
+\ \"13\": {\"dateline_date\": \"100\", \"postid\": \"13\", \"message_html\": \"TEST\",\
+\ \"title\": \"test\", \"comments_count_data\": \"12\", \"shortname\": \"user\",\
+\ \"journal_name\": \"user_journal\"}}}" 
+
+uMessage :: BL.ByteString
+uMessage = "{\"dateline_date\": \"100\", \"umailid\": \"12\", \"message_html\": \"TEST\",\
+\ \"title\": \"test\", \"from_username\": \"someone\" }"
+
+messageList :: BL.ByteString
+messageList = "{\"umail\": {\"12\": {\"dateline_date\": \"100\", \"umailid\": \"12\", \"message_html\": \"TEST\",\
+\ \"title\": \"test\", \"from_username\": \"someone\" },\
+\ \"13\": {\"dateline_date\": \"100\", \"umailid\": \"13\", \"message_html\": \"TEST\",\
+\ \"title\": \"test\", \"from_username\": \"someone\" }}}"
+
 spec :: Spec
 spec = do
   describe "Internals" $ do
@@ -94,6 +112,42 @@ spec = do
                                                      "TEST" 
                                                      "user"
                                                      (Just "user_journal"))
+
+    it "decodes PostList" $ do 
+        eitherDecode uMessage `shouldBe` (Right $ IJ.PostList $
+                                                  [IJ.Post "12" 
+                                                     "100"
+                                                     "12" 
+                                                     "test" 
+                                                     "TEST" 
+                                                     "user"
+                                                     (Just "user_journal"),
+                                                   IJ.Post "13" 
+                                                     "100"
+                                                     "12" 
+                                                     "test" 
+                                                     "TEST" 
+                                                     "user"
+                                                     (Just "user_journal")])
+
+    it "decodes Umail message" $ do 
+        eitherDecode uMessage `shouldBe` (Right $ IJ.UmailMessage "12" 
+                                                               "100"
+                                                               "test" 
+                                                               "TEST" 
+                                                               "someone")
+    it "decodes Umail messages" $ do 
+        eitherDecode uMessage `shouldBe` (Right $ IJ.MessageList $
+                                                  [IJ.UmailMessage "12" 
+                                                                   "100"
+                                                                   "test" 
+                                                                   "TEST" 
+                                                                   "someone",
+                                                   IJ.UmailMessage "13" 
+                                                                   "100"
+                                                                   "test" 
+                                                                   "TEST" 
+                                                                   "someone"])
     -- it "decodes Post2" $ do 
     --     eitherDecode "{\"message_html\": \"TEST\"}" `shouldBe` Right (Post "12" "100" "12" "test" "TEST")
 
