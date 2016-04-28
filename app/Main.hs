@@ -47,13 +47,15 @@ main = do
                 username    = username,  
                 secret  = "8543db8deccb4b0fcb753291c53f8f4f"
               } & updateCreds $ command & auth
-  parseOpt (command & commands) client >>= (putStr . fromString . show . IJ.message . head)  where
+  -- parseOpt (command & commands) client >>= print  where
+  parseOpt (command & commands) client >>= (T.putStr . IJ.messageHtml . head)  where
       -- parseOpt p@Post {} client = createPost p client -- >> mempty
       -- parseOpt s@Send {} client = sendUmail s client -- >> mempty
       -- parseOpt c@Comment {} client = createComment c client -- >> mempty
-      parseOpt post client =  extractP <$> fromJust <$> postsFromJson <$> apiPost client [("method", "post.get"),
-                                                            ("type", "favorites")]
-      -- parseOpt _ client =  extractU <$> fromJust <$> umailsFromJson <$> (umailGet client [])
+      -- parseOpt post client =  extractP <$> fromJust <$> postsFromJson <$> apiPost client [("method", "post.get"),
+                                                            -- ("type", "favorites")]
+      parseOpt _ client =  extractU <$> fromJust <$> umailsFromJson <$> (umailGet client [])
+      -- parseOpt _ client = (umailGet client [])
 
       --parseOpt n@Notify {} client = getNotifications n client >> return (Right ["Ok"])
    

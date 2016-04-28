@@ -138,7 +138,7 @@ data UmailMessage = UmailMessage {
 instance FromJSON UmailMessage where
 
   parseJSON (Object v) = UmailMessage <$> v .: "umailid" 
-                              <*> v .: "dateline_date" 
+                              <*> v .: "dateline" 
                               -- <*> v .: "count"
                               <*> v .: "title"
                               <*> v .: "message_html"
@@ -161,7 +161,7 @@ data MessageList = MessageList [UmailMessage] deriving (Eq, Show)
 instance FromJSON MessageList where
     parseJSON (Object v) = do
               x <- (v .: "umail") 
-              return $ MessageList <$> HMS.foldrWithKey go (pure []) where
+              MessageList <$> HMS.foldrWithKey go (pure []) x where
                 go i x r = (\(UmailMessage _ d t m f) rest -> UmailMessage i d t m f: rest) <$>
                                parseJSON x <*> r
     parseJSON _ = return $ MessageList []
