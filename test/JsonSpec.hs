@@ -68,13 +68,13 @@ posts = "{\"posts\": {\"12\":{\"dateline_date\": \"100\", \"postid\": \"13\", \"
 \ \"journal_name\": \"user_journal\"}}}" 
 
 uMessage :: BL.ByteString
-uMessage = "{\"dateline_date\": \"100\", \"umailid\": \"12\", \"message_html\": \"TEST\",\
+uMessage = "{\"dateline\": \"100\", \"umailid\": \"12\", \"message_html\": \"TEST\",\
 \ \"title\": \"test\", \"from_username\": \"someone\" }"
 
 messageList :: BL.ByteString
-messageList = "{\"umail\": {\"12\": {\"dateline_date\": \"100\", \"umailid\": \"12\", \"message_html\": \"TEST\",\
+messageList = "{\"umail\": {\"12\": {\"dateline\": \"100\", \"umailid\": \"12\", \"message_html\": \"TEST\",\
 \ \"title\": \"test\", \"from_username\": \"someone\" },\
-\ \"13\": {\"dateline_date\": \"100\", \"umailid\": \"13\", \"message_html\": \"TEST\",\
+\ \"13\": {\"dateline\": \"100\", \"umailid\": \"13\", \"message_html\": \"TEST\",\
 \ \"title\": \"test\", \"from_username\": \"someone\" }}}"
 
 spec :: Spec
@@ -114,15 +114,15 @@ spec = do
                                                      (Just "user_journal"))
 
     it "decodes PostList" $ do 
-        eitherDecode uMessage `shouldBe` (Right $ IJ.PostList $
-                                                  [IJ.Post "12" 
+        eitherDecode posts `shouldBe` (Right $ IJ.PostList $
+                                                  [IJ.Post "13" 
                                                      "100"
                                                      "12" 
                                                      "test" 
                                                      "TEST" 
                                                      "user"
                                                      (Just "user_journal"),
-                                                   IJ.Post "13" 
+                                                   IJ.Post "12" 
                                                      "100"
                                                      "12" 
                                                      "test" 
@@ -137,13 +137,13 @@ spec = do
                                                                "TEST" 
                                                                "someone")
     it "decodes Umail messages" $ do 
-        eitherDecode uMessage `shouldBe` (Right $ IJ.MessageList $
-                                                  [IJ.UmailMessage "12" 
+        eitherDecode messageList `shouldBe` (Right $ IJ.MessageList $
+                                                  [IJ.UmailMessage "13" 
                                                                    "100"
                                                                    "test" 
                                                                    "TEST" 
                                                                    "someone",
-                                                   IJ.UmailMessage "13" 
+                                                   IJ.UmailMessage "12" 
                                                                    "100"
                                                                    "test" 
                                                                    "TEST" 
