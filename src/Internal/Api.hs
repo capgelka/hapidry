@@ -36,6 +36,7 @@ import Data.Char (intToDigit)
 import Data.List
 import Data.Maybe
 
+import Debug.Trace (trace)
 
 newtype DiaryText = DiaryText Text
 instance NWTP.FormValue DiaryText where
@@ -65,9 +66,9 @@ ununicode s = BL.pack $ repl $ BL.unpack s where
   --         Nothing   -> L.cons (L.head string) (replace $ L.tail string)
 
   -- repl :: L.Text -> L.Text
-  repl s = RE.subRegex (RE.mkRegex "\\\\u([0-9a-f]+)") s (upd "\\1") where
+  repl s = RE.subRegex (RE.mkRegex "\\\\u([0-9a-f]{4,})") s (upd "\\1") where
     upd :: String -> String
-    upd x = "[" ++ (show $ length x) ++ x ++ "]"
+    upd x = trace ('0':'x':x) (show $ (read ('0':'x':x) :: Int))
 
 
     hexChar ch = fromMaybe (error $ "illegal char " ++ [ch]) $ 
