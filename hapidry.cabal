@@ -28,6 +28,8 @@ library
                      , aeson
                      , optparse-applicative
                      , configurator
+                     , regex-compat-tdfa
+                     , utf8-string
                    --  , editor-open
                      , unordered-containers
                      , split

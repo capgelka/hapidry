@@ -17,9 +17,9 @@ import Data.Text.Read (decimal)
 import qualified Data.Text.Lazy.Encoding as LE (decodeUtf8, encodeUtf8)
 import qualified Crypto.Hash.MD5 as MD5
 import qualified Data.ByteString.Char8 as B
-import qualified Data.ByteString.Lazy.Char8 as BL (ByteString)
+import qualified Data.ByteString.Lazy.Char8 as BL (ByteString, pack, unpack)
 import qualified Data.ByteString.Base16 as B16 (encode)
-import qualified Data.Text.Lazy as L (append, cons, tail, head,
+import qualified Data.Text.Lazy as L (append, cons, tail, head, unpack,
                                       take, drop, Text)
 import qualified Data.Text as T (unpack, map, concatMap, pack, snoc, filter, all)
 import Data.Text (Text)
@@ -28,6 +28,14 @@ import Control.Lens ((&), (^.), (^?))
 import qualified Data.Map as Map
 import qualified Network.Wreq.Types as NWTP (FormValue, renderFormValue)
 import Network.Wreq
+import qualified Text.Regex as RE
+
+import Numeric --(showHex, showInt)
+import Data.Char (intToDigit)
+
+import Data.List
+import Data.Maybe
+
 
 newtype DiaryText = DiaryText Text
 instance NWTP.FormValue DiaryText where
@@ -49,12 +57,24 @@ keyHash pass key = decodeLatin1 $ B16.encode $ MD5.hash $ B.append key pass
 {- to solve problem http://stackoverflow.com/questions/35687685/haskell-convert-unicode-sequence-to-utf-8
  no lib find -}
 ununicode :: BL.ByteString -> BL.ByteString               
-ununicode s = LE.encodeUtf8 $ replace $ LE.decodeUtf8 s where 
-  replace :: L.Text -> L.Text
-  replace "" = ""
-  replace string = case Map.lookup (L.take 6 string) table of
-          (Just x)  -> L.append x (replace $ L.drop 6 string)
-          Nothing   -> L.cons (L.head string) (replace $ L.tail string)
+ununicode s = BL.pack $ repl $ BL.unpack s where 
+  -- replace :: L.Text -> L.Text
+  -- replace "" = ""
+  -- replace string = case Map.lookup (L.take 6 string) table of
+  --         (Just x)  -> L.append x (replace $ L.drop 6 string)
+  --         Nothing   -> L.cons (L.head string) (replace $ L.tail string)
+
+  -- repl :: L.Text -> L.Text
+  repl s = RE.subRegex (RE.mkRegex "\\\\u([0-9a-f]+)") s (upd "\\1") where
+    upd :: String -> String
+    upd x = "[" ++ (show $ length x) ++ x ++ "]"
+
+
+    hexChar ch = fromMaybe (error $ "illegal char " ++ [ch]) $ 
+        elemIndex ch "0123456789abcdef"
+
+    parseHex hex = foldl' f 0 hex where
+        f n c = 16*n + hexChar c
 
   table = Map.fromList $ zip letters rus
 

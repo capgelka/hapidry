@@ -27,12 +27,14 @@ import Data.ByteString.UTF8 (fromString)
 
 import qualified Data.Text    as T
 import qualified Data.Text.IO as T
+import qualified Data.ByteString.Lazy.Char8 as BL (ByteString, pack, unpack, putStr)
 -- main :: IO ()
 -- main = putStr $ fromString "čušpajž日本語"
 
 -- extract :: PostList -> [Post]
 extractP (IJ.PostList x) = x
 extractU (IJ.MessageList x) = x
+fromRight (Right x) = x
 
 main :: IO ()
 main = do
@@ -47,15 +49,16 @@ main = do
                 username    = username,  
                 secret  = "8543db8deccb4b0fcb753291c53f8f4f"
               } & updateCreds $ command & auth
-  -- parseOpt (command & commands) client >>= print  where
-  parseOpt (command & commands) client >>= (T.putStr . IJ.messageHtml . head)  where
+  parseOpt (command & commands) client >>= print where
+  -- parseOpt (command & commands) client >>= (\x -> BL.putStr $ fromRight x) where
+  -- parseOpt (command & commands) client >>= (T.putStr . IJ.messageHtml . head)  where
       -- parseOpt p@Post {} client = createPost p client -- >> mempty
       -- parseOpt s@Send {} client = sendUmail s client -- >> mempty
       -- parseOpt c@Comment {} client = createComment c client -- >> mempty
       -- parseOpt post client =  extractP <$> fromJust <$> postsFromJson <$> apiPost client [("method", "post.get"),
                                                             -- ("type", "favorites")]
-      parseOpt _ client =  extractU <$> fromJust <$> umailsFromJson <$> (umailGet client [])
-      -- parseOpt _ client = (umailGet client [])
+      -- parseOpt _ client =  extractU <$> fromJust <$> umailsFromJson <$> (umailGet client [])
+      parseOpt _ client = (umailGet client [])
 
       --parseOpt n@Notify {} client = getNotifications n client >> return (Right ["Ok"])
    
