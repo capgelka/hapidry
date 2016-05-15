@@ -14,13 +14,14 @@ module Internal.Api
 
 import Data.Text.Encoding (decodeLatin1, encodeUtf8)
 import Data.Text.Read (decimal)
+import Data.Text.Lazy.Read (hexadecimal)
 import qualified Data.Text.Lazy.Encoding as LE (decodeUtf8, encodeUtf8)
 import qualified Crypto.Hash.MD5 as MD5
 import qualified Data.ByteString.Char8 as B
 import qualified Data.ByteString.Lazy.Char8 as BL (ByteString, pack, unpack)
 import qualified Data.ByteString.Base16 as B16 (encode)
-import qualified Data.Text.Lazy as L (append, cons, tail, head, unpack,
-                                      take, drop, Text)
+import qualified Data.Text.Lazy as L (append, cons, tail, head, unpack, foldl, length,  
+                                      take, drop, pack, all, Text, snoc, last, singleton, empty)
 import qualified Data.Text as T (unpack, map, concatMap, pack, snoc, filter, all)
 import Data.Text (Text)
 import Data.Aeson.Lens (key, _String)
@@ -31,10 +32,10 @@ import Network.Wreq
 import qualified Text.Regex as RE
 
 import Numeric --(showHex, showInt)
-import Data.Char (intToDigit)
+import Data.Char (intToDigit, isHexDigit)
 
 import Data.List
-import Data.Maybe
+-- import Data.Maybe (fromRight)
 
 import Debug.Trace (trace)
 
@@ -58,24 +59,115 @@ keyHash pass key = decodeLatin1 $ B16.encode $ MD5.hash $ B.append key pass
 {- to solve problem http://stackoverflow.com/questions/35687685/haskell-convert-unicode-sequence-to-utf-8
  no lib find -}
 ununicode :: BL.ByteString -> BL.ByteString               
-ununicode s = BL.pack $ repl $ BL.unpack s where 
-  -- replace :: L.Text -> L.Text
-  -- replace "" = ""
-  -- replace string = case Map.lookup (L.take 6 string) table of
-  --         (Just x)  -> L.append x (replace $ L.drop 6 string)
-  --         Nothing   -> L.cons (L.head string) (replace $ L.tail string)
+ununicode s = LE.encodeUtf8 $  parts $ LE.decodeUtf8 s where 
+
+  replace :: L.Text -> L.Text
+  replace "" = ""
+  replace string = case Map.lookup (L.take 6 string) table of
+          (Just x)  -> L.append x (replace $ L.drop 6 string)
+          Nothing   -> L.cons (L.head string) (replace $ L.tail string)
+
+  -- rr :: [L.Text] -> L.Text
+  -- rr x = foldl go L.empty x where
+  --   go :: L.Text -> L.Text -> L.Text
+  --   go p n = L.append p (repl n) --(repl n)
+    -- lst :: L.Text -> [L.Text]
+    -- lst x = foldr (\p n -> if (pred L.head) then span pred n else n) [] (f x)
+
+  parts :: L.Text -> L.Text
+  parts = fst . parts' where
+      lst (_, _, x) = x
+      snd (_, x, _) = x
+      fst (x, _, _) = x
+      parts' :: L.Text -> (L.Text, Integer, L.Text)
+      parts' = L.foldl f ("", 0, "") where
+          f :: (L.Text, Integer, L.Text) -> Char -> (L.Text, Integer, L.Text)
+          f p n | snd p == 0 = case n of
+                    ('\\') -> (fst p, 2, lst p)
+                    (x)    -> (L.singleton n, 1, lst p)
+                | snd p == 1 = case n of
+                    ('\\') -> (fst p, 2, lst p)
+                    (x)    -> ((fst p) `L.snoc` n, 1, lst p)
+                | snd p == 2 = case n of
+                    -- ('\\') ->  ((fst p) `L.snoc` n, 1, lst p)
+                    ('u')  ->  (fst p, 3, lst p)
+                    x      ->  ((L.snoc (L.snoc (fst p) 
+                                                '\\')
+                                         n),
+                                1, 
+                                lst p)
+                | snd p == 3 = proc p n
+          proc :: (L.Text, Integer, L.Text) -> Char -> (L.Text, Integer, L.Text)
+          proc (text, 3, buff) n | isHexDigit n           = (text, 3, buff `L.snoc` n)
+                                 | (len > 3) && (len < 6) = (L.append text
+                                                                      (replacedChoice buff n), 
+                                                             if n == '\\' then 2 else 1,
+                                                             L.empty)
+                                 | otherwise              =  (L.append text 
+                                                                       (L.append "\\u"
+                                                                                  (choice buff n)),
+                                                                                 -- (L.snoc buff
+                                                                                 --         n)), 
+                                                             if n == '\\' then 2 else 1,
+                                                             L.empty) where
+                                  len = L.length buff
+                                  choice b n = if n == '\\' then b else L.snoc b n
+                                  replacedChoice b n = if n == '\\' 
+                                                       then repl b 
+                                                       else L.snoc (repl b) n
+
+
+
+
+
+    -- (fst p) == [] = [L.singleton n]
+    --       | 
+    --       | pattern  
+    --         (L.last $ last p) = if pattern n 
+    --                             then (init p) ++ [L.snoc (p & last) n]
+    --                             else p ++ [L.singleton n]
+    --       | otherwise         = if not $ pattern n
+    --                             then (p & init) ++ [L.snoc (p & last) n]
+    --                             else p ++ [L.singleton n] 
+    -- z = span pred x
+    -- x = (fst z):(span (not pred) z)
+
+  repl :: L.Text -> L.Text
+  repl "" = ""
+  repl s  = (\v -> case v of 
+              (Right x) -> L.pack $ show $ fst x
+              (Left x) -> error $ "impossible" ++ (show x)) (hexadecimal s)
+          -- where
+
+          -- --v = trace (show $ hexadecimal t) (show <$> fst <$> hexadecimal t)
+          --     h = L.head s
+          --     t = L.tail s 
 
   -- repl :: L.Text -> L.Text
-  repl s = RE.subRegex (RE.mkRegex "\\\\u([0-9a-f]{4,})") s (upd "\\1") where
-    upd :: String -> String
-    upd x = trace ('0':'x':x) (show $ (read ('0':'x':x) :: Int))
+  -- repl "" = ""
+  -- repl s | (L.all isHexDigit t) && (t /= "") && (pattern h) = (\v -> case v of 
+  --                                   (Right x) -> L.pack (h:(show $ fst x))
+  --                                   (Left x) -> error $ "impossible" ++ (show x) ++ (show t)) (hexadecimal t)
+  --        | otherwise = s where
+  --         --v = trace (show $ hexadecimal t) (show <$> fst <$> hexadecimal t)
+  --         h = L.head s
+  --         t = L.tail s
+          
+
+  pattern :: Char -> Bool
+  pattern c = (c == '\\') || (c == 'u') || (isHexDigit c)
+
+  -- repl :: L.Text -> L.Text
+  -- repl s = RE.subRegex (RE.mkRegex "\\\\u([0-9a-f]{4,})") s ("\\ \\1") where
+  --   upd :: String -> String
+  --   upd x = trace ('0':'x':x) (show $ (read ('0':'x':x) :: Int))
 
 
-    hexChar ch = fromMaybe (error $ "illegal char " ++ [ch]) $ 
-        elemIndex ch "0123456789abcdef"
+  --   hexChar ch = fromMaybe (error $ "illegal char " ++ [ch]) $ 
+  --       elemIndex ch "0123456789abcdef"
 
-    parseHex hex = foldl' f 0 hex where
-        f n c = 16*n + hexChar c
+  --   parseHex hex = foldl' f 0 hex where
+  --       f n c = 16*n + hexChar c
 
   table = Map.fromList $ zip letters rus
 
