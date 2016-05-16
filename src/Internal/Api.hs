@@ -61,11 +61,11 @@ keyHash pass key = decodeLatin1 $ B16.encode $ MD5.hash $ B.append key pass
 ununicode :: BL.ByteString -> BL.ByteString               
 ununicode s = LE.encodeUtf8 $  parts $ LE.decodeUtf8 s where 
 
-  replace :: L.Text -> L.Text
-  replace "" = ""
-  replace string = case Map.lookup (L.take 6 string) table of
-          (Just x)  -> L.append x (replace $ L.drop 6 string)
-          Nothing   -> L.cons (L.head string) (replace $ L.tail string)
+  -- replace :: L.Text -> L.Text
+  -- replace "" = ""
+  -- replace string = case Map.lookup (L.take 6 string) table of
+  --         (Just x)  -> L.append x (replace $ L.drop 6 string)
+  --         Nothing   -> L.cons (L.head string) (replace $ L.tail string)
 
   -- rr :: [L.Text] -> L.Text
   -- rr x = foldl go L.empty x where
@@ -89,7 +89,6 @@ ununicode s = LE.encodeUtf8 $  parts $ LE.decodeUtf8 s where
                     ('\\') -> (fst p, 2, lst p)
                     (x)    -> ((fst p) `L.snoc` n, 1, lst p)
                 | snd p == 2 = case n of
-                    -- ('\\') ->  ((fst p) `L.snoc` n, 1, lst p)
                     ('u')  ->  (fst p, 3, lst p)
                     x      ->  ((L.snoc (L.snoc (fst p) 
                                                 '\\')
@@ -106,8 +105,6 @@ ununicode s = LE.encodeUtf8 $  parts $ LE.decodeUtf8 s where
                                  | otherwise              =  (L.append text 
                                                                        (L.append "\\u"
                                                                                   (choice buff n)),
-                                                                                 -- (L.snoc buff
-                                                                                 --         n)), 
                                                              if n == '\\' then 2 else 1,
                                                              L.empty) where
                                   len = L.length buff
@@ -115,6 +112,12 @@ ununicode s = LE.encodeUtf8 $  parts $ LE.decodeUtf8 s where
                                   replacedChoice b n = if n == '\\' 
                                                        then repl b 
                                                        else L.snoc (repl b) n
+
+  repl :: L.Text -> L.Text
+  repl "" = ""
+  repl s  = (\v -> case v of 
+      (Right x) -> L.singleton $ (\t -> toEnum t :: Char) $ fst x
+      (Left x) -> error $ "impossible" ++ (show x)) (hexadecimal s) 
 
 
 
@@ -132,11 +135,7 @@ ununicode s = LE.encodeUtf8 $  parts $ LE.decodeUtf8 s where
     -- z = span pred x
     -- x = (fst z):(span (not pred) z)
 
-  repl :: L.Text -> L.Text
-  repl "" = ""
-  repl s  = (\v -> case v of 
-              (Right x) -> L.pack $ show $ fst x
-              (Left x) -> error $ "impossible" ++ (show x)) (hexadecimal s)
+
           -- where
 
           -- --v = trace (show $ hexadecimal t) (show <$> fst <$> hexadecimal t)
@@ -154,8 +153,8 @@ ununicode s = LE.encodeUtf8 $  parts $ LE.decodeUtf8 s where
   --         t = L.tail s
           
 
-  pattern :: Char -> Bool
-  pattern c = (c == '\\') || (c == 'u') || (isHexDigit c)
+  -- pattern :: Char -> Bool
+  -- pattern c = (c == '\\') || (c == 'u') || (isHexDigit c)
 
   -- repl :: L.Text -> L.Text
   -- repl s = RE.subRegex (RE.mkRegex "\\\\u([0-9a-f]{4,})") s ("\\ \\1") where
@@ -169,26 +168,26 @@ ununicode s = LE.encodeUtf8 $  parts $ LE.decodeUtf8 s where
   --   parseHex hex = foldl' f 0 hex where
   --       f n c = 16*n + hexChar c
 
-  table = Map.fromList $ zip letters rus
+  -- table = Map.fromList $ zip letters rus
 
-  rus =  ["Ё", "ё", "А", "Б", "В", "Г", "Д", "Е", "Ж", "З", "И", "Й", "К", "Л", "М",
-         "Н", "О", "П", "Р", "С", "Т", "У", "Ф", "Х", "Ц", "Ч", "Ш", "Щ", "Ъ", "Ы",
-         "Ь", "Э", "Ю", "Я", "а", "б", "в", "г", "д", "е", "ж", "з", "и", "й", "к",
-         "л", "м", "н", "о", "п", "р", "с", "т", "у", "ф", "х", "ц", "ч", "ш", "щ",
-         "ъ", "ы", "ь", "э", "ю", "я", "—"]  :: [L.Text]
+  -- rus =  ["Ё", "ё", "А", "Б", "В", "Г", "Д", "Е", "Ж", "З", "И", "Й", "К", "Л", "М",
+  --        "Н", "О", "П", "Р", "С", "Т", "У", "Ф", "Х", "Ц", "Ч", "Ш", "Щ", "Ъ", "Ы",
+  --        "Ь", "Э", "Ю", "Я", "а", "б", "в", "г", "д", "е", "ж", "з", "и", "й", "к",
+  --        "л", "м", "н", "о", "п", "р", "с", "т", "у", "ф", "х", "ц", "ч", "ш", "щ",
+  --        "ъ", "ы", "ь", "э", "ю", "я", "—"]  :: [L.Text]
  
-  letters = ["\\u0401", "\\u0451", "\\u0410", "\\u0411", "\\u0412", "\\u0413", 
-             "\\u0414", "\\u0415", "\\u0416", "\\u0417", "\\u0418", "\\u0419",
-             "\\u041a", "\\u041b", "\\u041c", "\\u041d", "\\u041e", "\\u041f",
-             "\\u0420", "\\u0421", "\\u0422", "\\u0423", "\\u0424", "\\u0425",
-             "\\u0426", "\\u0427", "\\u0428", "\\u0429", "\\u042a", "\\u042b",
-             "\\u042c", "\\u042d", "\\u042e", "\\u042f", "\\u0430", "\\u0431",
-             "\\u0432", "\\u0433", "\\u0434", "\\u0435", "\\u0436", "\\u0437",
-             "\\u0438", "\\u0439", "\\u043a", "\\u043b", "\\u043c", "\\u043d",
-             "\\u043e", "\\u043f", "\\u0440", "\\u0441", "\\u0442", "\\u0443",
-             "\\u0444", "\\u0445", "\\u0446", "\\u0447", "\\u0448", "\\u0449",
-             "\\u044a", "\\u044b", "\\u044c", "\\u044d", "\\u044e", "\\u044f",
-             "\\u2014"] :: [L.Text]
+  -- letters = ["\\u0401", "\\u0451", "\\u0410", "\\u0411", "\\u0412", "\\u0413", 
+  --            "\\u0414", "\\u0415", "\\u0416", "\\u0417", "\\u0418", "\\u0419",
+  --            "\\u041a", "\\u041b", "\\u041c", "\\u041d", "\\u041e", "\\u041f",
+  --            "\\u0420", "\\u0421", "\\u0422", "\\u0423", "\\u0424", "\\u0425",
+  --            "\\u0426", "\\u0427", "\\u0428", "\\u0429", "\\u042a", "\\u042b",
+  --            "\\u042c", "\\u042d", "\\u042e", "\\u042f", "\\u0430", "\\u0431",
+  --            "\\u0432", "\\u0433", "\\u0434", "\\u0435", "\\u0436", "\\u0437",
+  --            "\\u0438", "\\u0439", "\\u043a", "\\u043b", "\\u043c", "\\u043d",
+  --            "\\u043e", "\\u043f", "\\u0440", "\\u0441", "\\u0442", "\\u0443",
+  --            "\\u0444", "\\u0445", "\\u0446", "\\u0447", "\\u0448", "\\u0449",
+  --            "\\u044a", "\\u044b", "\\u044c", "\\u044d", "\\u044e", "\\u044f",
+  --            "\\u2014"] :: [L.Text]
 
 {- 
 don't want dinamically linked icu, encoding lib doesn't compile 
