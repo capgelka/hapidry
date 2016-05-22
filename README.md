@@ -9,7 +9,8 @@ Currently it supports 4 actions.
 	* hapidry post -f '~/prepared_post.txt' -t subject
 	* cat prepared_post.md | markdown | hapidry post -p -t subject
 	* hapidry post -t subject (write post in your favorite $EDITOR)
-    * hapidry post -m "onlly for whitelist" -w
+    * hapidry post -m "only for whitelist" -w
+    * hapidry post -m "save to draft" -d
 * Send new U-mail (private message) to user
     * hapidry send someone -f '~/prepared_umail.txt' -t subject
 	* hapidry send someone -m message -t subject
