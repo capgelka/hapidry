@@ -18,7 +18,7 @@ import Data.Text.Lazy.Read (hexadecimal)
 import qualified Data.Text.Lazy.Encoding as LE (decodeUtf8, encodeUtf8)
 import qualified Crypto.Hash.MD5 as MD5
 import qualified Data.ByteString.Char8 as B
-import qualified Data.ByteString.Lazy.Char8 as BL (ByteString, pack, unpack)
+import qualified Data.ByteString.Lazy.Char8 as BL -- (ByteString, pack, unpack)
 import qualified Data.ByteString.Base16 as B16 (encode)
 import qualified Data.Text.Lazy as L (append, cons, tail, head, unpack, foldl, length,  
                                       take, drop, pack, all, Text, snoc, last, singleton, empty)
@@ -59,7 +59,7 @@ keyHash pass key = decodeLatin1 $ B16.encode $ MD5.hash $ B.append key pass
 {- to solve problem http://stackoverflow.com/questions/35687685/haskell-convert-unicode-sequence-to-utf-8
  no lib find -}
 ununicode :: BL.ByteString -> BL.ByteString               
-ununicode s = LE.encodeUtf8 $  parts $ LE.decodeUtf8 s where 
+ununicode s = parts s where 
 
   -- replace :: L.Text -> L.Text
   -- replace "" = ""
@@ -74,50 +74,52 @@ ununicode s = LE.encodeUtf8 $  parts $ LE.decodeUtf8 s where
     -- lst :: L.Text -> [L.Text]
     -- lst x = foldr (\p n -> if (pred L.head) then span pred n else n) [] (f x)
 
-  parts :: L.Text -> L.Text
+  parts :: BL.ByteString -> BL.ByteString
   parts = fst . parts' where
       lst (_, _, x) = x
       snd (_, x, _) = x
       fst (x, _, _) = x
-      parts' :: L.Text -> (L.Text, Integer, L.Text)
-      parts' = L.foldl f ("", 0, "") where
-          f :: (L.Text, Integer, L.Text) -> Char -> (L.Text, Integer, L.Text)
+      parts' :: BL.ByteString -> (BL.ByteString, Integer, BL.ByteString)
+      parts' = BL.foldl f ("", 0, "") where
+          f :: (BL.ByteString, Integer, BL.ByteString) -> Char -> (BL.ByteString, Integer, BL.ByteString)
           f p n | snd p == 0 = case n of
                     ('\\') -> (fst p, 2, lst p)
-                    (x)    -> (L.singleton n, 1, lst p)
+                    (x)    -> (BL.singleton n, 1, lst p)
                 | snd p == 1 = case n of
                     ('\\') -> (fst p, 2, lst p)
-                    (x)    -> ((fst p) `L.snoc` n, 1, lst p)
+                    (x)    -> ((fst p) `BL.snoc` n, 1, lst p)
                 | snd p == 2 = case n of
                     ('u')  ->  (fst p, 3, lst p)
-                    x      ->  ((L.snoc (L.snoc (fst p) 
+                    x      ->  ((BL.snoc (BL.snoc (fst p) 
                                                 '\\')
                                          n),
                                 1, 
                                 lst p)
                 | snd p == 3 = proc p n
-          proc :: (L.Text, Integer, L.Text) -> Char -> (L.Text, Integer, L.Text)
-          proc (text, 3, buff) n | isHexDigit n           = (text, 3, buff `L.snoc` n)
-                                 | (len > 3) && (len < 6) = (L.append text
+          proc :: (BL.ByteString, Integer, BL.ByteString) -> Char -> (BL.ByteString, Integer, BL.ByteString)
+          proc (text, 3, buff) n | isHexDigit n           = (text, 3, buff `BL.snoc` n)
+                                 | (len > 3) && (len < 6) = (BL.append text
                                                                       (replacedChoice buff n), 
                                                              if n == '\\' then 2 else 1,
-                                                             L.empty)
-                                 | otherwise              =  (L.append text 
-                                                                       (L.append "\\u"
+                                                             BL.empty)
+                                 | otherwise              =  (BL.append text 
+                                                                       (BL.append "\\u"
                                                                                   (choice buff n)),
                                                              if n == '\\' then 2 else 1,
-                                                             L.empty) where
-                                  len = L.length buff
-                                  choice b n = if n == '\\' then b else L.snoc b n
+                                                             BL.empty) where
+                                  len = BL.length buff
+                                  choice b n = if n == '\\' then b else BL.snoc b n
                                   replacedChoice b n = if n == '\\' 
                                                        then repl b 
-                                                       else L.snoc (repl b) n
+                                                       else BL.snoc (repl b) n
 
-  repl :: L.Text -> L.Text
+  -- repl = id
+
+  repl :: BL.ByteString -> BL.ByteString
   repl "" = ""
   repl s  = (\v -> case v of 
-      (Right x) -> L.singleton $ (\t -> toEnum t :: Char) $ fst x
-      (Left x) -> error $ "impossible" ++ (show x)) (hexadecimal s) 
+      (Right x) -> LE.encodeUtf8 $ L.singleton $ (\t -> toEnum t :: Char) $ fst x
+      (Left x) -> error $ "impossible" ++ (show x)) (hexadecimal $ LE.decodeUtf8 s) 
 
 
 
