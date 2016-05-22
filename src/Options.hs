@@ -47,6 +47,7 @@ data Commands
         file :: Maybe Path, -- ^ optional field for path to file with message for post
         pipe :: Bool, -- ^ flag. read message from stdin uf set
         whitelist :: Bool, -- ^flag. close post for whitelist only if set.
+        draft :: Bool, -- ^flag. post to draft if set  
         themes :: [String] -- ^ list of tags for post
       }
     | Send
@@ -183,7 +184,11 @@ parsePost = Post
     <*> (switch
       (long "whitelist"
        <> short 'w'
-       <> help "get text from stdin"))
+       <> help "make post visible only to whitelist"))
+    <*> (switch
+      (long "draft"
+       <> short 'd'
+       <> help "save post as draft"))
     <*> (multiString $
         short 'T'
         <> long "tags"
