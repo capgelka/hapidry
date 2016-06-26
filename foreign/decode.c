@@ -1,17 +1,18 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <ctype.h>
+// #include <stdio.h>
+// #include <stdlib.h>
+// #include <string.h>
+// #include <ctype.h>
+#include "udecode.h"
 
-struct automata
-{
-    int state;
-    int index;
-    char buff[6]; // = {0};
-    short b_index;
-    char* message;
-    int* new_message;  
-};
+// struct automata
+// {
+//     int state;
+//     int index;
+//     char buff[6]; // = {0};
+//     short b_index;
+//     char* message;
+//     int* new_message;  
+// };
 
 
 int init_automata(struct automata* fap, char* message)
@@ -31,7 +32,7 @@ int next(struct automata* fap)
     switch(fap->state)
     {
         case 0:
-            if(*(fap->message)== '\\')
+            if(*(fap->message) == '\\')
             {
                 fap->state = 2;
             } else 
@@ -95,7 +96,7 @@ int next(struct automata* fap)
     return fap->index;
 }
 
-int* decode(char* message)
+char* udecode(char* message)
 {
     int i;
     struct automata fa;
@@ -104,25 +105,50 @@ int* decode(char* message)
     {
         next(&fa);
     }
-    return fa.new_message;
+    char* decoded =  (char*) malloc(sizeof(char) * strlen(message));
+    char* tmptr;
+    int j = 0;
+    // printf("%d %d\n", i, fa.index );
+    for (i=0; i < fa.index; i++)
+    {
+        // printf("%d %d\n", i, fa.index );
+        if (fa.new_message[i] < 256)
+        {
+            decoded[j++] = (char)fa.new_message[i];
+            // printf("%s %s\n", );
+        }
+        else 
+        {
+            tmptr = (char*)(fa.new_message + i);
+            // printf("%d % d %d %d \n", tmptr[0], tmptr[1], tmptr[2], tmptr[3]);
+            decoded[j++] = tmptr[1];
+            decoded[j++] = tmptr[0];
+        }
+    }
+    decoded[j++] = '\0';
+    free(fa.new_message);
+    return decoded;
 }
+
+
 
 int main(int argc, char const *argv[])
 {
     char* example = "error:\\u041d\\u0435\\u0432\\u0435\\u0440\\u043d\\u044b\\u0439\\u100cc";
-    int* res = decode(example);
-    int i;
-    for (i=0; i < 10; i++)
-    {
-        if (res[i] < 256)
-        {
-            printf("%c",(char)res[i]);
-        }
-        else
-        {
-            printf("%d\n", res[i]);
-        }
-    }
+    char* res = udecode(example);
+    // int i;
+    printf("%s\n", res);
+    // for (i=0; i < 15; i++)
+    // {
+    //     if (res[i] < 256)
+    //     {
+    //         printf("%c -- %d\n",(char)res[i], i);
+    //     }
+    //     else
+    //     {
+    //         printf("%d -- %d\n", res[i], i);
+    //     }
+    // }
 
 
     return 0;

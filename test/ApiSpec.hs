@@ -35,6 +35,10 @@ goodClient = ClientCredentials {
                 secret  = "8543db8deccb4b0fcb753291c53f8f4f"
               }
 
+m :: BL.ByteString
+m = "{\"result\":\"12\",\"error\":\"\\u041d\\u0435\\u0432\\u0435\\u0440\\u043d\\u044b\\u0439 \\u0438\\u0434\\u0435\\u043d\\u0442\\u0438\\u0444\\u0438\\u043a\\u0430\\u0442\\u043e\\u0440 \\u0441\"}"
+
+
 spec :: Spec
 spec = do
   describe "keyHash" $ do
@@ -48,6 +52,10 @@ spec = do
         "just ascii: 1-9*&\\//\0 \\urrwe\\ufeg eee"
     it "converts url encoded string" $ do
         (ununicode "error:\\u041d\\u0435\\u0432\\u0435\\u0440\\u043d\\u044b\\u0439\\u100cc")
+         `shouldBe`
+         ("error:\208\157\208\181\208\178\208\181\209\128\208\189\209\139\208\185")
+    it "converts url encoded string" $ do
+        (ununicode m)
          `shouldBe`
          ("error:\208\157\208\181\208\178\208\181\209\128\208\189\209\139\208\185")
 

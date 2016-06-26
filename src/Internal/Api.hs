@@ -1,4 +1,5 @@
 {-# LANGUAGE  OverloadedStrings #-}
+{-# LANGUAGE ForeignFunctionInterface #-}
 
 module Internal.Api
     ( ClientCredentials(..)
@@ -31,6 +32,11 @@ import qualified Network.Wreq.Types as NWTP (FormValue, renderFormValue)
 import Network.Wreq
 import qualified Text.Regex as RE
 
+import qualified Data.Attoparsec.ByteString.Lazy as P
+import qualified Data.Aeson.Parser as P
+import Data.Aeson
+import Control.Monad (mzero)
+
 import Numeric --(showHex, showInt)
 import Data.Char (intToDigit, isHexDigit)
 
@@ -38,6 +44,16 @@ import Data.List
 -- import Data.Maybe (fromRight)
 
 import Debug.Trace (trace)
+
+import Foreign.C
+import Foreign.C.String
+import Foreign.Ptr
+import Foreign.C.Types
+
+import Data.ByteString.Unsafe (unsafePackCString, unsafeUseAsCString)
+import System.IO.Unsafe (unsafePerformIO)
+
+foreign import ccall "udecode" udecode :: CString -> IO (CString)
 
 newtype DiaryText = DiaryText Text
 instance NWTP.FormValue DiaryText where
@@ -58,8 +74,28 @@ keyHash pass key = decodeLatin1 $ B16.encode $ MD5.hash $ B.append key pass
    
 {- to solve problem http://stackoverflow.com/questions/35687685/haskell-convert-unicode-sequence-to-utf-8
  no lib find -}
-ununicode :: BL.ByteString -> BL.ByteString               
-ununicode s = parts s where 
+
+newtype MyBs = MyBs { unMyBs :: Text}  deriving (Eq, Show)
+
+
+chu :: BL.ByteString -> BL.ByteString
+chu t = case P.eitherResult $ (P.parse P.jstring t) of
+  (Right x) -> BL.fromStrict $ encodeUtf8 x
+  (Left x)  -> BL.pack x
+-- instance FromJSON MyBs where
+--   parseJSON = (\v -> P.jstring)
+--   -- parseJSON (Object v) = \v -> P.jstring
+--   -- parseJSON _ = mzero
+
+ununicode :: BL.ByteString -> IO (BL.ByteString)
+-- ununicode s = case (P.maybeResult $ (\x -> P.parse s $ P.jstring $ LE.decodeUtf8 x)) of
+--   (Just x) -> x
+--   (_)      -> "" 
+ununicode x = do
+  cs <- unsafeUseAsCString (BL.toStrict x) udecode
+  LE.encodeUtf8 <$> L.pack  <$> peekCAString <$> cs where
+   --LE.encodeUtf8 $ unsafePerformIO $ unsafePackCString $ decode x where
+-- ununicode s = chu s where 
 
   -- replace :: L.Text -> L.Text
   -- replace "" = ""

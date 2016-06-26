@@ -31,6 +31,8 @@ library
                      , regex-compat-tdfa
                      , utf8-string
                      , hex
+                     , attoparsec
+                     --, inline-c
                    --  , editor-open
                      , unordered-containers
                      , split
