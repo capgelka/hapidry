@@ -47,17 +47,16 @@ spec = do
 
   describe "ununicode" $ do
     it "doesn't change ascii text without unicode sequence" $ do
-       (ununicode "just ascii: 1-9*&\\//\0 \\urrwe\\ufeg eee") >>=
-        `shouldBe`
-        "just ascii: 1-9*&\\//\0 \\urrwe\\ufeg eee"
+       (ununicode "just ascii: 1-9*&\\//\\0 \\urrwe\\ufeg eee") 
+       >>= (\x -> x `shouldBe` "just ascii: 1-9*&\\//\\0 \\urrwe\\ufeg eee")
     it "converts url encoded string" $ do
         (ununicode "error:\\u041d\\u0435\\u0432\\u0435\\u0440\\u043d\\u044b\\u0439\\u100cc")
-         `shouldBe`
-         ("error:\208\157\208\181\208\178\208\181\209\128\208\189\209\139\208\185")
-    it "converts url encoded string" $ do
-        (ununicode m)
-         `shouldBe`
-         ("error:\208\157\208\181\208\178\208\181\209\128\208\189\209\139\208\185")
+        >>= (\x ->  x `shouldBe` 
+                      "error:\208\157\208\181\208\178\208\181\209\128\208\189\209\139\208\185")
+    -- it "converts url encoded string" $ do
+    --     (ununicode m)
+    --      `shouldBe`
+    --      ("error:\208\157\208\181\208\178\208\181\209\128\208\189\209\139\208\185")
 
   -- describe "toCP1251" $ do
   --   it "converts letters to cp1251 encoding" $ do
