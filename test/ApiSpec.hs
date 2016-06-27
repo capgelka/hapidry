@@ -47,7 +47,7 @@ spec = do
 
   describe "ununicode" $ do
     it "doesn't change ascii text without unicode sequence" $ do
-       (ununicode "just ascii: 1-9*&\\//\0 \\urrwe\\ufeg eee")
+       (ununicode "just ascii: 1-9*&\\//\0 \\urrwe\\ufeg eee") >>=
         `shouldBe`
         "just ascii: 1-9*&\\//\0 \\urrwe\\ufeg eee"
     it "converts url encoded string" $ do

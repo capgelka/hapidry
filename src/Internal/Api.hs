@@ -93,7 +93,10 @@ ununicode :: BL.ByteString -> IO (BL.ByteString)
 --   (_)      -> "" 
 ununicode x = do
   cs <- unsafeUseAsCString (BL.toStrict x) udecode
-  LE.encodeUtf8 <$> L.pack  <$> peekCAString <$> cs where
+  n  <- peekCAString cs
+
+  LE.encodeUtf8 <$> L.pack <$> peekCAString cs where
+  --LE.encodeUtf8 <$> L.pack  <$> peekCAString <$> x where
    --LE.encodeUtf8 $ unsafePerformIO $ unsafePackCString $ decode x where
 -- ununicode s = chu s where 
 
@@ -276,7 +279,7 @@ apiPost e params = case e & sid of
         apiPost' params = do
             r <- post "http://www.diary.ru/api" $ toForm params
             case r ^? responseBody . key "result" . _String of
-               (Just "0")  -> return $ Right $ ununicode $ r ^. responseBody
+               (Just "0")  -> sequence $ Right <$> ununicode $ r ^. responseBody
                (Just "12") -> authRequest e >>= (`apiPost` params)
                (Just x)  -> return $ Left
                                    $ (\y -> case y of

@@ -37,6 +37,8 @@ library
                      , unordered-containers
                      , split
   default-language:    Haskell2010
+  c-sources: foreign/udecode.c
+  include-dirs: foreign
 
 executable hapidry
   hs-source-dirs:      app
