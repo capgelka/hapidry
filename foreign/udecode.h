@@ -9,7 +9,7 @@ struct automata
 {
     int state;
     int index;
-    char buff[6]; // = {0};
+    char buff[6];
     short b_index;
     char* message;
     uint16_t* new_message;  
