@@ -13,6 +13,9 @@ import Network.Wreq.Types (FormValue, renderFormValue)
 import Control.Lens ((&), (^.), (^?))
 import Data.Either (isRight)
 
+
+import qualified Data.ByteString.Lazy.Char8 as BL -- (ByteString, pack, unpack)
+
 -- main :: IO ()
 -- main = hspec spec
 instance Eq FormParam where
@@ -53,6 +56,13 @@ spec = do
         (ununicode "error:\\u041d\\u0435\\u0432\\u0435\\u0440\\u043d\\u044b\\u0439\\u100cc")
         >>= (\x ->  x `shouldBe` 
                       "error:\208\157\208\181\208\178\208\181\209\128\208\189\209\139\208\185")
+    it "converts url encoded string" $ do
+        (ununicode $ 
+           BL.pack $ 
+           concat $ 
+           replicate 2 ("error:\\u041d\\u0435\\u0432\\u0435\\u0440\\u043d\\u044b\\u0439\\u100cc" :: String))
+         >>= (\x -> x `shouldBe`
+                      ("error:\208\157\208\181\208\178\208\181\209\128\208\189\209\139\208\185"))
     -- it "converts url encoded string" $ do
     --     (ununicode m)
     --      `shouldBe`

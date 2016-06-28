@@ -21,7 +21,7 @@ import qualified Crypto.Hash.MD5 as MD5
 import qualified Data.ByteString.Char8 as B
 import qualified Data.ByteString.Lazy.Char8 as BL -- (ByteString, pack, unpack)
 import qualified Data.ByteString.Base16 as B16 (encode)
-import qualified Data.Text.Lazy as L (append, cons, tail, head, unpack, foldl, length,  
+import qualified Data.Text.Lazy as L (append, cons, tail, head, unpack, foldl, length, fromStrict,
                                       take, drop, pack, all, Text, snoc, last, singleton, empty)
 import qualified Data.Text as T (unpack, map, concatMap, pack, snoc, filter, all)
 import Data.Text (Text)
@@ -49,11 +49,15 @@ import Foreign.C
 import Foreign.C.String
 import Foreign.Ptr
 import Foreign.C.Types
+import Data.Text.Foreign
+import Foreign.Storable
+import Data.Word (Word16)
+import Foreign.Marshal.Array
 
 import Data.ByteString.Unsafe (unsafePackCString, unsafeUseAsCString)
 import System.IO.Unsafe (unsafePerformIO)
 
-foreign import ccall "udecode" udecode :: CString -> IO (CString)
+foreign import ccall "udecode" udecode :: CString -> IO (Ptr Word16)
 
 newtype DiaryText = DiaryText Text
 instance NWTP.FormValue DiaryText where
@@ -93,10 +97,12 @@ ununicode :: BL.ByteString -> IO (BL.ByteString)
 --   (_)      -> "" 
 ununicode x = do
   cs <- unsafeUseAsCString (BL.toStrict x) udecode
-  n  <- peekCAString cs
-
-  LE.encodeUtf8 <$> L.pack <$> peekCAString cs where
-  --LE.encodeUtf8 <$> L.pack  <$> peekCAString <$> x where
+  size <- fromIntegral <$> lengthArray0 0 cs
+  -- n  <- peekCAString cs
+  -- trace (peekCAString cs) (peekCAString cs)
+  -- BL.pack <$> show <$> BL.pack <$> peekCAString cs where
+  -- LE.encodeUtf8 <$> L.pack  <$> peekCAString cs where
+  LE.encodeUtf8 <$> L.fromStrict <$> fromPtr cs size where
    --LE.encodeUtf8 $ unsafePerformIO $ unsafePackCString $ decode x where
 -- ununicode s = chu s where 
 
