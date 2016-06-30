@@ -1,4 +1,4 @@
-{-# LANGUAGE  OverloadedStrings #-}
+{-# LANGUAGE  OverloadedStrings, DuplicateRecordFields #-}
 
 module JsonSpec (spec) where
 
@@ -78,8 +78,6 @@ messageList = "{\"umail\": {\"12\": {\"dateline\": \"100\", \"umailid\": \"12\",
 \ \"title\": \"test\", \"from_username\": \"someone\" }}}"
 
 
-m :: BL.ByteString
-m = "{\"result\":\"12\",\"error\":\"\\u041d\\u0435\\u0432\\u0435\\u0440\\u043d\\u044b\\u0439 \\u0438\\u0434\\u0435\\u043d\\u0442\\u0438\\u0444\\u0438\\u043a\\u0430\\u0442\\u043e\\u0440 \\u0441\"}"
 
 spec :: Spec
 spec = do

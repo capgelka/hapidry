@@ -1,5 +1,5 @@
-#include <stdio.h>
 #include <stdlib.h>
+#include <strings.h>
 #include <string.h>
 #include <ctype.h>
 #include <stdint.h>
@@ -7,10 +7,10 @@
 
 struct automata
 {
-    int state;
+    uint8_t state;
     int index;
     char buff[6];
-    short b_index;
+    uint8_t b_index;
     char* message;
     uint16_t* new_message;  
 };
