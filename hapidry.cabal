@@ -29,10 +29,9 @@ library
                      , aeson
                      , optparse-applicative
                      , configurator
-                     , utf8-string
                      , hex
                      , attoparsec
-                   --  , editor-open
+                     , editor-open
                      , unordered-containers
                      , split
   default-language:    Haskell2010
@@ -51,7 +50,6 @@ executable hapidry
                      , configurator
                      , aeson
                      , text
-                     , utf8-string
                      --delete later
   default-language:    Haskell2010
 
