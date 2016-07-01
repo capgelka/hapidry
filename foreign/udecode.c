@@ -5,7 +5,7 @@
 #define ON_UNICODE 2
 #define BUFFSIZE 6
 
-int init_automata(struct automata* fap, char* message)
+inline int init_automata(struct automata* fap, char* message)
 {
     fap->state = DEFAULT;
     fap->index = 0;
@@ -13,11 +13,12 @@ int init_automata(struct automata* fap, char* message)
     fap->b_index = 0;
     fap->message = message;
     fap->new_message = (uint16_t*) malloc(sizeof(uint16_t) * strlen(message));
-    bzero(fap->new_message, strlen(message));
+    fap->m_length = strlen(message);
+    bzero(fap->new_message, fap->m_length);
     return 0;
 }
 
-int next(struct automata* fap)
+inline int next(struct automata* fap)
 {
     switch(fap->state)
     {
@@ -47,23 +48,23 @@ int next(struct automata* fap)
             {
                 fap->buff[fap->b_index++] = *(fap->message);
             }
-            else if (fap->b_index > 3 && fap->b_index < 6)
+            else if (fap->b_index > 3 && fap->b_index < BUFFSIZE)
             {   
-                short replaced = *(fap->message) == '\\';
-                fap->state = replaced ? ON_SLASH : DEFAULT;
-                if (replaced)
+                if (*(fap->message) == '\\')
                 {
                     fap->buff[fap->b_index++] = '\0';    
                     fap->new_message[fap->index++] =(int) strtol(fap->buff, NULL, 16);
                     bzero(fap->buff, BUFFSIZE);
                     fap->b_index = 0;
+                    fap->state = ON_SLASH;
                 } else
                 {
                     fap->buff[fap->b_index++] = '\0';    
                     fap->new_message[fap->index++] =(int) strtol(fap->buff, NULL, 16);
-                    bzero(fap->buff, 8);
+                    bzero(fap->buff, BUFFSIZE);
                     fap->b_index = 0;
                     fap->new_message[fap->index++] = *(fap->message);
+                    fap->state = DEFAULT;
                 }
             }
             else
@@ -98,7 +99,7 @@ uint16_t* udecode(char* message)
 {
     struct automata fa;
     init_automata(&fa, message);
-    for(int i=0; i<strlen(message); i++)
+    for(int i=0; i<fa.m_length; i++)
     {
         next(&fa);
     }

@@ -60,9 +60,9 @@ spec = do
     --     (ununicode $ 
     --        BL.pack $ 
     --        concat $ 
-    --        replicate 1000 ("error:\\u041d\\u0435\\u0432\\u0435\\u0440\\u043d\\u044b\\u0439\\u100cc" :: String))
-    --      >>= (\x -> x `shouldBe`
-    --                   ("error:\208\157\208\181\208\178\208\181\209\128\208\189\209\139\208\185"))
+    --        replicate 5000000 ("error:\\u041d\\u0435\\u0432\\u0435\\u0440\\u043d\\u044b\\u0439\\u100cc" :: String))
+    --      >>= (\x -> (BL.last x) `shouldBe`
+    --                   ('e'))
     -- it "converts url encoded string" $ do
     --     (ununicode m)
     --      `shouldBe`

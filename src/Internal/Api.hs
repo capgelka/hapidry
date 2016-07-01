@@ -69,8 +69,6 @@ keyHash pass key = decodeLatin1 $ B16.encode $ MD5.hash $ B.append key pass
 
 newtype MyBs = MyBs { unMyBs :: Text}  deriving (Eq, Show)
 
-
-
 ununicode :: BL.ByteString -> IO (BL.ByteString)
 ununicode x = do
   cs <- unsafeUseAsCString (BL.toStrict x) udecode
