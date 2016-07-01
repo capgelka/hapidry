@@ -13,6 +13,9 @@ import Network.Wreq.Types (FormValue, renderFormValue)
 import Control.Lens ((&), (^.), (^?))
 import Data.Either (isRight)
 
+
+import qualified Data.ByteString.Lazy.Char8 as BL -- (ByteString, pack, unpack)
+
 -- main :: IO ()
 -- main = hspec spec
 instance Eq FormParam where
@@ -35,6 +38,10 @@ goodClient = ClientCredentials {
                 secret  = "8543db8deccb4b0fcb753291c53f8f4f"
               }
 
+m :: BL.ByteString
+m = "{\"result\":\"12\",\"error\":\"\\u041d\\u0435\\u0432\\u0435\\u0440\\u043d\\u044b\\u0439 \\u0438\\u0434\\u0435\\u043d\\u0442\\u0438\\u0444\\u0438\\u043a\\u0430\\u0442\\u043e\\u0440 \\u0441\"}"
+
+
 spec :: Spec
 spec = do
   describe "keyHash" $ do
@@ -43,13 +50,23 @@ spec = do
 
   describe "ununicode" $ do
     it "doesn't change ascii text without unicode sequence" $ do
-       (ununicode "just ascii: 1-9*&\\//\0 \\urrwe\\ufeg eee")
-        `shouldBe`
-        "just ascii: 1-9*&\\//\0 \\urrwe\\ufeg eee"
+       (ununicode "just ascii: 1-9*&\\//\\0 \\urrwe\\ufeg eee") 
+       >>= (\x -> x `shouldBe` "just ascii: 1-9*&\\//\\0 \\urrwe\\ufeg eee")
     it "converts url encoded string" $ do
-        (ununicode "error:\\u041d\\u0435\\u0432\\u0435\\u0440\\u043d\\u044b\\u0439")
-         `shouldBe`
-         ("error:\208\157\208\181\208\178\208\181\209\128\208\189\209\139\208\185")
+        (ununicode "error:\\u041d\\u0435\\u0432\\u0435\\u0440\\u043d\\u044b\\u0439\\u100cc")
+        >>= (\x ->  x `shouldBe` 
+                      "error:\208\157\208\181\208\178\208\181\209\128\208\189\209\139\208\185")
+    -- it "converts url encoded string" $ do
+    --     (ununicode $ 
+    --        BL.pack $ 
+    --        concat $ 
+    --        replicate 5000000 ("error:\\u041d\\u0435\\u0432\\u0435\\u0440\\u043d\\u044b\\u0439\\u100cc" :: String))
+    --      >>= (\x -> (BL.last x) `shouldBe`
+    --                   ('e'))
+    -- it "converts url encoded string" $ do
+    --     (ununicode m)
+    --      `shouldBe`
+    --      ("error:\208\157\208\181\208\178\208\181\209\128\208\189\209\139\208\185")
 
   describe "toCP1251" $ do
     it "converts letters to cp1251 encoding" $ do
