@@ -21,4 +21,5 @@ inline int init_automata(struct automata* fap, char* message);
 
 inline int next(struct automata* fap);
 
+
 uint16_t* udecode(char* message);

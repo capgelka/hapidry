@@ -12,8 +12,8 @@ inline int init_automata(struct automata* fap, char* message)
     bzero(fap->buff, BUFFSIZE);
     fap->b_index = 0;
     fap->message = message;
-    fap->new_message = (uint16_t*) malloc(sizeof(uint16_t) * strlen(message));
     fap->m_length = strlen(message);
+    fap->new_message = (uint16_t*) malloc(sizeof(uint16_t) * fap->m_length);
     bzero(fap->new_message, fap->m_length);
     return 0;
 }
@@ -24,6 +24,7 @@ inline int next(struct automata* fap)
     {
         case DEFAULT:
             if(*(fap->message) == '\\')
+
             {
                 fap->state = ON_SLASH;
             } else 
@@ -48,7 +49,7 @@ inline int next(struct automata* fap)
             {
                 fap->buff[fap->b_index++] = *(fap->message);
             }
-            else if (fap->b_index > 3 && fap->b_index < BUFFSIZE)
+            else if (fap->b_index > 3 && fap->b_index < BUFFSIZE) 
             {   
                 if (*(fap->message) == '\\')
                 {
@@ -99,7 +100,7 @@ uint16_t* udecode(char* message)
 {
     struct automata fa;
     init_automata(&fa, message);
-    for(int i=0; i<fa.m_length; i++)
+    for(int i=0; i<(fa.m_length +1); i++)
     {
         next(&fa);
     }

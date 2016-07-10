@@ -71,9 +71,9 @@ newtype MyBs = MyBs { unMyBs :: Text}  deriving (Eq, Show)
 
 ununicode :: BL.ByteString -> IO (BL.ByteString)
 ununicode x = do
-  cs <- unsafeUseAsCString (BL.toStrict x) udecode
+  cs <- unsafeUseAsCString (BL.toStrict (BL.snoc x '\NUL')) udecode
   size <- fromIntegral <$> lengthArray0 0 cs
-  LE.encodeUtf8 <$> L.fromStrict <$> fromPtr cs size 
+  LE.encodeUtf8 <$> L.fromStrict <$> fromPtr cs size
 
 
 {- 
