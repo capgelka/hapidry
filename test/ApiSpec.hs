@@ -55,7 +55,7 @@ spec = do
     it "converts url encoded string" $ do
         (ununicode "error:\\u041d\\u0435\\u0432\\u0435\\u0440\\u043d\\u044b\\u0439\\u100cc")
         >>= (\x ->  x `shouldBe` 
-                      "error:\208\157\208\181\208\178\208\181\209\128\208\189\209\139\208\185")
+                      "error:\208\157\208\181\208\178\208\181\209\128\208\189\209\139\208\185\195\140")
     -- it "converts url encoded string" $ do
     --     (ununicode $ 
     --        BL.pack $ 

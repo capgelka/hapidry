@@ -10,6 +10,7 @@ module Utils
   , createComment 
   , postsFromJson --delete later
   , umailsFromJson
+  , readPost
   ) where
 
 import Data.Text (Text)
@@ -19,17 +20,19 @@ import qualified Data.Text as T (pack, unpack, concat)
 import Data.Text.Encoding (encodeUtf8, decodeUtf8)
 import qualified Data.ByteString.Char8 as B
 
-import qualified Data.ByteString.Lazy.Char8 as BL (ByteString)
+import qualified Data.ByteString.Lazy.Char8 as BL --(ByteString)
 import qualified Data.Configurator as C
 import qualified Data.Configurator.Types as CT
 import Control.Lens ((&))
 import Text.Editor (runUserEditor)
-import Data.Maybe (isJust)
+import Data.Maybe (isJust, maybeToList)
 import Api
 import Data.Aeson
 import Json
 import qualified Internal.Json as IJ --(MessageList, UmailMessage)
 import Options
+
+import Debug.Trace
 
 applyOptions :: [(Text, Maybe String)] -> [(Text, Text)]
 applyOptions = map (\(x, Just y) -> (x, T.pack y)) . filter (\(_, y) -> isJust y)
@@ -139,6 +142,23 @@ createComment (Comment pid text  _ _) client = sequence <$> (: [])
                                                               
                                                                                                     
 
+-- readPost :: Commands -> ClientCredentials -> IO (Either Integer [BL.ByteString])
+readPost (Blog blognames) client = do
+  posts <- postsFromJson <$> postsGet client [] (map T.pack blognames)
+  T.putStrLn (T.pack $ show $ length posts)
+  mapM_ printBlog posts where
+    printBlog :: IJ.Post -> IO ()
+    printBlog p = do
+      T.putStrLn $ T.concat [p & IJ.title, "(", p & IJ.date, ")"]
+      T.putStrLn ""
+      T.putStrLn $ p & IJ.message
+      T.putStrLn $ T.concat $ "comments: ":(take 1 (maybeToList $ p & IJ.commentCount))
+
+      -- BL.putStrLn $ BL.concat [blog & title, "(", bl & date ")"]
+      -- BL.putStr "---------------------"
+
+
+
 getNotifications :: Commands -> ClientCredentials -> IO ()
 getNotifications opt client = do 
   notifications <- notificationsFromJson <$> notificationGet client []
@@ -164,9 +184,12 @@ notificationsFromJson (Right json) = decode json
 notificationsFromJson (Left _)     = Nothing
 
 
-postsFromJson :: Either Integer BL.ByteString -> Maybe PostList
-postsFromJson (Right json) = decode json
-postsFromJson (Left x)     = Just $ PostList []
+postsFromJson :: Either Integer [BL.ByteString] -> [IJ.Post]
+postsFromJson (Right x) = concatMap (\j -> case (decode j) of
+                                            (Just json) -> IJ.posts json
+                                            Nothing     -> [])
+                                    x
+postsFromJson (Left x)  =  []
 
 umailsFromJson :: Either Integer BL.ByteString -> Maybe IJ.MessageList
 umailsFromJson (Right json) = decode json

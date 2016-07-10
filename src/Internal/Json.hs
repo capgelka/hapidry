@@ -80,7 +80,7 @@ instance FromJSON DiscussionList where
 data Post = Post {
     postid :: Text
   , date :: Text
-  , commentCount :: Text
+  , commentCount :: Maybe Text
   , title :: Text
   , message :: Text
   , shortname :: Text
@@ -92,14 +92,14 @@ instance FromJSON Post where
 
   parseJSON (Object v) = Post <$> v .: "postid" 
                               <*> v .: "dateline_date" 
-                              <*> v .: "comments_count_data"
+                              <*> v .:? "comments_count_data"
                               <*> v .: "title"
                               <*> v .: "message_html"
                               <*> v .: "shortname"
                               <*> v .:? "journal_name"
   parseJSON _ = mzero
 
-newtype PostList = PostList [Post] deriving (Eq, Show)
+newtype PostList = PostList { posts :: [Post] } deriving (Eq, Show)
 
 instance FromJSON PostList where
   parseJSON = withObject "posts" $ \p -> do

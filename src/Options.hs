@@ -57,6 +57,10 @@ data Commands
         text :: Maybe String, -- ^ optional field to store message text 
         file :: Maybe Path, -- ^ optional field for path to file with message for u-mail
         pipe :: Bool -- ^ flag. read message from stdin uf set
+      } 
+    | Blog 
+      {
+        blognames :: [Target]  -- ^ list of blognames to read
       } deriving (Show)
 
 mainParser :: ParserInfo Args
@@ -93,11 +97,36 @@ parseCommands = subparser $
     command "post"  (parsePost  `withInfo` "create new post") <>
     command "comment" (parseComment  `withInfo` "create new comment") <>
     command "send"  (parseSend  `withInfo` "send new umail") <>
-    command "read" (parseNotify `withInfo` "-//-")
+    command "read" (parseRead `withInfo` "read blogposts")
 
 withInfo :: Parser a -> String -> ParserInfo a
 withInfo opts desc = info (helper <*> opts) $ progDesc desc
 
+parseRead :: Parser Commands
+parseRead = Blog
+    <$> many (argument str (metavar "BLOG_NAME"))
+    -- <*> switch
+    --   (long "count"
+    --    <> short 'c'
+    --    <> help "show only count")
+    -- <*> switch
+    --   (long "umail"
+    --    <> short 'U'
+    --    <> help "show umails notifiactions on")
+    -- <*> switch
+    --   (long "comment"
+    --    <> short 'C'
+    --    <> help "show comments on")
+    -- <*> switch
+    --   (long "discussion"
+    --    <> short 'D'
+    --    <> help "show discussions on")
+    -- <*> switch
+    --   (long "all"
+    --    <> short 'a'
+    --    <> help "show all")
+
+-- | Subparser for hapidry notify
 parseNotify :: Parser Commands
 parseNotify = Notify
     <$> switch

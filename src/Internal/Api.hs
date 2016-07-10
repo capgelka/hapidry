@@ -125,7 +125,7 @@ apiPost e params = case e & sid of
         apiPost' params = do
             r <- post "http://www.diary.ru/api" $ toForm params
             case r ^? responseBody . key "result" . _String of
-               (Just "0")  -> sequence $ Right <$> ununicode $ r ^. responseBody
+               (Just "0")  -> return $ Right $ r ^. responseBody
                (Just "12") -> authRequest e >>= (`apiPost` params)
                (Just x)  -> return $ Left
                                    $ (\y -> case y of

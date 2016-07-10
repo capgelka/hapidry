@@ -12,6 +12,7 @@ module Api
   , umailsSend
   , notificationGet
   , commentCreate
+  , postsGet
   ) where
 
 
@@ -47,6 +48,15 @@ userGet env params = apiPost env (("method", "user.get"):params)
 umailGet :: ClientCredentials -> [(Text, Text)] -> IO (Either Integer BL.ByteString)
 umailGet env params = apiPost env (("method", "umail.get"):params)
 
+postGet :: ClientCredentials -> [(Text, Text)] -> IO (Either Integer BL.ByteString)
+postGet env params = apiPost env (("method", "post.get"):params)
+
+postsGet :: ClientCredentials -> [(Text, Text)] -> [Name] -> IO (Either Integer [BL.ByteString])
+postsGet env p [] = sequence <$> (: []) <$> (postGet env (("type", "diary"):p))
+postsGet env p names = sequence 
+                       <$> mapM (\j -> postGet env 
+                                              (("type", "diary"):("shortname", j):p)) 
+                                names
 
 umailsSend :: ClientCredentials -> [(Text, Text)] -> [Name] -> IO (Either Integer [BL.ByteString])
 umailsSend env p [] = sequence <$> (: []) <$> (umailSend env p)
