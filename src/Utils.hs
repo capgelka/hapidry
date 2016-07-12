@@ -32,6 +32,10 @@ import Json
 import qualified Internal.Json as IJ --(MessageList, UmailMessage)
 import Options
 
+import Data.Time.Format
+import Data.Time.Clock.POSIX
+import qualified System.Locale as SL
+
 import Debug.Trace
 
 applyOptions :: [(Text, Maybe String)] -> [(Text, Text)]
@@ -149,10 +153,15 @@ readPost (Blog blognames) client = do
   mapM_ printBlog posts where
     printBlog :: IJ.Post -> IO ()
     printBlog p = do
-      T.putStrLn $ T.concat [p & IJ.title, "(", p & IJ.date, ")"]
+      T.putStrLn $ T.concat [p & IJ.title, 
+                            "(", 
+                              T.pack $ formatTime defaultTimeLocale "%c" 
+                                     $ posixSecondsToUTCTime
+                                     $ (toEnum $ p & IJ.date :: POSIXTime),
+                             ")"]
       T.putStrLn ""
       T.putStrLn $ p & IJ.message
-      T.putStrLn $ T.concat $ "comments: ":(take 1 (maybeToList $ p & IJ.commentCount))
+      T.putStrLn $ T.concat $ ["comments: ", (p & IJ.commentCount)]
 
       -- BL.putStrLn $ BL.concat [blog & title, "(", bl & date ")"]
       -- BL.putStr "---------------------"

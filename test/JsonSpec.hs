@@ -109,7 +109,7 @@ spec = do
 
     it "decodes Post" $ do 
         eitherDecode post `shouldBe` (Right $ IJ.Post "12" 
-                                                     "100"
+                                                     100
                                                      "12" 
                                                      "test" 
                                                      "TEST" 
@@ -119,14 +119,14 @@ spec = do
     it "decodes PostList" $ do 
         eitherDecode JsonSpec.posts `shouldBe` (Right $ IJ.PostList $
                                                   [IJ.Post "13" 
-                                                     "100"
+                                                     100
                                                      "12" 
                                                      "test" 
                                                      "TEST" 
                                                      "user"
                                                      (Just "user_journal"),
                                                    IJ.Post "12" 
-                                                     "100"
+                                                     100
                                                      "12" 
                                                      "test" 
                                                      "TEST" 

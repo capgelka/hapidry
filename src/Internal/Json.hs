@@ -79,8 +79,8 @@ instance FromJSON DiscussionList where
 
 data Post = Post {
     postid :: Text
-  , date :: Text
-  , commentCount :: Maybe Text
+  , date :: Int
+  , commentCount :: Text
   , title :: Text
   , message :: Text
   , shortname :: Text
@@ -92,7 +92,7 @@ instance FromJSON Post where
 
   parseJSON (Object v) = Post <$> v .: "postid" 
                               <*> v .: "dateline_date" 
-                              <*> v .:? "comments_count_data"
+                              <*> v .:? "comments_count_data" .!= "0"
                               <*> v .: "title"
                               <*> v .: "message_html"
                               <*> v .: "shortname"
