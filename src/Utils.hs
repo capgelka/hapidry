@@ -32,8 +32,8 @@ import Json
 import qualified Internal.Json as IJ --(MessageList, UmailMessage)
 import Options
 
-import Data.Time.Format
-import Data.Time.Clock.POSIX
+-- import Data.Time.Format
+-- import Data.Time.Clock.POSIX
 import qualified System.Locale as SL
 
 import Debug.Trace
@@ -155,9 +155,11 @@ readPost (Blog blognames) client = do
     printBlog p = do
       T.putStrLn $ T.concat [p & IJ.title, 
                             "(", 
-                              T.pack $ formatTime defaultTimeLocale "%c" 
-                                     $ posixSecondsToUTCTime
-                                     $ (toEnum $ p & IJ.date :: POSIXTime),
+                            p & IJ.date,
+                              -- T.pack $ formatTime defaultTimeLocale "%c" 
+                              --        $ posixSecondsToUTCTime
+                              --        $ (p & IJ.date),
+                                    -- $ (fromIntegral (p & IJ.date) :: POSIXTime),
                              ")"]
       T.putStrLn ""
       T.putStrLn $ p & IJ.message

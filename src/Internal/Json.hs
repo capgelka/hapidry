@@ -20,6 +20,10 @@ import Control.Applicative
 import Control.Monad (mzero)
 import qualified Data.HashMap.Strict as HMS
 import qualified Data.Map as M
+
+import Data.Time.Clock.POSIX
+import Data.Time.Format
+
 import Debug.Trace (trace, traceShow)
 
 type Preview = Text
@@ -79,7 +83,7 @@ instance FromJSON DiscussionList where
 
 data Post = Post {
     postid :: Text
-  , date :: Int
+  , date :: Text
   , commentCount :: Text
   , title :: Text
   , message :: Text
@@ -87,11 +91,15 @@ data Post = Post {
   , journalname :: Maybe Text 
 } deriving (Eq, Show)
 
+convertTime :: String -> Text
+convertTime timestr =  pack $ formatTime defaultTimeLocale "%c" 
+                           $ posixSecondsToUTCTime
+                           $ (fromIntegral (read timestr :: Int) :: POSIXTime)
 
 instance FromJSON Post where
 
   parseJSON (Object v) = Post <$> v .: "postid" 
-                              <*> v .: "dateline_date" 
+                              <*> (convertTime <$> v .: "dateline_date")
                               <*> v .:? "comments_count_data" .!= "0"
                               <*> v .: "title"
                               <*> v .: "message_html"
