@@ -146,24 +146,20 @@ createComment (Comment pid text  _ _) client = sequence <$> (: [])
                                                               
                                                                                                     
 
--- readPost :: Commands -> ClientCredentials -> IO (Either Integer [BL.ByteString])
+readPost :: Commands -> ClientCredentials -> IO ()
 readPost (Blog blognames) client = do
   posts <- postsFromJson <$> postsGet client [] (map T.pack blognames)
-  T.putStrLn (T.pack $ show $ length posts)
+  -- T.putStrLn (T.pack $ show $ length posts)
   mapM_ printBlog posts where
     printBlog :: IJ.Post -> IO ()
     printBlog p = do
       T.putStrLn $ T.concat [p & IJ.title, 
-                            "(", 
-                            p & IJ.date,
-                              -- T.pack $ formatTime defaultTimeLocale "%c" 
-                              --        $ posixSecondsToUTCTime
-                              --        $ (p & IJ.date),
-                                    -- $ (fromIntegral (p & IJ.date) :: POSIXTime),
+                             " (", 
+                             p & IJ.date,
                              ")"]
-      T.putStrLn ""
+      T.putStrLn "<br><br>\n\n"
       T.putStrLn $ p & IJ.message
-      T.putStrLn $ T.concat $ ["comments: ", (p & IJ.commentCount)]
+      T.putStrLn $ T.concat $ ["comments: ", (p & IJ.commentCount), "<br><br><br>\n\n\n"]
 
       -- BL.putStrLn $ BL.concat [blog & title, "(", bl & date ")"]
       -- BL.putStr "---------------------"
