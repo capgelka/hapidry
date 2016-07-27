@@ -84,6 +84,7 @@ instance FromJSON DiscussionList where
 data Post = Post {
     postid :: Text
   , date :: Text
+  , timestamp :: Int
   , commentCount :: Text
   , title :: Text
   , message :: Text
@@ -99,12 +100,14 @@ convertTime timestr =  pack $ formatTime defaultTimeLocale "%c"
 instance FromJSON Post where
 
   parseJSON (Object v) = Post <$> v .: "postid" 
-                              <*> (convertTime <$> v .: "dateline_date")
+                              <*> (convertTime <$> timestamp)
+                              <*> ((\x -> read x :: Int) <$> timestamp)
                               <*> v .:? "comments_count_data" .!= "0"
                               <*> v .: "title"
                               <*> v .: "message_html"
                               <*> v .: "shortname"
-                              <*> v .:? "journal_name"
+                              <*> v .:? "journal_name" where
+                                  timestamp = v .: "dateline_date"
   parseJSON _ = mzero
 
 newtype PostList = PostList { posts :: [Post] } deriving (Eq, Show)
@@ -115,7 +118,7 @@ instance FromJSON PostList where
       return posts where
           parseJSON' (Object v) = PostList <$> HMS.foldrWithKey go (pure []) v
               where
-                go i x r = (\(Post _ d c t m s j) rest -> Post i d c t m s j: rest) <$>
+                go i x r = (\(Post _ d ts c t m s j) rest -> Post i d ts c t m s j: rest) <$>
                                parseJSON x <*> r
           parseJSON' _ = return $ PostList []
 

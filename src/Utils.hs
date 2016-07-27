@@ -31,6 +31,8 @@ import Data.Aeson
 import Json
 import qualified Internal.Json as IJ --(MessageList, UmailMessage)
 import Options
+import Data.List (sortBy)
+import Data.Ord (comparing)
 
 -- import Data.Time.Format
 -- import Data.Time.Clock.POSIX
@@ -147,12 +149,19 @@ createComment (Comment pid text  _ _) client = sequence <$> (: [])
                                                                                                     
 
 readPost :: Commands -> ClientCredentials -> IO ()
-readPost (Blog blognames) client = do
+readPost (Blog blognames order) client = do
+  let proc = if order then id else reverse
   posts <- postsFromJson <$> postsGet client [] (map T.pack blognames)
+  let sorted = proc $ sortBy (comparing (& IJ.timestamp)) 
+                              posts
   -- T.putStrLn (T.pack $ show $ length posts)
-  mapM_ printBlog posts where
+  mapM_ printBlog sorted where
+    -- comparePost :: IJ.Post -> IJ.Post -> Ordering
+    -- comparePost x y = compare (x & IJ.timestamp)
+    --                           (y & IJ.timestamp)
     printBlog :: IJ.Post -> IO ()
     printBlog p = do
+      -- T.putStrLn
       T.putStrLn $ T.concat [p & IJ.title, 
                              " (", 
                              p & IJ.date,

@@ -60,7 +60,8 @@ data Commands
       } 
     | Blog 
       {
-        blognames :: [Target]  -- ^ list of blognames to read
+        blognames :: [Target],  -- ^ list of blognames to read
+        reversed :: Bool -- ^ reverse order of post by date if set
       } deriving (Show)
 
 mainParser :: ParserInfo Args
@@ -105,10 +106,10 @@ withInfo opts desc = info (helper <*> opts) $ progDesc desc
 parseRead :: Parser Commands
 parseRead = Blog
     <$> many (argument str (metavar "BLOG_NAME"))
-    -- <*> switch
-    --   (long "count"
-    --    <> short 'c'
-    --    <> help "show only count")
+    <*> switch
+      (long "reversed"
+       <> short 'r'
+       <> help "reverse sorting order")
     -- <*> switch
     --   (long "umail"
     --    <> short 'U'
@@ -218,10 +219,11 @@ parsePost = Post
       (long "draft"
        <> short 'd'
        <> help "save post as draft"))
-    <*> (multiString $
-        short 'T'
+    <*> (multiString
+        (short 'T'
         <> long "tags"
-        <> metavar "POST_MESSAGE_TAGS")
+        <> metavar "POST_MESSAGE_TAGS"
+        <> help "add tags to message"))
       
 
 multiString desc = concat <$> many single where 
