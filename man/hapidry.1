@@ -1,0 +1,47 @@
+.TH HAPIDRY 1
+.SH NAME
+hapidry \- command line client for diary.ru
+.SH SYNOPSIS
+.B hapidry
+<action>
+[\fIOPTIONS\fR] 
+
+.SH DESCRIPTION
+.B hapidry
+hapidry (haskell api diary) is a command line client for diary.ru api with interface in unix spirit. It supports most common actions avaible via API, and designed to make easy working with
+diary using powerfull unix utils.
+
+
+.SH OPTIONS
+.
+.TP
+.BI -c,\ --config\ config_path 
+use non defautl hapidry config.
+.TP
+.BI -u,\ --user \ diaryusername
+overrides diary user login.
+.TP
+.BI -p,\ --password\ password
+overrides password for selected user.
+
+
+.
+.SH Options for read
+.
+.TP
+.BI -r,\ --reverse 
+use reverse order for posts sorted by date.
+
+.SH AUTHOR
+.
+Written by capgelka <ldyach@yandex.ru>.
+.
+.SH COPYRIGHT
+
+.br
+This is Free Software; this software is licensed under the GPL version 2, as published by the Free Software Foundation.
+There is NO warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+.
+.SH SEE ALSO
+.
+.BR curl (1).
