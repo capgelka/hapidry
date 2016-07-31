@@ -90,6 +90,7 @@ data Post = Post {
   , message :: Text
   , shortname :: Text
   , journalname :: Maybe Text 
+  , author :: Text
 } deriving (Eq, Show)
 
 convertTime :: String -> Text
@@ -106,7 +107,8 @@ instance FromJSON Post where
                               <*> v .: "title"
                               <*> v .: "message_html"
                               <*> v .: "shortname"
-                              <*> v .:? "journal_name" where
+                              <*> v .:? "journal_name"
+                              <*> v .: "author_username" where
                                   timestamp = v .: "dateline_date"
   parseJSON _ = mzero
 
@@ -118,8 +120,9 @@ instance FromJSON PostList where
       return posts where
           parseJSON' (Object v) = PostList <$> HMS.foldrWithKey go (pure []) v
               where
-                go i x r = (\(Post _ d ts c t m s j) rest -> Post i d ts c t m s j: rest) <$>
-                               parseJSON x <*> r
+                go i x r = (\(Post _ d ts c t m s j a) 
+                              rest -> Post i d ts c t m s j a: rest) <$> parseJSON
+                                                                   x <*> r
           parseJSON' _ = return $ PostList []
 
 

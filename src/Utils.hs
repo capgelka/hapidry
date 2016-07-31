@@ -15,7 +15,7 @@ module Utils
 
 import Data.Text (Text)
 import qualified Data.Text.IO as T
-import qualified Data.Text as T (pack, unpack, concat)
+import qualified Data.Text as T (pack, unpack, concat, append)
 
 import Data.Text.Encoding (encodeUtf8, decodeUtf8)
 import qualified Data.ByteString.Char8 as B
@@ -155,6 +155,7 @@ readPost (Blog blognames order) client = do
   let sorted = proc $ sortBy (comparing (& IJ.timestamp)) 
                               posts
   -- T.putStrLn (T.pack $ show $ length posts)
+
   mapM_ printBlog sorted where
     -- comparePost :: IJ.Post -> IJ.Post -> Ordering
     -- comparePost x y = compare (x & IJ.timestamp)
@@ -162,10 +163,16 @@ readPost (Blog blognames order) client = do
     printBlog :: IJ.Post -> IO ()
     printBlog p = do
       -- T.putStrLn
-      T.putStrLn $ T.concat [p & IJ.title, 
-                             " (", 
-                             p & IJ.date,
-                             ")"]
+
+      T.putStrLn $ case (p & IJ.journalname) of
+          Just x -> T.concat ["<h3>", x, " (", p & IJ.author, ")</h3><br>"]
+          Nothing -> ""
+      T.putStrLn $ T.concat [p & IJ.date,
+                            ": ",
+                             p & IJ.title, 
+                             " [",
+                             p & IJ.postid,
+                             "]"]
       T.putStrLn "<br><br>\n\n"
       T.putStrLn $ p & IJ.message
       T.putStrLn $ T.concat $ ["comments: ", (p & IJ.commentCount), "<br><br><br>\n\n\n"]
