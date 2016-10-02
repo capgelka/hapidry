@@ -11,6 +11,7 @@ module Utils
   , postsFromJson --delete later
   , umailsFromJson
   , readPost
+  , readUmail
   ) where
 
 import Data.Text (Text)
@@ -180,7 +181,26 @@ readPost (Blog blognames order) client = do
       -- BL.putStrLn $ BL.concat [blog & title, "(", bl & date ")"]
       -- BL.putStr "---------------------"
 
-
+readUmail :: Commands -> ClientCredentials -> IO ()
+readUmail (Umail folder order) client = do
+  let proc = if order then id else reverse
+  let folderType = T.pack $ show $ case folder of
+                                    (Just x)  -> fromEnum x
+                                    (Nothing) -> fromEnum Input   
+  umails <- umailsFromJson <$> umailGet client [("folder", folderType)]
+  mapM_ printUmail umails where
+    printUmail :: IJ.UmailMessage -> IO ()
+    printUmail u = do
+      T.putStrLn $ T.concat ["<h3>(", u & IJ.username, ")</h3><br>"]
+      T.putStrLn $ T.concat [u & IJ.dateline,
+                            ": ",
+                             u & IJ.utitle, 
+                             " [",
+                             u & IJ.umailid,
+                             "]"]
+      T.putStrLn "<br><br>\n\n"
+      T.putStrLn $ IJ.messageHtml u
+      T.putStrLn $ "<br>"
 
 getNotifications :: Commands -> ClientCredentials -> IO ()
 getNotifications opt client = do 
@@ -214,6 +234,8 @@ postsFromJson (Right x) = concatMap (\j -> case (decode j) of
                                     x
 postsFromJson (Left x)  =  []
 
-umailsFromJson :: Either Integer BL.ByteString -> Maybe IJ.MessageList
-umailsFromJson (Right json) = decode json
-umailsFromJson (Left x)     = Just $ IJ.MessageList []
+umailsFromJson :: Either Integer BL.ByteString -> [IJ.UmailMessage]
+umailsFromJson (Right json) = case (decode json) of
+                               (Just j) -> IJ.umails j
+                               Nothing -> []
+umailsFromJson (Left x)     =  []

@@ -160,7 +160,8 @@ instance FromJSON UmailMessage where
                               -- <*> v .:? "journal_name"
   parseJSON _ = mzero
 
-data MessageList = MessageList [UmailMessage] deriving (Eq, Show)
+newtype MessageList = MessageList { umails :: [UmailMessage] } deriving (Eq, Show)
+-- data MessageList = MessageList [UmailMessage] deriving (Eq, Show)
 
 -- newtype MList = MList [UmailMessage] deriving (Eq, Show)
 

@@ -6,9 +6,11 @@ module Options
   , Auth(..)
   , Args(..)
   , execParser
+  , Folder(..)
     ) where
 
 import Options.Applicative
+import Options.Applicative.Builder (eitherReader)
 import Data.List.Split (splitOn)
 import Data.Char (isSpace)
 
@@ -19,8 +21,16 @@ type Id = String
 type Path   = String
 data Auth   = Auth (Maybe String) (Maybe String) deriving (Show)
 type ConfigPath = String
+data Folder = Input | Output | Deleted deriving (Enum, Show)
 
 data Args = Args { auth :: Auth, config :: ConfigPath, commands :: Commands } deriving (Show)
+
+folderReader :: ReadM Folder
+folderReader = eitherReader $ \arg -> case arg of
+    "output"  -> Right Output
+    "input"   -> Right Input
+    "deleted" -> Right Deleted
+    _         -> Left "wrong dolder name"
 
 data Commands 
     = Notify
@@ -62,10 +72,15 @@ data Commands
       {
         blognames :: [Target],  -- ^ list of blognames to read
         reversed :: Bool -- ^ reverse order of post by date if set
+      }
+    | Umail
+      {
+        folder :: Maybe Folder, -- ^ folder to read
+        reversed :: Bool -- ^ reverse order of post by date if set
       } deriving (Show)
 
 mainParser :: ParserInfo Args
-mainParser = parseArgs `withInfo` "diary.ru API client"     
+mainParser = parseArgs `withInfo` "diary.ru API client" 
 
 parseArgs :: Parser Args
 parseArgs = Args <$> parseAuth <*> parseConfig <*> parseCommands
@@ -98,7 +113,8 @@ parseCommands = subparser $
     command "post"  (parsePost  `withInfo` "create new post") <>
     command "comment" (parseComment  `withInfo` "create new comment") <>
     command "send"  (parseSend  `withInfo` "send new umail") <>
-    command "read" (parseRead `withInfo` "read blogposts")
+    command "read" (parseRead `withInfo` "read blogposts") <>
+    command "umail" (parseUmail `withInfo` "read umail")
 
 withInfo :: Parser a -> String -> ParserInfo a
 withInfo opts desc = info (helper <*> opts) $ progDesc desc
@@ -191,6 +207,18 @@ parseSend = Send
       (long "pipe"
        <> short 'p'
        <> help "get text from stdin"))
+
+parseUmail :: Parser Commands
+parseUmail = Umail
+    <$> (optional $ option folderReader $
+        short 'f'
+        <> long "folders"
+        <> metavar "UMAIL_FOLDER")
+    <*> switch
+        (long "reversed"
+         <> short 'r'
+         <> help "reverse sorting order")
+
 
 parsePost :: Parser Commands
 parsePost = Post 

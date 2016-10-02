@@ -55,6 +55,7 @@ main = do
       parseOpt c@Comment {} client = createComment c client -- >> mempty
       parseOpt n@Notify {} client = getNotifications n client >> return (Right ["Ok"])
       parseOpt p@Blog {} client = readPost p client >> return (Right ["Ok"])
+      parseOpt p@Umail {} client = readUmail p client >> return (Right ["Ok"])
   -- parseOpt (command & commands) client >>= print where
   -- parseOpt (command & commands) client >>= (\x -> BL.putStr $ fromRight x) where
   -- parseOpt (command & commands) client >>= (T.putStr . IJ.messageHtml . head)  where

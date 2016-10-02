@@ -48,6 +48,14 @@ userGet env params = apiPost env (("method", "user.get"):params)
 umailGet :: ClientCredentials -> [(Text, Text)] -> IO (Either Integer BL.ByteString)
 umailGet env params = apiPost env (("method", "umail.get"):params)
 
+-- umailsGet :: ClientCredentials 
+--              -> [(Text, Text)] 
+--              -> [Name]
+--              -> IO (Either Integer BL.ByteString)
+-- umailsGet env p [] = sequence <$> (: []) <$> umailGet env []
+-- umailsGet env p names = sequence <$> mapM (\u -> umailGet env (("username", u):p) <$> umailGet env []
+
+
 postGet :: ClientCredentials -> [(Text, Text)] -> IO (Either Integer BL.ByteString)
 postGet env params = apiPost env (("method", "post.get"):params)
 
