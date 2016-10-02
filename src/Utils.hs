@@ -188,7 +188,9 @@ readUmail (Umail folder order) client = do
                                     (Just x)  -> fromEnum x
                                     (Nothing) -> fromEnum Input   
   umails <- umailsFromJson <$> umailGet client [("folder", folderType)]
-  mapM_ printUmail umails where
+  let sorted = proc $ sortBy (comparing (& IJ.utimestamp)) 
+                              umails
+  mapM_ printUmail sorted where
     printUmail :: IJ.UmailMessage -> IO ()
     printUmail u = do
       T.putStr $ T.concat ["<h3>(", u & IJ.username, ") "]

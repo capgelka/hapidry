@@ -130,7 +130,7 @@ data UmailMessage = UmailMessage {
     umailid :: Text
   -- , timestamp :: Int
   , dateline :: Text
-  -- , commentCount :: Text
+  , utimestamp :: Int
   , utitle :: Text
   , messageHtml :: Text
   , username :: Text
@@ -155,7 +155,7 @@ instance FromJSON UmailMessage where
   parseJSON (Object v) = UmailMessage <$> v .: "umailid" 
 
                               <*> (convertTime <$> timestamp)
-                              -- <*> v .: "count"
+                              <*> ((\x -> read x :: Int) <$> timestamp)
                               <*> v .: "title"
                               <*> v .: "message_html"
                               <*> v .: "from_username" where
@@ -180,8 +180,9 @@ instance FromJSON MessageList where
     parseJSON (Object v) = do
               x <- (v .: "umail") 
               MessageList <$> HMS.foldrWithKey go (pure []) x where
-                go i x r = (\(UmailMessage _ d t m f) rest -> UmailMessage i d t m f: rest) <$>
-                               parseJSON x <*> r
+                go i x r = (\(UmailMessage _ d ts t m f) rest 
+                            -> UmailMessage i d ts t m f: rest) <$>
+                                  parseJSON x <*> r
     parseJSON _ = return $ MessageList []
 
   -- parseJSON = withObject "umail" $ \u -> do
