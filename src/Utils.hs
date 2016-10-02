@@ -191,13 +191,13 @@ readUmail (Umail folder order) client = do
   mapM_ printUmail umails where
     printUmail :: IJ.UmailMessage -> IO ()
     printUmail u = do
-      T.putStrLn $ T.concat ["<h3>(", u & IJ.username, ")</h3><br>"]
+      T.putStr $ T.concat ["<h3>(", u & IJ.username, ") "]
       T.putStrLn $ T.concat [u & IJ.dateline,
                             ": ",
                              u & IJ.utitle, 
                              " [",
                              u & IJ.umailid,
-                             "]"]
+                             "]</h3>"]
       T.putStrLn "<br><br>\n\n"
       T.putStrLn $ IJ.messageHtml u
       T.putStrLn $ "<br>"

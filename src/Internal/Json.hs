@@ -128,6 +128,7 @@ instance FromJSON PostList where
 
 data UmailMessage = UmailMessage {
     umailid :: Text
+  -- , timestamp :: Int
   , dateline :: Text
   -- , commentCount :: Text
   , utitle :: Text
@@ -152,11 +153,13 @@ data UmailMessage = UmailMessage {
 instance FromJSON UmailMessage where
 
   parseJSON (Object v) = UmailMessage <$> v .: "umailid" 
-                              <*> v .: "dateline" 
+
+                              <*> (convertTime <$> timestamp)
                               -- <*> v .: "count"
                               <*> v .: "title"
                               <*> v .: "message_html"
-                              <*> v .: "from_username"
+                              <*> v .: "from_username" where
+                                  timestamp = v .: "dateline"
                               -- <*> v .:? "journal_name"
   parseJSON _ = mzero
 
