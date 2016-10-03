@@ -1,4 +1,4 @@
-{-# LANGUAGE  OverloadedStrings #-}
+{-# LANGUAGE  OverloadedStrings, TemplateHaskell, ExistentialQuantification #-}
 
 module Options
   ( mainParser
@@ -10,9 +10,12 @@ module Options
     ) where
 
 import Options.Applicative
-import Options.Applicative.Builder (eitherReader)
+import Options.Applicative.Builder (eitherReader, infoOption)
 import Data.List.Split (splitOn)
 import Data.Char (isSpace)
+
+
+import Data.Monoid 
 
 
 type Action = String
@@ -21,9 +24,13 @@ type Id = String
 type Path   = String
 data Auth   = Auth (Maybe String) (Maybe String) deriving (Show)
 type ConfigPath = String
+type Version =  Bool
 data Folder = Input | Output | Deleted deriving (Enum, Show)
 
-data Args = Args { auth :: Auth, config :: ConfigPath, commands :: Commands } deriving (Show)
+data Args = Args { auth :: Auth, 
+                   config :: ConfigPath, 
+                   versionFlag :: Bool,
+                   commands :: Commands} deriving (Show)
 
 folderReader :: ReadM Folder
 folderReader = eitherReader $ \arg -> case arg of
@@ -33,7 +40,8 @@ folderReader = eitherReader $ \arg -> case arg of
     _         -> Left "wrong dolder name"
 
 data Commands 
-    = Notify
+    = None 
+    | Notify
       {
         quiet :: Bool,
         all  :: Bool,
@@ -83,7 +91,20 @@ mainParser :: ParserInfo Args
 mainParser = parseArgs `withInfo` "diary.ru API client" 
 
 parseArgs :: Parser Args
-parseArgs = Args <$> parseAuth <*> parseConfig <*> parseCommands
+parseArgs = Args <$> parseAuth 
+                 <*> parseConfig 
+                 <*>  switch (long "version"
+                   <> short 'v'
+                   <> help "show version")
+                 <*> (parseCommands <|> pure None)
+
+
+-- parseVersion :: Parser Version
+-- parseVersion = infoOption 
+--                 (concat [showVersion version, " ", $(gitHash)])
+--                 (short 'v'
+--                  <> long "version"
+--                  <> help "path to config file")
 
 parseConfig :: Parser ConfigPath
 parseConfig = strOption $

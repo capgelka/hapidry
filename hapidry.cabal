@@ -27,7 +27,7 @@ library
                      , bytestring
                      , text
                      , aeson
-                     , optparse-applicative
+                     , optparse-applicative>=0.13.0.0
                      , configurator
                      , hex
                      , attoparsec
@@ -36,6 +36,7 @@ library
                      , split
                      , time
                      , old-locale
+                     , gitrev
   default-language:    Haskell2010
   c-sources: foreign/udecode.c
   cc-options: -O2 -std=c99
@@ -52,6 +53,7 @@ executable hapidry
                      , configurator
                      , aeson
                      , text
+                     , gitrev
                      --delete later
   default-language:    Haskell2010
 

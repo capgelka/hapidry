@@ -1,4 +1,4 @@
-{-# LANGUAGE  OverloadedStrings #-}
+{-# LANGUAGE  OverloadedStrings, TemplateHaskell #-}
 {-# OPTIONS_GHC -fno-warn-unused-binds #-}
 
 
@@ -27,14 +27,24 @@ import qualified Data.Text.Encoding as E
 
 import qualified Data.Text    as T
 import qualified Data.Text.IO as T
-import qualified Data.ByteString.Lazy.Char8 as BL (ByteString, pack, unpack, putStr)
+import qualified Data.ByteString.Lazy.Char8 as BL (ByteString, pack, unpack, putStr, concat)
+
+
+import Data.Version (showVersion)
+import Development.GitRev (gitHash)
+import qualified Paths_hapidry as P (version)
 -- main :: IO ()
 -- main = putStr $ fromString "čušpajž日本語"
 
 -- extract :: PostList -> [Post]
+type Delimeter = T.Text
 extractP (IJ.PostList x) = x
 extractU (IJ.MessageList x) = x
 fromRight (Right x) = x
+
+printResult :: Either Integer [BL.ByteString] -> Delimeter -> IO ()
+printResult (Left x)  _ = error $ show x
+printResult (Right xs) d = mapM_ (\x -> BL.putStr x >> T.putStr d) xs >> putStrLn ""
 
 main :: IO ()
 main = do
@@ -49,13 +59,19 @@ main = do
                 username    = username,  
                 secret  = "8543db8deccb4b0fcb753291c53f8f4f"
               } & updateCreds $ command & auth
-  parseOpt (command & commands) client >>= print where
-      parseOpt p@Post {} client = createPost p client -- >> mempty
-      parseOpt s@Send {} client = sendUmail s client -- >> mempty
-      parseOpt c@Comment {} client = createComment c client -- >> mempty
-      parseOpt n@Notify {} client = getNotifications n client >> return (Right ["Ok"])
-      parseOpt p@Blog {} client = readPost p client >> return (Right ["Ok"])
-      parseOpt p@Umail {} client = readUmail p client >> return (Right ["Ok"])
+  parseOpt command client >>= (`printResult` " ")  where
+      parseOpt x c | x & versionFlag = return $ Right 
+                                              $ ["hapidry", 
+                                                 BL.pack $ showVersion P.version,
+                                                 BL.concat ["(", $(gitHash), ")"]]
+                   | otherwise   = parseOpt' (x & commands) c where
+
+        parseOpt' p@Post {} client = createPost p client -- >> mempty
+        parseOpt' s@Send {} client = sendUmail s client -- >> mempty
+        parseOpt' c@Comment {} client = createComment c client -- >> mempty
+        parseOpt' n@Notify {} client = getNotifications n client >> return (Right ["Ok"])
+        parseOpt' p@Blog {} client = readPost p client >> return (Right ["Ok"])
+        parseOpt' p@Umail {} client = readUmail p client >> return (Right ["Ok"])
   -- parseOpt (command & commands) client >>= print where
   -- parseOpt (command & commands) client >>= (\x -> BL.putStr $ fromRight x) where
   -- parseOpt (command & commands) client >>= (T.putStr . IJ.messageHtml . head)  where
