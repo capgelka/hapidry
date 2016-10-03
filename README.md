@@ -24,6 +24,18 @@ Currently it supports 4 actions.
 	* cat prepared_comment.md | markdown | hapidry comment 12324 -p
 	* hapidry comment 1234 (write comment in your favorite $EDITOR)
 
+* Read blogs
+    * hapidry read (read your own blog)
+    * hapidry read someone1 someone2 (read someone1 and someone2 blogs)
+    * hapidry read -r (read posts in reversed order)
+    * hapidry read | w3m -T text/html | less (use less to read posts rendered via w3m)
+
+* Read umail
+    * hapidry umail (read income umails)
+    * hapidry umail deleted (read umails from deleted folder)
+    * hapidry umail -r (umail in reversed order)
+    * hapidry umail | w3m -T text/html | less (use less to read umail rendered via w3m)
+
 * There are also some additional features
     * hapidry post -m message --tags "tagone, tag2,othertag" (creates new post with 3 tags)
     * hapidry post blog1 blog2 -m message (add new post in 2 blogs with given names!)
