@@ -128,25 +128,12 @@ instance FromJSON PostList where
 
 data UmailMessage = UmailMessage {
     umailid :: Text
-  -- , timestamp :: Int
   , dateline :: Text
   , utimestamp :: Int
   , utitle :: Text
   , messageHtml :: Text
   , username :: Text
-  -- , journalname :: Maybe Text 
 } deriving (Eq, Show)
-        -- count - всего писем, соответствующих параметрам;
-        -- umail - набор писем: 
-
-        -- umailid - идентификатор письма, 
-        -- from_userid - идентификатор отправителя, 
-        -- from_username - логин отправителя, 
-        -- dateline - дата-время отправки письма, 
-        -- read - флаг прочтения, 
-        -- no_smilies - флаг запрета конвертации текстовых смайлов, 
-        -- title - тема письма, 
-        -- message_html - текст письма. 
 
 
 
@@ -160,20 +147,9 @@ instance FromJSON UmailMessage where
                               <*> v .: "message_html"
                               <*> v .: "from_username" where
                                   timestamp = v .: "dateline"
-                              -- <*> v .:? "journal_name"
   parseJSON _ = mzero
 
 newtype MessageList = MessageList { umails :: [UmailMessage] } deriving (Eq, Show)
--- data MessageList = MessageList [UmailMessage] deriving (Eq, Show)
-
--- newtype MList = MList [UmailMessage] deriving (Eq, Show)
-
--- instance FromJSON MList where
---      parseJSON (Object v) = MList <$> HMS.foldrWithKey go (pure []) v
---               where
---                 go i x r = (\(UmailMessage _ d t m f) rest -> UmailMessage i d t m f: rest) <$>
---                                parseJSON x <*> r
---      parseJSON' _ = return $ MList []
 
 
 instance FromJSON MessageList where
@@ -184,13 +160,3 @@ instance FromJSON MessageList where
                             -> UmailMessage i d ts t m f: rest) <$>
                                   parseJSON x <*> r
     parseJSON _ = return $ MessageList []
-
-  -- parseJSON = withObject "umail" $ \u -> do
-  --     (umails :: MList) <- u .: "umail"
-  --     return umails
-  --      -- where
-  --         parseJSON' (Object v) = MessageList <$> HMS.foldrWithKey go (pure []) v
-  --             where
-  --               go i x r = (\(UmailMessage _ d t m f) rest -> UmailMessage i d t m f: rest) <$>
-  --                              parseJSON x <*> r
-  --         parseJSON' _ = return $ MessageList []

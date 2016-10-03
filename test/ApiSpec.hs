@@ -105,11 +105,3 @@ spec = do
       apiPost client [("method","user.get")] >>= (`shouldSatisfy` isRight)
 
 -- other tests needs functions to read data from the api for checks. So it'll be implemented later
-
-
-Сложно быть инициатором диалога, но дабы не лезтьВ таком случае, рискну начать с того что мне было бы интересно.
-
-
-Для вас ДС это нечто локальное в рамках сессии? Или нечто существующее постоянно?
-Для
-

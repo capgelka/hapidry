@@ -155,16 +155,9 @@ readPost (Blog blognames order) client = do
   posts <- postsFromJson <$> postsGet client [] (map T.pack blognames)
   let sorted = proc $ sortBy (comparing (& IJ.timestamp)) 
                               posts
-  -- T.putStrLn (T.pack $ show $ length posts)
-
   mapM_ printBlog sorted where
-    -- comparePost :: IJ.Post -> IJ.Post -> Ordering
-    -- comparePost x y = compare (x & IJ.timestamp)
-    --                           (y & IJ.timestamp)
     printBlog :: IJ.Post -> IO ()
     printBlog p = do
-      -- T.putStrLn
-
       T.putStrLn $ case (p & IJ.journalname) of
           Just x -> T.concat ["<h3>", x, " (", p & IJ.author, ")</h3><br>"]
           Nothing -> ""
@@ -177,9 +170,6 @@ readPost (Blog blognames order) client = do
       T.putStrLn "<br><br>\n\n"
       T.putStrLn $ p & IJ.message
       T.putStrLn $ T.concat $ ["comments: ", (p & IJ.commentCount), "<br><br><br>\n\n\n"]
-
-      -- BL.putStrLn $ BL.concat [blog & title, "(", bl & date ")"]
-      -- BL.putStr "---------------------"
 
 readUmail :: Commands -> ClientCredentials -> IO ()
 readUmail (Umail folder order) client = do
@@ -211,7 +201,6 @@ getNotifications opt client = do
       Nothing  -> error "error can't read notifications"
       (Just n) -> getNotifications' opt n where
           getNotifications' :: Commands -> Notifications -> IO ()
-          -- getNotifications' (Notify q c umails comments disk a)  
           getNotifications' _ nt = do
             let uc = nt & umailCount
             let cc = nt & commentsCount
