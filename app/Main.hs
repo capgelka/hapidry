@@ -46,25 +46,30 @@ printResult :: Either Integer [BL.ByteString] -> Delimeter -> IO ()
 printResult (Left x)  _ = error $ show x
 printResult (Right xs) d = mapM_ (\x -> BL.putStr x >> T.putStr d) xs >> putStrLn ""
 
-main :: IO ()
-main = do
-  command <- execParser mainParser 
+getCreds :: Args -> IO (ClientCredentials)
+getCreds command = do
   cfg <- C.load [C.Required (command & config)]
   password <- readOptionB cfg "password"
   username <- readOption cfg "username"
-  client <- authRequest $ ClientCredentials {
+  authRequest $ ClientCredentials {
                 password = password,
                 appkey  = "5ab793910e36584cd81622e5eb77d3d1",
                 sid     = Right "",
                 username    = username,  
                 secret  = "8543db8deccb4b0fcb753291c53f8f4f"
               } & updateCreds $ command & auth
-  parseOpt command client >>= (`printResult` " ")  where
-      parseOpt x c | x & versionFlag = return $ Right 
-                                              $ ["hapidry", 
-                                                 BL.pack $ showVersion P.version,
-                                                 BL.concat ["(", $(gitHash), ")"]]
-                   | otherwise   = parseOpt' (x & commands) c where
+
+
+
+main :: IO ()
+main = do
+  command <- execParser mainParser 
+  parseOpt command >>= (`printResult` " ")  where
+      parseOpt x | x & versionFlag = return $ Right 
+                                            $ ["hapidry", 
+                                               BL.pack $ showVersion P.version,
+                                               BL.concat ["(", $(gitHash), ")"]]
+                 | otherwise       = getCreds x >>= (\c -> parseOpt' (x & commands) c) where
 
         parseOpt' p@Post {} client = createPost p client -- >> mempty
         parseOpt' s@Send {} client = sendUmail s client -- >> mempty
