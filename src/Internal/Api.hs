@@ -23,7 +23,8 @@ import qualified Data.ByteString.Lazy.Char8 as BL -- (ByteString, pack, unpack)
 import qualified Data.ByteString.Base16 as B16 (encode)
 import qualified Data.Text.Lazy as L (append, cons, tail, head, unpack, foldl, length, fromStrict,
                                       take, drop, pack, all, Text, snoc, last, singleton, empty)
-import qualified Data.Text as T (unpack, map, concatMap, pack, snoc, filter, all)
+import qualified Data.Text as T (unpack, map, concatMap, pack, snoc, filter, all, concat)
+import qualified Data.Text.IO as T
 import Data.Text (Text)
 import Data.Aeson.Lens (key, _String)
 import Control.Lens ((&), (^.), (^?))
@@ -35,6 +36,9 @@ import qualified Data.Attoparsec.ByteString.Lazy as P
 import qualified Data.Aeson.Parser as P
 import Data.Aeson
 import Control.Monad (mzero)
+
+import System.Directory
+import Data.Either (isRight)
 
 import Foreign.C.String (CString)
 import Foreign.Ptr (Ptr)
@@ -59,6 +63,13 @@ data  ClientCredentials =  ClientCredentials {
       username :: Text,  
       secret   :: B.ByteString
       } deriving Show
+
+
+writeSid :: ClientCredentials -> IO ()
+writeSid client = T.writeFile (T.unpack $ T.concat ["/tmp/hapidry_", client & username])
+                              (case client & sid of
+                                  (Right x) -> x
+                                  (Left _)  -> error "Non reachable")
 
 
 keyHash :: B.ByteString -> B.ByteString -> Text
@@ -141,8 +152,9 @@ authRequest env = do
                                                                      (secret env)),
                                                 ("username", username env),
                                                 ("method",  "user.auth")]
-        
-  return $ env { sid = authParse r } where 
+  let newSid = authParse r
+  if isRight newSid then writeSid env else return ()       
+  return $ env { sid = newSid } where 
     authParse :: Response BL.ByteString -> Either Integer Text
     authParse response = case response  ^? responseBody . key "result" of
             (Just "0") -> Right $ (response ^. responseBody . key "sid" . _String)

@@ -33,10 +33,10 @@ import qualified Data.ByteString.Lazy.Char8 as BL (ByteString, pack, unpack, put
 import Data.Version (showVersion)
 import Development.GitRev (gitHash)
 import qualified Paths_hapidry as P (version)
--- main :: IO ()
--- main = putStr $ fromString "čušpajž日本語"
+-- import System.Directory
+-- import System.FilePath
 
--- extract :: PostList -> [Post]
+
 type Delimeter = T.Text
 extractP (IJ.PostList x) = x
 extractU (IJ.MessageList x) = x
@@ -51,13 +51,19 @@ getCreds command = do
   cfg <- C.load [C.Required (command & config)]
   password <- readOptionB cfg "password"
   username <- readOption cfg "username"
-  authRequest $ ClientCredentials {
+  -- let path = T.unpack $ T.concat ["/tmp/hapidry_", username]
+  -- exist <- doesFileExist path
+  currentSid <- readSid username
+  let creds = ClientCredentials {
                 password = password,
                 appkey  = "5ab793910e36584cd81622e5eb77d3d1",
-                sid     = Right "",
+                sid     = Right currentSid,
                 username    = username,  
                 secret  = "8543db8deccb4b0fcb753291c53f8f4f"
-              } & updateCreds $ command & auth
+                } & updateCreds $ command & auth
+  case currentSid of
+    ("") -> authRequest creds
+    _    -> return creds
 
 
 
@@ -77,6 +83,7 @@ main = do
         parseOpt' n@Notify {} client = getNotifications n client >> return (Right ["Ok"])
         parseOpt' p@Blog {} client = readPost p client >> return (Right ["Ok"])
         parseOpt' p@Umail {} client = readUmail p client >> return (Right ["Ok"])
+
   -- parseOpt (command & commands) client >>= print where
   -- parseOpt (command & commands) client >>= (\x -> BL.putStr $ fromRight x) where
   -- parseOpt (command & commands) client >>= (T.putStr . IJ.messageHtml . head)  where

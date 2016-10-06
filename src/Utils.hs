@@ -12,6 +12,7 @@ module Utils
   , umailsFromJson
   , readPost
   , readUmail
+  , readSid
   ) where
 
 import Data.Text (Text)
@@ -34,12 +35,20 @@ import qualified Internal.Json as IJ --(MessageList, UmailMessage)
 import Options
 import Data.List (sortBy)
 import Data.Ord (comparing)
+import System.Directory
 
 -- import Data.Time.Format
 -- import Data.Time.Clock.POSIX
 import qualified System.Locale as SL
 
 import Debug.Trace
+
+readSid :: Text -> IO Text
+readSid username = do 
+  let path = T.unpack $ T.concat ["/tmp/hapidry_", username]
+  exist <- doesFileExist path
+  if exist then T.readFile path else return ""
+
 
 applyOptions :: [(Text, Maybe String)] -> [(Text, Text)]
 applyOptions = map (\(x, Just y) -> (x, T.pack y)) . filter (\(_, y) -> isJust y)
