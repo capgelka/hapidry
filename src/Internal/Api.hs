@@ -48,7 +48,6 @@ import Foreign.Marshal.Array (lengthArray0 )
 
 import Data.ByteString.Unsafe (unsafeUseAsCString)
 
-
 foreign import ccall "udecode" udecode :: CString -> IO (Ptr Word16)
 
 newtype DiaryText = DiaryText Text
@@ -152,9 +151,9 @@ authRequest env = do
                                                                      (secret env)),
                                                 ("username", username env),
                                                 ("method",  "user.auth")]
-  let newSid = authParse r
-  if isRight newSid then writeSid env else return ()       
-  return $ env { sid = newSid } where 
+  let newEnv = env {sid = authParse r}
+  if isRight $ newEnv & sid then writeSid newEnv else return ()       
+  return $ newEnv where 
     authParse :: Response BL.ByteString -> Either Integer Text
     authParse response = case response  ^? responseBody . key "result" of
             (Just "0") -> Right $ (response ^. responseBody . key "sid" . _String)
