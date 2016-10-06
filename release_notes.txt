@@ -1,3 +1,9 @@
+0.2.5
+New features:
+* umail reading
+* post reading
+* -v/--version option
+
 0.2.3
 New feateres:
 * comments sending support (hapidry comment)
