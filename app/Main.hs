@@ -85,7 +85,6 @@ main = do
         parseOpt' n@Notify {} client = getNotifications n client >> return (Right [""])
         parseOpt' p@Blog {} client = readPost p client >> return (Right [""])
         parseOpt' p@Umail {} client = readUmail p client >> return (Right [""])
-        parseOpt' x client = return () >> return (Right [""])
 
   -- parseOpt (command & commands) client >>= print where
   -- parseOpt (command & commands) client >>= (\x -> BL.putStr $ fromRight x) where

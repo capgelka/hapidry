@@ -34,10 +34,6 @@ parserPrefs = prefs $ disambiguate
                     <> showHelpOnEmpty
 
 
- -- ParserPrefs { prefDisambiguate = True,
- --                      prefShowHelpOnError = True,
- --                      prefShowHelpOnEmpty = True }
-
 data Args = Args { auth :: Auth, 
                    config :: ConfigPath, 
                    versionFlag :: Bool,
@@ -51,8 +47,7 @@ folderReader = eitherReader $ \arg -> case arg of
     _         -> Left "wrong dolder name"
 
 data Commands 
-    = None 
-    | Notify
+    = Notify
       {
         quiet :: Bool,
         all  :: Bool,
@@ -107,16 +102,8 @@ parseArgs = Args <$> parseAuth
                  <*>  switch (long "version"
                    <> short 'v'
                    <> help "show version")
-                 <*> (parseCommands <|> pure None)
-                 -- <|> DefaultCommand
+                 <*> parseCommands
 
-
--- parseVersion :: Parser Version
--- parseVersion = infoOption 
---                 (concat [showVersion version, " ", $(gitHash)])
---                 (short 'v'
---                  <> long "version"
---                  <> help "path to config file")
 
 parseConfig :: Parser ConfigPath
 parseConfig = strOption $
