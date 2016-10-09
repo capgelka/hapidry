@@ -42,6 +42,8 @@ extractP (IJ.PostList x) = x
 extractU (IJ.MessageList x) = x
 fromRight (Right x) = x
 
+
+
 printResult :: Either Integer [BL.ByteString] -> Delimeter -> IO ()
 printResult (Left x)  _ = error $ show x
 printResult (Right xs) d = mapM_ (\x -> BL.putStr x >> T.putStr d) xs >> putStrLn ""
@@ -69,7 +71,7 @@ getCreds command = do
 
 main :: IO ()
 main = do
-  command <- execParser mainParser 
+  command <- customExecParser parserPrefs mainParser 
   parseOpt command >>= (`printResult` " ")  where
       parseOpt x | x & versionFlag = return $ Right 
                                             $ ["hapidry", 
@@ -80,9 +82,10 @@ main = do
         parseOpt' p@Post {} client = createPost p client -- >> mempty
         parseOpt' s@Send {} client = sendUmail s client -- >> mempty
         parseOpt' c@Comment {} client = createComment c client -- >> mempty
-        parseOpt' n@Notify {} client = getNotifications n client >> return (Right ["Ok"])
-        parseOpt' p@Blog {} client = readPost p client >> return (Right ["Ok"])
-        parseOpt' p@Umail {} client = readUmail p client >> return (Right ["Ok"])
+        parseOpt' n@Notify {} client = getNotifications n client >> return (Right [""])
+        parseOpt' p@Blog {} client = readPost p client >> return (Right [""])
+        parseOpt' p@Umail {} client = readUmail p client >> return (Right [""])
+        parseOpt' x client = return () >> return (Right [""])
 
   -- parseOpt (command & commands) client >>= print where
   -- parseOpt (command & commands) client >>= (\x -> BL.putStr $ fromRight x) where

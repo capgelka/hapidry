@@ -5,8 +5,9 @@ module Options
   , Commands(..)
   , Auth(..)
   , Args(..)
-  , execParser
+  , customExecParser
   , Folder(..)
+  , parserPrefs
     ) where
 
 import Options.Applicative
@@ -26,6 +27,16 @@ data Auth   = Auth (Maybe String) (Maybe String) deriving (Show)
 type ConfigPath = String
 type Version =  Bool
 data Folder = Input | Output | Deleted deriving (Enum, Show)
+
+
+parserPrefs = prefs $ disambiguate
+                    <> showHelpOnError
+                    <> showHelpOnEmpty
+
+
+ -- ParserPrefs { prefDisambiguate = True,
+ --                      prefShowHelpOnError = True,
+ --                      prefShowHelpOnEmpty = True }
 
 data Args = Args { auth :: Auth, 
                    config :: ConfigPath, 
@@ -97,6 +108,7 @@ parseArgs = Args <$> parseAuth
                    <> short 'v'
                    <> help "show version")
                  <*> (parseCommands <|> pure None)
+                 -- <|> DefaultCommand
 
 
 -- parseVersion :: Parser Version
