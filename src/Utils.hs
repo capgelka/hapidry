@@ -184,8 +184,8 @@ readUmail :: Commands -> ClientCredentials -> IO ()
 readUmail (Umail folder order) client = do
   let proc = if order then id else reverse
   let folderType = T.pack $ show $ case folder of
-                                    (Just x)  -> fromEnum x
-                                    (Nothing) -> fromEnum Input   
+                                    (Just x)  -> 1 + fromEnum x
+                                    (Nothing) -> 1 + fromEnum Input   
   umails <- umailsFromJson <$> umailGet client [("folder", folderType)]
   let sorted = proc $ sortBy (comparing (& IJ.utimestamp)) 
                               umails
