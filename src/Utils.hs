@@ -167,7 +167,7 @@ readPost (Blog blognames order) client = do
   mapM_ printBlog sorted where
     printBlog :: IJ.Post -> IO ()
     printBlog p = do
-      T.putStrLn $ case (p & IJ.journalname) of
+      T.putStrLn $ case p & IJ.journalname of
           Just x -> T.concat ["<h3>", x, " (", p & IJ.author, ")</h3><br>"]
           Nothing -> ""
       T.putStrLn $ T.concat [p & IJ.date,
@@ -178,14 +178,14 @@ readPost (Blog blognames order) client = do
                              "]"]
       T.putStrLn "<br><br>\n\n"
       T.putStrLn $ p & IJ.message
-      T.putStrLn $ T.concat $ ["comments: ", (p & IJ.commentCount), "<br><br><br>\n\n\n"]
+      T.putStrLn $ T.concat ["comments: ", p & IJ.commentCount, "<br><br><br>\n\n\n"]
 
 readUmail :: Commands -> ClientCredentials -> IO ()
 readUmail (Umail folder order) client = do
   let proc = if order then id else reverse
   let folderType = T.pack $ show $ case folder of
                                     (Just x)  -> 1 + fromEnum x
-                                    (Nothing) -> 1 + fromEnum Input   
+                                    Nothing   -> 1 + fromEnum Input   
   umails <- umailsFromJson <$> umailGet client [("folder", folderType)]
   let sorted = proc $ sortBy (comparing (& IJ.utimestamp)) 
                               umails
@@ -201,7 +201,7 @@ readUmail (Umail folder order) client = do
                              "]</h3>"]
       T.putStrLn "<br><br>\n\n"
       T.putStrLn $ IJ.messageHtml u
-      T.putStrLn $ "<br>"
+      T.putStrLn "<br>"
 
 getNotifications :: Commands -> ClientCredentials -> IO ()
 getNotifications opt client = do 
@@ -214,11 +214,11 @@ getNotifications opt client = do
             let uc = nt & umailCount
             let cc = nt & commentsCount
             let dc =  nt & discussCount
-            if uc > 0 then T.putStrLn $ T.concat ["you have ", (T.pack $ show uc), " unread umails"]
+            if uc > 0 then T.putStrLn $ T.concat ["you have ", T.pack $ show uc, " unread umails"]
                       else T.putStr ""
-            if cc > 0 then T.putStrLn $ T.concat ["you have ", (T.pack $ show cc), " unread comments"]
+            if cc > 0 then T.putStrLn $ T.concat ["you have ", T.pack $ show cc, " unread comments"]
                       else T.putStr ""
-            if dc > 0 then T.putStrLn $ T.concat ["you have ", (T.pack $ show dc), " unread discussions"]
+            if dc > 0 then T.putStrLn $ T.concat ["you have ", T.pack $ show dc, " unread discussions"]
                       else T.putStr ""
 
 
@@ -228,14 +228,14 @@ notificationsFromJson (Left _)     = Nothing
 
 
 postsFromJson :: Either Integer [BL.ByteString] -> [IJ.Post]
-postsFromJson (Right x) = concatMap (\j -> case (decode j) of
+postsFromJson (Right x) = concatMap (\j -> case decode j of
                                             (Just json) -> IJ.posts json
                                             Nothing     -> [])
                                     x
 postsFromJson (Left x)  =  []
 
 umailsFromJson :: Either Integer BL.ByteString -> [IJ.UmailMessage]
-umailsFromJson (Right json) = case (decode json) of
+umailsFromJson (Right json) = case decode json of
                                (Just j) -> IJ.umails j
                                Nothing -> []
 umailsFromJson (Left x)     =  []

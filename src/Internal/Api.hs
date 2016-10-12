@@ -35,7 +35,7 @@ import Network.Wreq
 import qualified Data.Attoparsec.ByteString.Lazy as P
 import qualified Data.Aeson.Parser as P
 import Data.Aeson
-import Control.Monad (mzero)
+import Control.Monad (mzero, when)
 
 import System.Directory
 import Data.Either (isRight)
@@ -79,11 +79,11 @@ keyHash pass key = decodeLatin1 $ B16.encode $ MD5.hash $ B.append key pass
 
 newtype MyBs = MyBs { unMyBs :: Text}  deriving (Eq, Show)
 
-ununicode :: BL.ByteString -> IO (BL.ByteString)
+ununicode :: BL.ByteString -> IO BL.ByteString
 ununicode x = do
   cs <- unsafeUseAsCString (BL.toStrict (BL.snoc x '\NUL')) udecode
   size <- fromIntegral <$> lengthArray0 0 cs
-  LE.encodeUtf8 <$> L.fromStrict <$> fromPtr cs size
+  LE.encodeUtf8 . L.fromStrict <$> fromPtr cs size
 
 
 {- 
@@ -102,7 +102,7 @@ toCP1251 = B.pack . T.unpack . unicodeText . T.map replace where
       Nothing  -> l
 
   isOneByte :: Text -> Bool
-  isOneByte x = T.all (\e -> fromEnum e <= 255) x
+  isOneByte = T.all (\e -> fromEnum e <= 255)
 
   unicodeText :: Text -> Text
   unicodeText txt | isOneByte txt =  txt
@@ -110,7 +110,7 @@ toCP1251 = B.pack . T.unpack . unicodeText . T.map replace where
 
   unicode :: Char -> Text
   unicode l | fromEnum l < 255 = T.pack [l]
-            | otherwise = T.pack ('&':'#':(show $ fromEnum l)) `T.snoc` ';'
+            | otherwise = T.pack ('&':'#':show (fromEnum l)) `T.snoc` ';'
 
 
   table = Map.fromList $ zip rus cpCodes
@@ -140,7 +140,7 @@ apiPost e params = case e & sid of
                (Just x)  -> return $ Left
                                    $ (\y -> case y of
                                           (Right a) -> fst a
-                                          (Left _) -> (-1))
+                                          (Left _)  -> -1)
                                    $ decimal x 
                Nothing   -> return $ Left (-1)
 
@@ -152,11 +152,12 @@ authRequest env = do
                                                 ("username", username env),
                                                 ("method",  "user.auth")]
   let newEnv = env {sid = authParse r}
-  if isRight $ newEnv & sid then writeSid newEnv else return ()       
-  return $ newEnv where 
+  when (isRight $ newEnv & sid) 
+       (writeSid newEnv)      
+  return newEnv where 
     authParse :: Response BL.ByteString -> Either Integer Text
     authParse response = case response  ^? responseBody . key "result" of
-            (Just "0") -> Right $ (response ^. responseBody . key "sid" . _String)
+            (Just "0") -> Right (response ^. responseBody . key "sid" . _String)
             (Just  _)  -> Left $ (\x -> case x of
                                       (Right a) -> fst a
                                       (Left _) -> 0)

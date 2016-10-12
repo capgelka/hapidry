@@ -1,10 +1,6 @@
 {-# LANGUAGE  OverloadedStrings, TemplateHaskell #-}
 {-# OPTIONS_GHC -fno-warn-unused-binds #-}
 
-
-import qualified Data.ByteString.Lazy.Char8 as BL (ByteString)
-
-
 import qualified Data.Configurator as C
 import Control.Lens ((&))
 import Api
@@ -48,7 +44,7 @@ printResult :: Either Integer [BL.ByteString] -> Delimeter -> IO ()
 printResult (Left x)  _ = error $ show x
 printResult (Right xs) d = mapM_ (\x -> BL.putStr x >> T.putStr d) xs >> putStrLn ""
 
-getCreds :: Args -> IO (ClientCredentials)
+getCreds :: Args -> IO ClientCredentials
 getCreds command = do
   cfg <- C.load [C.Required (command & config)]
   password <- readOptionB cfg "password"
@@ -74,10 +70,10 @@ main = do
   command <- customExecParser parserPrefs mainParser 
   parseOpt command >>= (`printResult` " ")  where
       parseOpt x | x & versionFlag = return $ Right 
-                                            $ ["hapidry", 
+                                              ["hapidry", 
                                                BL.pack $ showVersion P.version,
                                                BL.concat ["(", $(gitHash), ")"]]
-                 | otherwise       = getCreds x >>= (\c -> parseOpt' (x & commands) c) where
+                 | otherwise       = getCreds x >>= parseOpt' (x & commands) where
 
         parseOpt' p@Post {} client = createPost p client -- >> mempty
         parseOpt' s@Send {} client = sendUmail s client -- >> mempty

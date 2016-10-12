@@ -34,7 +34,7 @@ type Name = Text
 type Id = Text
 
 postsCreate :: ClientCredentials -> [(Text, Text)] -> [Name] -> IO (Either Integer [BL.ByteString])
-postsCreate env p [] = sequence <$> (: []) <$> (postCreate env p)
+postsCreate env p [] = sequence . (: []) <$> postCreate env p
 postsCreate env p names = do
   uids <- catMaybes <$> mapM (idByName env) names
   sequence <$> mapM (\u -> postCreate env (("juserid", u):p)) uids
@@ -60,11 +60,11 @@ postGet :: ClientCredentials -> [(Text, Text)] -> IO (Either Integer BL.ByteStri
 postGet env params = apiPost env (("method", "post.get"):params)
 
 postsGet :: ClientCredentials -> [(Text, Text)] -> [Name] -> IO (Either Integer [BL.ByteString])
-postsGet env p [] = sequence <$> (: []) <$> (postGet env (("type", "diary"):p))
-postsGet env p names | elem "favorites" names = postsGet env (("type", "favorites"):p) []
-                     | elem "last" names = postsGet env (("type", "last"):p) []
-                     | elem "draft" names = postsGet env (("type", "draft"):p) []
-                     | elem "quotes" names = postsGet env (("type", "quotes"):p) []
+postsGet env p [] = sequence . (: []) <$> postGet env (("type", "diary"):p)
+postsGet env p names | "favorites" `elem` names = postsGet env (("type", "favorites"):p) []
+                     | "last" `elem` names = postsGet env (("type", "last"):p) []
+                     | "draft" `elem` names = postsGet env (("type", "draft"):p) []
+                     | "quotes" `elem` names = postsGet env (("type", "quotes"):p) []
                      | otherwise = sequence <$> mapM (\j -> postGet env 
                                                                     (("type", "diary")
                                                                      :("shortname", j)
@@ -72,7 +72,7 @@ postsGet env p names | elem "favorites" names = postsGet env (("type", "favorite
                                                       names
 
 umailsSend :: ClientCredentials -> [(Text, Text)] -> [Name] -> IO (Either Integer [BL.ByteString])
-umailsSend env p [] = sequence <$> (: []) <$> (umailSend env p)
+umailsSend env p [] = sequence <$> (: []) <$> umailSend env p
 umailsSend env p names = sequence <$> mapM (\u -> umailSend env (("username", u):p)) names
 
 

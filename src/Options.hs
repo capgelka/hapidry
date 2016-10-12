@@ -1,4 +1,4 @@
-{-# LANGUAGE  OverloadedStrings, TemplateHaskell, ExistentialQuantification #-}
+{-# LANGUAGE  OverloadedStrings, ExistentialQuantification #-}
 
 module Options
   ( mainParser
@@ -195,42 +195,42 @@ parseNotify = Notify
 parseComment :: Parser Commands
 parseComment = Comment
     <$> argument str (metavar "POST_ID")
-    <*> (optional $ strOption $
+    <*> optional (strOption $
         short 'm'
         <> long "message"
         <> metavar "COMMENT_MESSAGE")
-    <*> (optional $ strOption $
+    <*> optional (strOption $
         short 'f'
         <> long "file"
         <> metavar "COMMENT_MESSAGE_FILE")
-    <*> (switch
-      (long "pipe"
-       <> short 'p'
-       <> help "get text from stdin"))
+    <*> switch
+        (long "pipe"
+        <> short 'p'
+        <> help "get text from stdin")
 
 parseSend :: Parser Commands
 parseSend = Send
     <$> many (argument str (metavar "UMAIL_USERNAME"))
-    <*> (optional $ strOption $
+    <*> optional (strOption $
         short 'm'
         <> long "message"
         <> metavar "UMAIL_MESSAGE")
-    <*> (optional $ strOption $
+    <*> optional (strOption $
         short 't'
         <> long "title"
         <> metavar "UMAIL_MESSAGE_TITLE")
-    <*> (optional $ strOption $
+    <*> optional (strOption $
         short 'f'
         <> long "file"
         <> metavar "UMAIL_MESSAGE_FILE")
-    <*> (switch
-      (long "pipe"
+    <*> switch
+        (long "pipe"
        <> short 'p'
-       <> help "get text from stdin"))
+       <> help "get text from stdin")
 
 parseUmail :: Parser Commands
 parseUmail = Umail
-    <$> (optional $ option folderReader $
+    <$> optional (option folderReader $
         short 'f'
         <> long "folders"
         <> metavar "UMAIL_FOLDER")
@@ -243,35 +243,35 @@ parseUmail = Umail
 parsePost :: Parser Commands
 parsePost = Post 
     <$> many (argument str (metavar "BLOG"))
-    <*> (optional $ strOption $
+    <*> optional (strOption $
         short 'm'
         <> long "message"
         <> metavar "POST_MESSAGE")
-    <*> (optional $ strOption $
+    <*> optional (strOption $
         short 't'
         <> long "title"
         <> metavar "POST_MESSAGE_TITLE")
-    <*> (optional $ strOption $
+    <*> optional (strOption $
         short 'f'
         <> long "file"
         <> metavar "POST_MESSAGE_FILE")
-    <*> (switch
+    <*> switch
       (long "pipe"
        <> short 'p'
-       <> help "get text from stdin")) 
-    <*> (switch
+       <> help "get text from stdin")
+    <*> switch
       (long "whitelist"
        <> short 'w'
-       <> help "make post visible only to whitelist"))
-    <*> (switch
+       <> help "make post visible only to whitelist")
+    <*> switch
       (long "draft"
        <> short 'd'
-       <> help "save post as draft"))
-    <*> (multiString
+       <> help "save post as draft")
+    <*> multiString
         (short 'T'
         <> long "tags"
         <> metavar "POST_MESSAGE_TAGS"
-        <> help "add tags to message"))
+        <> help "add tags to message")
       
 
 multiString desc = concat <$> many single where 

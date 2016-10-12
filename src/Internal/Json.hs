@@ -95,8 +95,8 @@ data Post = Post {
 
 convertTime :: String -> Text
 convertTime timestr =  pack $ formatTime defaultTimeLocale "%c" 
-                           $ posixSecondsToUTCTime
-                           $ (fromIntegral (read timestr :: Int) :: POSIXTime)
+                            $ posixSecondsToUTCTime
+                            $ (fromIntegral (read timestr :: Int) :: POSIXTime)
 
 instance FromJSON Post where
 
@@ -115,9 +115,8 @@ instance FromJSON Post where
 newtype PostList = PostList { posts :: [Post] } deriving (Eq, Show)
 
 instance FromJSON PostList where
-  parseJSON = withObject "posts" $ \p -> do
-      posts <- parseJSON' =<< p .: "posts"
-      return posts where
+  parseJSON = withObject "posts" $
+     \p -> parseJSON' =<< p .: "posts" where
           parseJSON' (Object v) = PostList <$> HMS.foldrWithKey go (pure []) v
               where
                 go i x r = (\(Post _ d ts c t m s j a) 
@@ -154,7 +153,7 @@ newtype MessageList = MessageList { umails :: [UmailMessage] } deriving (Eq, Sho
 
 instance FromJSON MessageList where
     parseJSON (Object v) = do
-              x <- (v .: "umail") 
+              x <- v .: "umail"
               MessageList <$> HMS.foldrWithKey go (pure []) x where
                 go i x r = (\(UmailMessage _ d ts t m f) rest 
                             -> UmailMessage i d ts t m f: rest) <$>
