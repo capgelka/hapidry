@@ -1,11 +1,9 @@
 {-# LANGUAGE  OverloadedStrings #-}
-{-# LANGUAGE ForeignFunctionInterface #-}
 
 module Internal.Api
     ( ClientCredentials(..)
       , authRequest
       , keyHash
-      , ununicode
       , toCP1251
       , toForm
       , apiPost
@@ -39,16 +37,8 @@ import Control.Monad (mzero, when)
 
 import System.Directory
 import Data.Either (isRight)
-
-import Foreign.C.String (CString)
-import Foreign.Ptr (Ptr)
-import Data.Text.Foreign (fromPtr)
-import Data.Word (Word16)
-import Foreign.Marshal.Array (lengthArray0 )
-
-import Data.ByteString.Unsafe (unsafeUseAsCString)
-
-foreign import ccall "udecode" udecode :: CString -> IO (Ptr Word16)
+import Data.Maybe (fromMaybe)
+import System.Environment(lookupEnv)
 
 newtype DiaryText = DiaryText Text
 instance NWTP.FormValue DiaryText where
@@ -65,27 +55,18 @@ data  ClientCredentials =  ClientCredentials {
 
 
 writeSid :: ClientCredentials -> IO ()
-writeSid client = T.writeFile (T.unpack $ T.concat ["/tmp/hapidry_", client & username])
-                              (case client & sid of
-                                  (Right x) -> x
-                                  (Left _)  -> error "Non reachable")
+writeSid client = getTempPrefix >>= (\tmp -> 
+                    T.writeFile (T.unpack $ T.concat [tmp, client & username])
+                                (case client & sid of
+                                    (Right x) -> x
+                                    (Left _)  -> error "Non reachable")) >> return () where
+                    getTempPrefix :: IO Text
+                    getTempPrefix = T.pack . fromMaybe "/tmp/hapidry" <$> lookupEnv "TEMP"
 
 
 keyHash :: B.ByteString -> B.ByteString -> Text
 keyHash pass key = decodeLatin1 $ B16.encode $ MD5.hash $ B.append key pass 
    
-{- to solve problem http://stackoverflow.com/questions/35687685/haskell-convert-unicode-sequence-to-utf-8
- no lib find -}
-
-newtype MyBs = MyBs { unMyBs :: Text}  deriving (Eq, Show)
-
-ununicode :: BL.ByteString -> IO BL.ByteString
-ununicode x = do
-  cs <- unsafeUseAsCString (BL.toStrict (BL.snoc x '\NUL')) udecode
-  size <- fromIntegral <$> lengthArray0 0 cs
-  LE.encodeUtf8 . L.fromStrict <$> fromPtr cs size
-
-
 {- 
 don't want dinamically linked icu, encoding lib doesn't compile 
 http://stackoverflow.com/questions/35905276/cant-compile-haskell-encoding-lib-couldnt-find-haxml-modules

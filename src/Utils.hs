@@ -1,4 +1,4 @@
-{-# LANGUAGE  OverloadedStrings #-}
+{-# LANGUAGE  OverloadedStrings, CPP #-}
 
 module Utils 
   ( readOption
@@ -26,7 +26,9 @@ import qualified Data.ByteString.Lazy.Char8 as BL --(ByteString)
 import qualified Data.Configurator as C
 import qualified Data.Configurator.Types as CT
 import Control.Lens ((&))
+#ifdef OS_Linux
 import Text.Editor (runUserEditor)
+#endif
 import Data.Maybe (isJust, maybeToList)
 import Api
 import Data.Aeson
@@ -89,6 +91,7 @@ createPost (Post blogs _ title _ True whitelist draft tags) client = do
                        ("type",  if draft then Just "draft" else Nothing)] 
                        ++ convertTags tags)
               (map T.pack blogs)
+#ifdef OS_Linux
 createPost (Post blogs Nothing title Nothing False whitelist draft tags) client = do 
   text <- T.unpack <$> decodeUtf8 <$> runUserEditor
   postsCreate client  (applyOptions
@@ -98,6 +101,7 @@ createPost (Post blogs Nothing title Nothing False whitelist draft tags) client 
                        ("type",  if draft then Just "draft" else Nothing)]
                        ++ convertTags tags)
               (map T.pack blogs)
+#endif
 createPost (Post blogs text title _ _ whitelist draft tags) client = postsCreate client
                                (applyOptions [("message", text),
                                               ("title", title),
@@ -123,12 +127,14 @@ sendUmail (Send users _ title _ True) client = do
                         [("message", Just text),
                          ("title", title)])
                (map T.pack users)
+#ifdef OS_Linux               
 sendUmail (Send users Nothing title Nothing False) client = do 
     text <- T.unpack <$> decodeUtf8 <$> runUserEditor
     umailsSend client (applyOptions
                         [("message", Just text),
                          ("title", title)])
                (map T.pack users)
+#endif               
 sendUmail (Send users text title _ _) client = umailsSend client 
                                                           (applyOptions [("message", text),
                                                                          ("title", title)]) 
@@ -145,11 +151,13 @@ createComment (Comment pid _ _ True) client = do
     sequence <$> (: []) 
              <$> commentCreate client (applyOptions [("message", Just text),
                                                      ("postid", Just pid)]) 
+#ifdef OS_Linux             
 createComment (Comment pid Nothing Nothing False) client = do 
     text <- T.unpack <$> decodeUtf8 <$> runUserEditor
     sequence <$> (: []) 
              <$> commentCreate client (applyOptions [("message", Just text),
                                                      ("postid", Just pid)]) 
+#endif             
 createComment (Comment pid text  _ _) client = sequence <$> (: [])
                                                         <$> commentCreate 
                                                             client 
