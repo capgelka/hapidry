@@ -56,12 +56,12 @@ data  ClientCredentials =  ClientCredentials {
 
 writeSid :: ClientCredentials -> IO ()
 writeSid client = getTempPrefix >>= (\tmp -> 
-                    T.writeFile (T.unpack $ T.concat [tmp, client & username])
+                    T.writeFile (T.unpack $ T.concat [tmp, "/hapidry_", client & username])
                                 (case client & sid of
                                     (Right x) -> x
                                     (Left _)  -> error "Non reachable")) >> return () where
                     getTempPrefix :: IO Text
-                    getTempPrefix = T.pack . fromMaybe "/tmp/hapidry" <$> lookupEnv "TEMP"
+                    getTempPrefix = T.pack . fromMaybe "/tmp" <$> lookupEnv "TEMP"
 
 
 keyHash :: B.ByteString -> B.ByteString -> Text

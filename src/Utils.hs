@@ -29,7 +29,7 @@ import Control.Lens ((&))
 #ifdef OS_Linux
 import Text.Editor (runUserEditor)
 #endif
-import Data.Maybe (isJust, maybeToList)
+import Data.Maybe (isJust, maybeToList, fromMaybe)
 import Api
 import Data.Aeson
 import Json
@@ -38,6 +38,7 @@ import Options
 import Data.List (sortBy)
 import Data.Ord (comparing)
 import System.Directory
+import System.Environment(lookupEnv)
 
 -- import Data.Time.Format
 -- import Data.Time.Clock.POSIX
@@ -47,9 +48,11 @@ import Debug.Trace
 
 readSid :: Text -> IO Text
 readSid username = do 
-  let path = T.unpack $ T.concat ["/tmp/hapidry_", username]
+  path <- T.unpack <$> (getTempPrefix >>= \tmp -> return $ T.concat [tmp, "/hapidry_", username])
   exist <- doesFileExist path
-  if exist then T.readFile path else return ""
+  if exist then T.readFile path else return "" where
+          getTempPrefix :: IO Text
+          getTempPrefix = T.pack . fromMaybe "/tmp" <$> lookupEnv "TEMP"
 
 
 applyOptions :: [(Text, Maybe String)] -> [(Text, Text)]
