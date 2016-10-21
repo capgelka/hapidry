@@ -198,10 +198,12 @@ parseComment = Comment
     <*> optional (strOption $
         short 'm'
         <> long "message"
+        <> help "comment text"
         <> metavar "COMMENT_MESSAGE")
     <*> optional (strOption $
         short 'f'
         <> long "file"
+        <> help "get text from file"
         <> metavar "COMMENT_MESSAGE_FILE")
     <*> switch
         (long "pipe"
@@ -214,14 +216,17 @@ parseSend = Send
     <*> optional (strOption $
         short 'm'
         <> long "message"
+        <> help "umail text"
         <> metavar "UMAIL_MESSAGE")
     <*> optional (strOption $
         short 't'
         <> long "title"
+        <> help "umail title"
         <> metavar "UMAIL_MESSAGE_TITLE")
     <*> optional (strOption $
         short 'f'
         <> long "file"
+        <> help "get text from file"
         <> metavar "UMAIL_MESSAGE_FILE")
     <*> switch
         (long "pipe"
@@ -232,7 +237,8 @@ parseUmail :: Parser Commands
 parseUmail = Umail
     <$> optional (option folderReader $
         short 'f'
-        <> long "folders"
+        <> long "folder"
+        <> help "umail folder"
         <> metavar "UMAIL_FOLDER")
     <*> switch
         (long "reversed"
@@ -246,14 +252,17 @@ parsePost = Post
     <*> optional (strOption $
         short 'm'
         <> long "message"
+        <> help "post text"
         <> metavar "POST_MESSAGE")
     <*> optional (strOption $
         short 't'
         <> long "title"
+        <> help "post title"
         <> metavar "POST_MESSAGE_TITLE")
     <*> optional (strOption $
         short 'f'
         <> long "file"
+        <> help "get text from file"
         <> metavar "POST_MESSAGE_FILE")
     <*> switch
       (long "pipe"
