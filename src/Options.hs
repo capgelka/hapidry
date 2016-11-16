@@ -1,4 +1,4 @@
-{-# LANGUAGE  OverloadedStrings, ExistentialQuantification #-}
+{-# LANGUAGE  OverloadedStrings, ExistentialQuantification, DuplicateRecordFields #-}
 
 module Options
   ( mainParser
@@ -23,7 +23,7 @@ type Action = String
 type Target = String
 type Id = String
 type Path   = String
-data Auth   = Auth (Maybe String) (Maybe String) deriving (Show)
+data Auth   = Auth {username :: Maybe String, password :: Maybe String} deriving (Show)
 type ConfigPath = String
 type Version =  Bool
 data Folder = Input | Output | Deleted deriving (Enum, Show)

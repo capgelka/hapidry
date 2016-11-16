@@ -1,10 +1,10 @@
-{-# LANGUAGE  OverloadedStrings, TemplateHaskell #-}
+{-# LANGUAGE  OverloadedStrings, TemplateHaskell, DuplicateRecordFields #-}
 {-# OPTIONS_GHC -fno-warn-unused-binds #-}
 
 import qualified Data.Configurator as C
 import Control.Lens ((&))
 import Api
-import Internal.Api
+import Internal.Api (authRequest)
 import qualified Internal.Json as IJ--del
 import qualified Json as J
 
@@ -48,7 +48,9 @@ getCreds :: Args -> IO ClientCredentials
 getCreds command = do
   cfg <- C.load [C.Required (command & config)]
   password <- readOptionB cfg "password"
-  username <- readOption cfg "username"
+  username <- case command & auth & Options.username of
+          Nothing  -> readOption cfg "username"
+          (Just x) -> return $ T.pack x
   -- let path = T.unpack $ T.concat ["/tmp/hapidry_", username]
   -- exist <- doesFileExist path
   currentSid <- readSid username
