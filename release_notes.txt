@@ -1,3 +1,10 @@
+0.2.6
+New features:
+* comments reading (hapidry read)
+
+Bug fixed:
+* use localtime and locale to print dates
+
 0.2.5
 New features:
 * umail reading
