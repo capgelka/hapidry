@@ -197,17 +197,15 @@ readPost (Blog blognames order) client | isPostId $ head blognames = readComment
 
     readComments :: String -> IO ()
     readComments post = do 
-      T.putStrLn "CHU"
-      T.putStrLn post
       comments <- commentsFromJson <$> commentsGet client [] (T.pack post)
-      let proc = if order then id else reverse
+      let proc = if order then reverse else id
       let sorted = proc $ sortBy (comparing (& IJ.ctimestamp)) 
                                   comments
       mapM_ printComment sorted where
         printComment :: IJ.PostComment -> IO ()
         printComment c = do
           T.putStrLn $ T.concat ["<b>", c & IJ.cauthor, "</b> ",
-                                 c & IJ.cdate, "[", c & IJ.commentid, "]", "<br>"]
+                                 c & IJ.cdate, " [", c & IJ.commentid, "]", "<br>"]
           T.putStrLn $ c & IJ.ctitle
           T.putStrLn "<br>"
           T.putStrLn "<br><br>\n\n"

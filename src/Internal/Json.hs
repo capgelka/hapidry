@@ -175,7 +175,7 @@ instance FromJSON PostComment where
   parseJSON (Object v) = PostComment <$> v .: "commentid" 
                                       <*> (convertTime <$> timestamp)
                                       <*> ((\x -> read x :: Int) <$> timestamp)
-                                      <*> v .: "title"
+                                      <*> v .: "author_title"
                                       <*> v .: "message_html"
                                       <*> v .: "author_username" where
                                           timestamp = v .: "dateline"
@@ -187,7 +187,7 @@ newtype PostCommentList = PostCommentList { comments :: [PostComment] } deriving
 
 instance FromJSON PostCommentList where
     parseJSON (Object v) = do
-              x <- v .: "comment"
+              x <- v .: "comments"
               PostCommentList <$> HMS.foldrWithKey go (pure []) x where
                 go i x r = (\(PostComment _ d ts t m f) rest 
                             -> PostComment i d ts t m f: rest) <$>
