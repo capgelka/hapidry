@@ -178,10 +178,11 @@ readPost (Blog blognames order) client | isPostId $ head blognames = readComment
   mapM_ printBlog sorted where
     printBlog :: IJ.Post -> IO ()
     printBlog p = do
+      date <- p & IJ.date
       T.putStrLn $ case p & IJ.journalname of
           Just x -> T.concat ["<h3>", x, " (", p & IJ.author, ")</h3><br>"]
           Nothing -> ""
-      T.putStrLn $ T.concat [p & IJ.date,
+      T.putStrLn $ T.concat [date,
                             ": ",
                              p & IJ.title, 
                              " [",
@@ -204,8 +205,9 @@ readPost (Blog blognames order) client | isPostId $ head blognames = readComment
       mapM_ printComment sorted where
         printComment :: IJ.PostComment -> IO ()
         printComment c = do
+          date <- c & IJ.cdate
           T.putStrLn $ T.concat ["<b>", c & IJ.cauthor, "</b> ",
-                                 c & IJ.cdate, " [", c & IJ.commentid, "]", "<br>"]
+                                 date, " [", c & IJ.commentid, "]", "<br>"]
           T.putStrLn $ c & IJ.ctitle
           T.putStrLn "<br>"
           T.putStrLn "<br><br>\n\n"
@@ -223,8 +225,9 @@ readUmail (Umail folder order) client = do
   mapM_ printUmail sorted where
     printUmail :: IJ.UmailMessage -> IO ()
     printUmail u = do
+      date <- u & IJ.dateline
       T.putStr $ T.concat ["<h3>(", u & IJ.username, ") "]
-      T.putStrLn $ T.concat [u & IJ.dateline,
+      T.putStrLn $ T.concat [date,
                             ": ",
                              u & IJ.utitle, 
                              " [",

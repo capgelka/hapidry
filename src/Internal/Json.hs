@@ -25,6 +25,7 @@ import qualified Data.Map as M
 
 import Data.Time.Clock.POSIX
 import Data.Time.Format
+import Data.Time.LocalTime
 
 import Debug.Trace (trace, traceShow)
 
@@ -85,7 +86,7 @@ instance FromJSON DiscussionList where
 
 data Post = Post {
     postid :: Text
-  , date :: Text
+  , date :: IO Text
   , timestamp :: Int
   , commentCount :: Text
   , title :: Text
@@ -93,12 +94,46 @@ data Post = Post {
   , shortname :: Text
   , journalname :: Maybe Text 
   , author :: Text
-} deriving (Eq, Show)
+} 
 
-convertTime :: String -> Text
-convertTime timestr =  pack $ formatTime defaultTimeLocale "%c" 
-                            $ posixSecondsToUTCTime
-                            $ (fromIntegral (read timestr :: Int) :: POSIXTime)
+timeLocale = TimeLocale { wDays = [ 
+                                    ("Sunday", "Воскресенье"),
+                                    ("Monday", "Понедельник"),
+                                    ("Tuesday", "Вторник"),
+                                    ("Wednesday", "Среда"),
+                                    ("Thursday", "Четверг"),
+                                    ("Friday", "Пятница"),
+                                    ("Saturday", "Суббота")
+                                  ], 
+                         months = [
+                                    ("January", "Января"),
+                                    ("February", "Февраля"),
+                                    ("March", "Марта"),
+                                    ("April", "Апреля"),
+                                    ("May", "Мая"),
+                                    ("June", "Июня"),
+                                    ("July", "Июля"),
+                                    ("August", "Августа"),
+                                    ("September", "Сентября"),
+                                    ("October", "Октября"),
+                                    ("November", "Ноября"),
+                                    ("December", "Декабря")], 
+                        amPm = ("AM", "PM"), 
+                        dateTimeFmt = "%a%e %b %H:%M:%S %Z %Y", 
+                        dateFmt = "%m/%d/%y", 
+                        timeFmt = "%H:%M:%S", 
+                        time12Fmt = "%I:%M:%S %p", 
+                        knownTimeZones = []}
+
+
+convertTime :: String -> IO Text
+convertTime timestr =  do
+  let utcTime = posixSecondsToUTCTime $ (fromIntegral (read timestr :: Int) :: POSIXTime)
+  tz <- getCurrentTimeZone
+  return $ pack $ formatTime (timeLocale {knownTimeZones = [tz]})
+                             "%c" 
+                             (utcToLocalTime tz utcTime)
+
 
 instance FromJSON Post where
 
@@ -114,7 +149,7 @@ instance FromJSON Post where
                                   timestamp = v .: "dateline_date"
   parseJSON _ = mzero
 
-newtype PostList = PostList { posts :: [Post] } deriving (Eq, Show)
+newtype PostList = PostList { posts :: [Post] } 
 
 instance FromJSON PostList where
   parseJSON = withObject "posts" $
@@ -129,12 +164,12 @@ instance FromJSON PostList where
 
 data UmailMessage = UmailMessage {
     umailid :: Text
-  , dateline :: Text
+  , dateline :: IO Text
   , utimestamp :: Int
   , utitle :: Text
   , messageHtml :: Text
   , username :: Text
-} deriving (Eq, Show)
+} 
 
 
 
@@ -149,7 +184,7 @@ instance FromJSON UmailMessage where
                                           timestamp = v .: "dateline"
   parseJSON _ = mzero
 
-newtype MessageList = MessageList { umails :: [UmailMessage] } deriving (Eq, Show)
+newtype MessageList = MessageList { umails :: [UmailMessage] } 
 
 
 instance FromJSON MessageList where
@@ -163,12 +198,12 @@ instance FromJSON MessageList where
 
 data PostComment = PostComment {
     commentid :: Text
-  , cdate :: Text
+  , cdate :: IO Text
   , ctimestamp :: Int
   , ctitle :: Text
   , cmessage :: Text
   , cauthor :: Text
-} deriving (Eq, Show)
+} 
 
 instance FromJSON PostComment where
 
@@ -182,7 +217,7 @@ instance FromJSON PostComment where
   parseJSON _ = mzero
 
 
-newtype PostCommentList = PostCommentList { comments :: [PostComment] } deriving (Eq, Show)
+newtype PostCommentList = PostCommentList { comments :: [PostComment] } 
 
 
 instance FromJSON PostCommentList where
