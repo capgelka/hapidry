@@ -12,6 +12,8 @@ module Internal.Json
     , PostList(..)
     , UmailMessage(..)
     , MessageList(..)
+    , PostComment(..)
+    , PostCommentList(..)
     ) where
 
 import Data.Aeson
@@ -139,13 +141,12 @@ data UmailMessage = UmailMessage {
 instance FromJSON UmailMessage where
 
   parseJSON (Object v) = UmailMessage <$> v .: "umailid" 
-
-                              <*> (convertTime <$> timestamp)
-                              <*> ((\x -> read x :: Int) <$> timestamp)
-                              <*> v .: "title"
-                              <*> v .: "message_html"
-                              <*> v .: "from_username" where
-                                  timestamp = v .: "dateline"
+                                      <*> (convertTime <$> timestamp)
+                                      <*> ((\x -> read x :: Int) <$> timestamp)
+                                      <*> v .: "title"
+                                      <*> v .: "message_html"
+                                      <*> v .: "from_username" where
+                                          timestamp = v .: "dateline"
   parseJSON _ = mzero
 
 newtype MessageList = MessageList { umails :: [UmailMessage] } deriving (Eq, Show)
@@ -159,3 +160,36 @@ instance FromJSON MessageList where
                             -> UmailMessage i d ts t m f: rest) <$>
                                   parseJSON x <*> r
     parseJSON _ = return $ MessageList []
+
+data PostComment = PostComment {
+    commentid :: Text
+  , cdate :: Text
+  , ctimestamp :: Int
+  , ctitle :: Text
+  , cmessage :: Text
+  , cauthor :: Text
+} deriving (Eq, Show)
+
+instance FromJSON PostComment where
+
+  parseJSON (Object v) = PostComment <$> v .: "commentid" 
+                                      <*> (convertTime <$> timestamp)
+                                      <*> ((\x -> read x :: Int) <$> timestamp)
+                                      <*> v .: "title"
+                                      <*> v .: "message_html"
+                                      <*> v .: "author_username" where
+                                          timestamp = v .: "dateline"
+  parseJSON _ = mzero
+
+
+newtype PostCommentList = PostCommentList { comments :: [PostComment] } deriving (Eq, Show)
+
+
+instance FromJSON PostCommentList where
+    parseJSON (Object v) = do
+              x <- v .: "comment"
+              PostCommentList <$> HMS.foldrWithKey go (pure []) x where
+                go i x r = (\(PostComment _ d ts t m f) rest 
+                            -> PostComment i d ts t m f: rest) <$>
+                                  parseJSON x <*> r
+    parseJSON _ = return $ PostCommentList []

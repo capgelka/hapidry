@@ -37,6 +37,7 @@ import qualified Internal.Json as IJ --(MessageList, UmailMessage)
 import Options
 import Data.List (sortBy)
 import Data.Ord (comparing)
+import Data.Char (isDigit)
 import System.Directory
 import System.Environment(lookupEnv)
 
@@ -167,10 +168,9 @@ createComment (Comment pid text  _ _) client = sequence <$> (: [])
                                                             (applyOptions [("message", text),
                                                                            ("postid", Just pid)])
                                                               
-                                                                                                    
-
 readPost :: Commands -> ClientCredentials -> IO ()
-readPost (Blog blognames order) client = do
+readPost (Blog blognames order) client | isPostId $ head blognames = readComments $ head blognames 
+                                       | otherwise                 = do
   let proc = if order then id else reverse
   posts <- postsFromJson <$> postsGet client [] (map T.pack blognames)
   let sorted = proc $ sortBy (comparing (& IJ.timestamp)) 
@@ -190,6 +190,28 @@ readPost (Blog blognames order) client = do
       T.putStrLn "<br><br>\n\n"
       T.putStrLn $ p & IJ.message
       T.putStrLn $ T.concat ["comments: ", p & IJ.commentCount, "<br><br><br>\n\n\n"]
+
+    isPostId :: String -> Bool
+    isPostId ('p':xs) = all isDigit xs
+    isPostId xs       = all isDigit xs
+
+    readComments :: String -> IO ()
+    readComments post = do 
+      T.putStrLn "CHU"
+      T.putStrLn post
+      comments <- commentsFromJson <$> commentsGet client [] (T.pack post)
+      let proc = if order then id else reverse
+      let sorted = proc $ sortBy (comparing (& IJ.ctimestamp)) 
+                                  comments
+      mapM_ printComment sorted where
+        printComment :: IJ.PostComment -> IO ()
+        printComment c = do
+          T.putStrLn $ T.concat ["<b>", c & IJ.cauthor, "</b> ",
+                                 c & IJ.cdate, "[", c & IJ.commentid, "]", "<br>"]
+          T.putStrLn $ c & IJ.ctitle
+          T.putStrLn "<br>"
+          T.putStrLn "<br><br>\n\n"
+          T.putStrLn $ c & IJ.cmessage
 
 readUmail :: Commands -> ClientCredentials -> IO ()
 readUmail (Umail folder order) client = do
@@ -250,3 +272,9 @@ umailsFromJson (Right json) = case decode json of
                                (Just j) -> IJ.umails j
                                Nothing -> []
 umailsFromJson (Left x)     =  []
+
+commentsFromJson :: Either Integer BL.ByteString -> [IJ.PostComment]
+commentsFromJson (Right json) = case decode json of
+                               (Just c) -> IJ.comments c
+                               Nothing -> []
+commentsFromJson (Left x)     =  []

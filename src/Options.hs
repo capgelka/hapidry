@@ -50,7 +50,7 @@ data Commands
     = Notify
       {
         quiet :: Bool,
-        all  :: Bool,
+        full  :: Bool,
         umail :: Bool,
         discussion :: Bool,
         comment :: Bool,
@@ -159,9 +159,9 @@ parseRead = Blog
     --    <> short 'D'
     --    <> help "show discussions on")
     -- <*> switch
-    --   (long "all"
+    --   (long "full"
     --    <> short 'a'
-    --    <> help "show all")
+    --    <> help "show full")
 
 -- | Subparser for hapidry notify
 parseNotify :: Parser Commands

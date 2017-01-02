@@ -2,7 +2,7 @@
 
 hapidry (haskell api diary) is a command line client for diary.ru api with interface in unix spirit. Feel free to open issues if something is done some other ugly way.
 
-Currently it supports 4 actions.
+Currently it supports 6 actions.
 
 * Create new post in your blog
 	* hapidry post -m message -t subject

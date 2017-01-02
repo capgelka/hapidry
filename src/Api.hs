@@ -12,6 +12,7 @@ module Api
   , umailsSend
   , notificationGet
   , commentCreate
+  , commentsGet
   , postsGet
   ) where
 
@@ -19,6 +20,7 @@ module Api
 import qualified Data.ByteString.Lazy.Char8 as BL (ByteString)
 import Data.Text (Text)
 import qualified Data.Text.Lazy as L (Text)
+import qualified Data.Text as T (head, tail)
 import Internal.Api (ClientCredentials(..), apiPost, authRequest)
 --import Data.Aeson.Lens (key, _String)
 import Data.Aeson
@@ -55,6 +57,13 @@ umailGet env params = apiPost env (("method", "umail.get"):params)
 -- umailsGet env p [] = sequence <$> (: []) <$> umailGet env []
 -- umailsGet env p names = sequence <$> mapM (\u -> umailGet env (("username", u):p) <$> umailGet env []
 
+commentsGet :: ClientCredentials -> [(Text, Text)] -> Id -> IO (Either Integer BL.ByteString)
+commentsGet env params pid | T.head pid == 'p' = commentsGet' env params (T.tail pid)
+                           | otherwise = commentsGet' env params pid where
+                                commentsGet' env params pid  =  apiPost env 
+                                                                        (("method", "comment.get")
+                                                                        :("postid", pid)
+                                                                        :params)
 
 postGet :: ClientCredentials -> [(Text, Text)] -> IO (Either Integer BL.ByteString)
 postGet env params = apiPost env (("method", "post.get"):params)
