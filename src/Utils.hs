@@ -43,10 +43,9 @@ import System.Directory
 import System.Environment(lookupEnv)
 
 import Data.Aeson.Lens (key, _String)
-import Control.Lens ((&), (^.), (^?), preview, view)
+import Control.Lens ((&), (^.))
 
--- import Data.Time.Format
--- import Data.Time.Clock.POSIX
+
 import qualified System.Locale as SL
 
 import Debug.Trace

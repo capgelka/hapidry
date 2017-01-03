@@ -11,6 +11,8 @@ Currently it supports 7 actions (with 6 subcommands).
 	* hapidry post -t subject (write post in your favorite $EDITOR)
     * hapidry post -m "only for whitelist" -w
     * hapidry post -m "save to draft" -d
+    * hapidry post --music "music for music field"
+    * hapidry post --mood "mood for mood field"
 * Send new U-mail (private message) to user
     * hapidry send someone -f '~/prepared_umail.txt' -t subject
 	* hapidry send someone -m message -t subject

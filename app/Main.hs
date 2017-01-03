@@ -32,11 +32,6 @@ import qualified Paths_hapidry as P (version)
 
 import System.Exit
 
-import Data.Aeson.Lens (key, _String)
-import Control.Lens ((&), (^.), (^?), preview, view)
--- import System.Directory
--- import System.FilePath
-
 
 type Delimeter = T.Text
 extractP (IJ.PostList x) = x

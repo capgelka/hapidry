@@ -1,3 +1,13 @@
+0.2.7
+New features
+* option --mood and --music for hapidry post
+
+Bug fixed
+* Pretty and human readable errors
+* postid as output for hapidry post
+
+
+
 0.2.6
 New features:
 * comments reading (hapidry read)
