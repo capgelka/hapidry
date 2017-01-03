@@ -40,7 +40,7 @@ fromRight (Right x) = x
 
 
 
-printResult :: Either Integer [BL.ByteString] -> Delimeter -> IO ()
+printResult :: Either BL.ByteString [BL.ByteString] -> Delimeter -> IO ()
 printResult (Left x)  _ = print x
 printResult (Right xs) d = mapM_ (\x -> BL.putStr x >> T.putStr d) xs >> putStrLn ""
 

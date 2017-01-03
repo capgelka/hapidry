@@ -76,7 +76,7 @@ readOption conf opt = readOption' <$> C.lookup conf opt where
 readOptionB :: CT.Config -> CT.Name -> IO B.ByteString
 readOptionB conf opt = encodeUtf8 <$> readOption conf opt
 
-createPost :: Commands -> ClientCredentials -> IO (Either Integer [BL.ByteString])
+createPost :: Commands -> ClientCredentials -> IO (Either BL.ByteString [BL.ByteString])
 createPost (Post blogs _ title (Just x) False whitelist draft tags music mood) client = do
     text <- readFile x
     postsCreate client (applyOptions
@@ -126,7 +126,7 @@ createPost (Post blogs text title _ _ whitelist draft tags music mood) client = 
 
 
 
-sendUmail :: Commands -> ClientCredentials -> IO (Either Integer [BL.ByteString])
+sendUmail :: Commands -> ClientCredentials -> IO (Either BL.ByteString [BL.ByteString])
 sendUmail (Send users _ title (Just x) False) client = do
     text <- readFile x
     umailsSend client (applyOptions
@@ -152,7 +152,7 @@ sendUmail (Send users text title _ _) client = umailsSend client
                                                                          ("title", title)]) 
                                                           (map T.pack users)
 
-createComment :: Commands -> ClientCredentials -> IO (Either Integer [BL.ByteString])
+createComment :: Commands -> ClientCredentials -> IO (Either BL.ByteString [BL.ByteString])
 createComment (Comment pid _ (Just x) False) client = do
     text <- readFile x
     sequence <$> (: []) 
@@ -264,25 +264,25 @@ getNotifications opt client = do
                       else T.putStr ""
 
 
-notificationsFromJson :: Either Integer BL.ByteString -> Maybe Notifications
+notificationsFromJson :: Either BL.ByteString BL.ByteString -> Maybe Notifications
 notificationsFromJson (Right json) = decode json
 notificationsFromJson (Left _)     = Nothing
 
 
-postsFromJson :: Either Integer [BL.ByteString] -> [IJ.Post]
+postsFromJson :: Either BL.ByteString [BL.ByteString] -> [IJ.Post]
 postsFromJson (Right x) = concatMap (\j -> case decode j of
                                             (Just json) -> IJ.posts json
                                             Nothing     -> [])
                                     x
 postsFromJson (Left x)  =  []
 
-umailsFromJson :: Either Integer BL.ByteString -> [IJ.UmailMessage]
+umailsFromJson :: Either BL.ByteString BL.ByteString -> [IJ.UmailMessage]
 umailsFromJson (Right json) = case decode json of
                                (Just j) -> IJ.umails j
                                Nothing -> []
 umailsFromJson (Left x)     =  []
 
-commentsFromJson :: Either Integer BL.ByteString -> [IJ.PostComment]
+commentsFromJson :: Either BL.ByteString BL.ByteString -> [IJ.PostComment]
 commentsFromJson (Right json) = case decode json of
                                (Just c) -> IJ.comments c
                                Nothing -> []

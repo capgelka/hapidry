@@ -105,25 +105,22 @@ toCP1251 = B.pack . T.unpack . unicodeText . T.map replace where
 toForm :: [(Text, Text)] -> [FormParam]
 toForm = map (\(x, y) -> encodeUtf8 x := DiaryText y)
 
-apiPost :: ClientCredentials -> [(Text, Text)] -> IO (Either Integer BL.ByteString)
+apiPost :: ClientCredentials -> [(Text, Text)] -> IO (Either BL.ByteString BL.ByteString)
 apiPost e params = case e & sid of
-    (Left x)  -> return $ Left x
+    (Left x)  -> return $ Left "{\"error\": \"Unknown auth error\"}"
     (Right x) ->  apiPost' $ updateSid x params where
 
         updateSid :: Text -> [(Text, Text)] -> [(Text, Text)]
         updateSid sid params = ("sid", sid):filter (\(x, _) -> x /= "sid") params
 
+        apiPost' :: [(Text, Text)] -> IO (Either BL.ByteString BL.ByteString)
         apiPost' params = do
             r <- post "http://www.diary.ru/api" $ toForm params
             case r ^? responseBody . key "result" . _String of
                (Just "0")  -> return $ Right $ r ^. responseBody
                (Just "12") -> authRequest e >>= (`apiPost` params)
-               (Just x)  -> return $ Left
-                                   $ (\y -> case y of
-                                          (Right a) -> fst a
-                                          (Left _)  -> -1)
-                                   $ decimal x 
-               Nothing   -> return $ Left (-1)
+               (Just x)  -> return $ Left $ r ^. responseBody
+               Nothing   -> return $ Left "{\"error\": \"Unknown error\"}"
 
 authRequest :: ClientCredentials -> IO ClientCredentials
 authRequest env = do
