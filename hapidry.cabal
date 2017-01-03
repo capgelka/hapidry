@@ -54,6 +54,7 @@ executable hapidry
                      , aeson
                      , text
                      , gitrev
+                     , lens-aeson
                      --delete later
   default-language:    Haskell2010
 

@@ -13,6 +13,7 @@ module Utils
   , readPost
   , readUmail
   , readSid
+  , getResponseField
   ) where
 
 import Data.Text (Text)
@@ -40,6 +41,9 @@ import Data.Ord (comparing)
 import Data.Char (isDigit)
 import System.Directory
 import System.Environment(lookupEnv)
+
+import Data.Aeson.Lens (key, _String)
+import Control.Lens ((&), (^.), (^?), preview, view)
 
 -- import Data.Time.Format
 -- import Data.Time.Clock.POSIX
@@ -287,3 +291,9 @@ commentsFromJson (Right json) = case decode json of
                                (Just c) -> IJ.comments c
                                Nothing -> []
 commentsFromJson (Left x)     =  []
+
+getFieldFromJson :: Text -> BL.ByteString -> BL.ByteString
+getFieldFromJson field = BL.pack . T.unpack . (\el -> el ^. key field . _String)
+
+getResponseField :: Text -> Either BL.ByteString [BL.ByteString] -> Either BL.ByteString [BL.ByteString]
+getResponseField field = \x -> x >>= (\y -> Right $ map (getFieldFromJson field) y)

@@ -23,7 +23,7 @@ import qualified Data.Text.Encoding as E
 
 import qualified Data.Text    as T
 import qualified Data.Text.IO as T
-import qualified Data.ByteString.Lazy.Char8 as BL (ByteString, pack, unpack, putStr, concat)
+import qualified Data.ByteString.Lazy.Char8 as BL (ByteString, pack, unpack, putStr, putStrLn, concat)
 
 
 import Data.Version (showVersion)
@@ -31,6 +31,9 @@ import Development.GitRev (gitHash)
 import qualified Paths_hapidry as P (version)
 
 import System.Exit
+
+import Data.Aeson.Lens (key, _String)
+import Control.Lens ((&), (^.), (^?), preview, view)
 -- import System.Directory
 -- import System.FilePath
 
@@ -84,7 +87,11 @@ main = do
                                                BL.concat ["(", $(gitHash), ")"]]
                  | otherwise       = getCreds x >>= parseOpt' (x & commands) where
 
-        parseOpt' p@Post {} client = createPost p client -- >> mempty
+        parseOpt' p@Post {} client = (createPost p client) >>= \x -> return $ getResponseField "postid" x
+          -- (\x -> 
+          --   return $ x >>= \y -> 
+          --       Right $ map (BL.pack . T.unpack . (\el -> el ^. key "postid" . _String))
+          --                   y)-- >> mempty
         parseOpt' s@Send {} client = sendUmail s client -- >> mempty
         parseOpt' c@Comment {} client = createComment c client -- >> mempty
         parseOpt' n@Notify {} client = getNotifications n client >> return (Right [""])
