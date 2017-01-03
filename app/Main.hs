@@ -29,6 +29,8 @@ import qualified Data.ByteString.Lazy.Char8 as BL (ByteString, pack, unpack, put
 import Data.Version (showVersion)
 import Development.GitRev (gitHash)
 import qualified Paths_hapidry as P (version)
+
+import System.Exit
 -- import System.Directory
 -- import System.FilePath
 
@@ -40,8 +42,13 @@ fromRight (Right x) = x
 
 
 
-printResult :: Either BL.ByteString [BL.ByteString] -> Delimeter -> IO ()
-printResult (Left x)  _ = print x
+-- printResult :: Either BL.ByteString [BL.ByteString] -> Delimeter -> IO ()
+printResult (Left x)  _ = case decode x of
+                            (Just r) -> do
+                              T.putStr "Ошибка: "
+                              T.putStrLn (r & J.errorText)
+                              exitWith $ ExitFailure (r & J.returnCode)
+                            Nothing  -> T.putStrLn "Unknown Error!" >> (exitWith $ ExitFailure (-1))
 printResult (Right xs) d = mapM_ (\x -> BL.putStr x >> T.putStr d) xs >> putStrLn ""
 
 getCreds :: Args -> IO ClientCredentials

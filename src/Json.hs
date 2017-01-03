@@ -5,6 +5,7 @@ module Json
       Journal(..)
     , Notifications(..)
     , J.PostList(..)
+    , ApiError(..)
     ) where
 
 import Data.Aeson
@@ -14,6 +15,10 @@ import Control.Monad
 import qualified Data.HashMap.Strict as HMS
 import qualified Internal.Json as J
 
+data ApiError = ApiError {
+    errorText   :: Text
+  , returnCode  :: Int
+  } deriving (Show, Eq)
 
 data Journal = Journal {
     userid    :: Text
@@ -51,3 +56,8 @@ instance FromJSON Journal where
     userid    <- pack <$> journal .: "userid"
     shortname <- pack <$> journal .: "shortname"
     return Journal { userid = userid, shortname = shortname }
+
+instance FromJSON ApiError where   
+  parseJSON (Object ae) = ApiError <$> ae .: "error" 
+                                   <*> ((\x -> read x :: Int) <$> ae .: "result" )
+  parseJSON _ = mzero
