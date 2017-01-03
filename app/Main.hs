@@ -78,11 +78,7 @@ main = do
                  | otherwise       = getCreds x >>= parseOpt' (x & commands) where
 
         parseOpt' p@Post {} client = (createPost p client) >>= \x -> return $ getResponseField "postid" x
-          -- (\x -> 
-          --   return $ x >>= \y -> 
-          --       Right $ map (BL.pack . T.unpack . (\el -> el ^. key "postid" . _String))
-          --                   y)-- >> mempty
-        parseOpt' s@Send {} client = sendUmail s client -- >> mempty
+        parseOpt' s@Send {} client = sendUmail s client >>= \x -> return $ getResponseField "message" x
         parseOpt' c@Comment {} client = createComment c client -- >> mempty
         parseOpt' n@Notify {} client = getNotifications n client >> return (Right [""])
         parseOpt' p@Blog {} client = readPost p client >> return (Right [""])

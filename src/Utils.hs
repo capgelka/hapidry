@@ -20,8 +20,9 @@ module Utils
 import Data.Text (Text)
 import qualified Data.Text.IO as T
 import qualified Data.Text as T (pack, unpack, concat, append)
-
+import qualified Data.Text.Lazy as TL (fromStrict)
 import Data.Text.Encoding (encodeUtf8, decodeUtf8)
+import qualified Data.Text.Lazy.Encoding as LE (encodeUtf8)
 import qualified Data.ByteString.Char8 as B
 
 import qualified Data.ByteString.Lazy.Char8 as BL --(ByteString)
@@ -309,7 +310,7 @@ commentsFromJson (Right json) = case decode json of
 commentsFromJson (Left x)     =  []
 
 getFieldFromJson :: Text -> BL.ByteString -> BL.ByteString
-getFieldFromJson field = BL.pack . T.unpack . (\el -> el ^. key field . _String)
+getFieldFromJson field = LE.encodeUtf8 . TL.fromStrict . (\el -> el ^. key field . _String)
 
 getResponseField :: Text -> Either BL.ByteString [BL.ByteString] -> Either BL.ByteString [BL.ByteString]
 getResponseField field = \x -> x >>= (\y -> Right $ map (getFieldFromJson field) y)
