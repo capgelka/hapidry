@@ -35,6 +35,7 @@ import Api
 import Data.Aeson
 import Json
 import qualified Internal.Json as IJ --(MessageList, UmailMessage)
+import qualified Json as J
 import Options
 import Data.List (sortBy)
 import Data.Ord (comparing)
@@ -45,8 +46,7 @@ import System.Environment(lookupEnv)
 import Data.Aeson.Lens (key, _String)
 import Control.Lens ((&), (^.))
 
-
-import qualified System.Locale as SL
+import System.Exit
 
 import Debug.Trace
 
@@ -187,11 +187,18 @@ readPost b@(Blog blognames order) client | length blognames /= 1     = readPost'
     isPostId :: String -> Bool
     isPostId ('p':xs) = all isDigit xs
     isPostId xs       = all isDigit xs
-    
+
     readPost' :: Commands -> IO ()
     readPost' (Blog blognames order) = do
       let proc = if order then id else reverse
-      posts <- postsFromJson <$> postsGet client [] (map T.pack blognames)
+      result <- postsFromJson <$> postsGet client [] (map T.pack blognames)
+      -- if isRight result then printError 
+      action <- case result of
+        (Right x) -> return ()
+        (Left x)  -> printError x
+      posts <- case result of
+        (Right x) -> return x
+        (Left x)  -> return []
       let sorted = proc $ sortBy (comparing (& IJ.timestamp)) 
                                   posts
       mapM_ printBlog sorted where
@@ -210,6 +217,7 @@ readPost b@(Blog blognames order) client | length blognames /= 1     = readPost'
           T.putStrLn "<br><br>\n\n"
           T.putStrLn $ p & IJ.message
           T.putStrLn $ T.concat ["comments: ", p & IJ.commentCount, "<br><br><br>\n\n\n"]
+
 
     readComments :: String -> IO ()
     readComments post = do 
@@ -276,12 +284,20 @@ notificationsFromJson (Right json) = decode json
 notificationsFromJson (Left _)     = Nothing
 
 
-postsFromJson :: Either BL.ByteString [BL.ByteString] -> [IJ.Post]
-postsFromJson (Right x) = concatMap (\j -> case decode j of
+printError :: BL.ByteString -> IO ()
+printError json = case decode json of
+   (Just r) -> do
+      T.putStr "Ошибка: "
+      T.putStrLn (r & J.errorText)
+      exitWith $ ExitFailure (r & J.returnCode)
+   Nothing  -> T.putStrLn "Unknown Error!" >> (exitWith $ ExitFailure (-1))
+
+postsFromJson :: Either BL.ByteString [BL.ByteString] -> Either BL.ByteString [IJ.Post]
+postsFromJson (Right x) = Right $ concatMap (\j -> case decode j of
                                             (Just json) -> IJ.posts json
                                             Nothing     -> [])
                                     x
-postsFromJson (Left x)  =  []
+postsFromJson (Left x)  = Left x
 
 umailsFromJson :: Either BL.ByteString BL.ByteString -> [IJ.UmailMessage]
 umailsFromJson (Right json) = case decode json of
