@@ -180,32 +180,36 @@ createComment (Comment pid text  _ _) client = sequence <$> (: [])
                                                                            ("postid", Just pid)])
                                                               
 readPost :: Commands -> ClientCredentials -> IO ()
-readPost (Blog blognames order) client | isPostId $ head blognames = readComments $ head blognames 
-                                       | otherwise                 = do
-  let proc = if order then id else reverse
-  posts <- postsFromJson <$> postsGet client [] (map T.pack blognames)
-  let sorted = proc $ sortBy (comparing (& IJ.timestamp)) 
-                              posts
-  mapM_ printBlog sorted where
-    printBlog :: IJ.Post -> IO ()
-    printBlog p = do
-      date <- p & IJ.date
-      T.putStrLn $ case p & IJ.journalname of
-          Just x -> T.concat ["<h3>", x, " (", p & IJ.author, ")</h3><br>"]
-          Nothing -> ""
-      T.putStrLn $ T.concat [date,
-                            ": ",
-                             p & IJ.title, 
-                             " [",
-                             p & IJ.postid,
-                             "]"]
-      T.putStrLn "<br><br>\n\n"
-      T.putStrLn $ p & IJ.message
-      T.putStrLn $ T.concat ["comments: ", p & IJ.commentCount, "<br><br><br>\n\n\n"]
+readPost b@(Blog blognames order) client | length blognames /= 1     = readPost' b
+                                         | isPostId $ head blognames = readComments $ head blognames 
+                                         | otherwise                 = readPost' b where
 
     isPostId :: String -> Bool
     isPostId ('p':xs) = all isDigit xs
     isPostId xs       = all isDigit xs
+    
+    readPost' :: Commands -> IO ()
+    readPost' (Blog blognames order) = do
+      let proc = if order then id else reverse
+      posts <- postsFromJson <$> postsGet client [] (map T.pack blognames)
+      let sorted = proc $ sortBy (comparing (& IJ.timestamp)) 
+                                  posts
+      mapM_ printBlog sorted where
+        printBlog :: IJ.Post -> IO ()
+        printBlog p = do
+          date <- p & IJ.date
+          T.putStrLn $ case p & IJ.journalname of
+              Just x -> T.concat ["<h3>", x, " (", p & IJ.author, ")</h3><br>"]
+              Nothing -> ""
+          T.putStrLn $ T.concat [date,
+                                ": ",
+                                 p & IJ.title, 
+                                 " [",
+                                 p & IJ.postid,
+                                 "]"]
+          T.putStrLn "<br><br>\n\n"
+          T.putStrLn $ p & IJ.message
+          T.putStrLn $ T.concat ["comments: ", p & IJ.commentCount, "<br><br><br>\n\n\n"]
 
     readComments :: String -> IO ()
     readComments post = do 
