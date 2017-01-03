@@ -77,42 +77,50 @@ readOptionB :: CT.Config -> CT.Name -> IO B.ByteString
 readOptionB conf opt = encodeUtf8 <$> readOption conf opt
 
 createPost :: Commands -> ClientCredentials -> IO (Either Integer [BL.ByteString])
-createPost (Post blogs _ title (Just x) False whitelist draft tags) client = do
+createPost (Post blogs _ title (Just x) False whitelist draft tags music mood) client = do
     text <- readFile x
     postsCreate client (applyOptions
                       [("message", Just text),
                        ("title", title),
                        ("close_access_mode", Just $ if whitelist then "4" else "0"),
-                       ("type",  if draft then Just "draft" else Nothing)] 
+                       ("type",  if draft then Just "draft" else Nothing),
+                       ("current_music", music),
+                       ("current_mood", mood)] 
                        ++ convertTags tags)
                 (map T.pack blogs)    
-createPost (Post blogs _ title _ True whitelist draft tags) client = do 
+createPost (Post blogs _ title _ True whitelist draft tags music mood) client = do 
   text <- getContents
   postsCreate client  (applyOptions
                       [("message", Just text),
                        ("title", title),
                        ("close_access_mode", Just $ if whitelist then "4" else "0"),
-                       ("type",  if draft then Just "draft" else Nothing)] 
+                       ("type",  if draft then Just "draft" else Nothing),
+                       ("current_music", music),
+                       ("current_mood", mood)]  
                        ++ convertTags tags)
               (map T.pack blogs)
 #ifdef OS_Linux
-createPost (Post blogs Nothing title Nothing False whitelist draft tags) client = do 
+createPost (Post blogs Nothing title Nothing False whitelist draft tags music mood) client = do 
   text <- T.unpack <$> decodeUtf8 <$> runUserEditor
   postsCreate client  (applyOptions
                       [("message", Just text),
                        ("title", title),
                        ("close_access_mode", Just $ if whitelist then "4" else "0"),
-                       ("type",  if draft then Just "draft" else Nothing)]
+                       ("type",  if draft then Just "draft" else Nothing),
+                       ("current_music", music),
+                       ("current_mood", mood)] 
                        ++ convertTags tags)
               (map T.pack blogs)
 #endif
-createPost (Post blogs text title _ _ whitelist draft tags) client = postsCreate client
+createPost (Post blogs text title _ _ whitelist draft tags music mood) client = postsCreate client
                                (applyOptions [("message", text),
                                               ("title", title),
                                               ("close_access_mode", 
                                                Just $ if whitelist then "4" else "0"),
                                                ("type",  
-                                                if draft then Just "draft" else Nothing)]
+                                                if draft then Just "draft" else Nothing),
+                                              ("current_music", music),
+                                              ("current_mood", mood)] 
                                 ++ convertTags tags)
                                (map T.pack blogs)
 

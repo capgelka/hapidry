@@ -72,7 +72,9 @@ data Commands
         pipe :: Bool, -- ^ flag. read message from stdin uf set
         whitelist :: Bool, -- ^flag. close post for whitelist only if set.
         draft :: Bool, -- ^flag. post to draft if set  
-        themes :: [String] -- ^ list of tags for post
+        tags :: [String], -- ^ list of tags for post
+        music :: Maybe String, -- ^ optional field for music
+        mood :: Maybe String -- ^ optional field for mood
       }
     | Send
       {
@@ -281,6 +283,12 @@ parsePost = Post
         <> long "tags"
         <> metavar "POST_MESSAGE_TAGS"
         <> help "add tags to message")
+    <*> optional (strOption $
+        long "music"
+        <> help "post music")
+    <*> optional (strOption $
+        long "mood"
+        <> help "post mood")
       
 
 multiString desc = concat <$> many single where 
