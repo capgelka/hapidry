@@ -14,6 +14,7 @@ module Utils
   , readUmail
   , readSid
   , getResponseField
+  , printError
   ) where
 
 import Data.Text (Text)
@@ -192,13 +193,9 @@ readPost b@(Blog blognames order) client | length blognames /= 1     = readPost'
     readPost' (Blog blognames order) = do
       let proc = if order then id else reverse
       result <- postsFromJson <$> postsGet client [] (map T.pack blognames)
-      -- if isRight result then printError 
-      action <- case result of
-        (Right x) -> return ()
-        (Left x)  -> printError x
       posts <- case result of
         (Right x) -> return x
-        (Left x)  -> return []
+        (Left x)  -> printError x >> return []
       let sorted = proc $ sortBy (comparing (& IJ.timestamp)) 
                                   posts
       mapM_ printBlog sorted where
