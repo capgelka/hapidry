@@ -53,8 +53,7 @@ data Commands
         full  :: Bool,
         umail :: Bool,
         discussion :: Bool,
-        comment :: Bool,
-        count :: Bool
+        comment :: Bool
       }
     | Comment 
       {
@@ -148,22 +147,7 @@ parseRead = Blog
       (long "reversed"
        <> short 'r'
        <> help "reverse sorting order")
-    -- <*> switch
-    --   (long "umail"
-    --    <> short 'U'
-    --    <> help "show umails notifiactions on")
-    -- <*> switch
-    --   (long "comment"
-    --    <> short 'C'
-    --    <> help "show comments on")
-    -- <*> switch
-    --   (long "discussion"
-    --    <> short 'D'
-    --    <> help "show discussions on")
-    -- <*> switch
-    --   (long "full"
-    --    <> short 'a'
-    --    <> help "show full")
+
 
 -- | Subparser for hapidry notify
 parseNotify :: Parser Commands
@@ -171,27 +155,24 @@ parseNotify = Notify
     <$> switch
       (long "quiet"
         <> short 'q'
-        <> help "show something only if it's count greter then 0")
+        <> help "show something only if it's count greater then 0")
     <*> switch
-      (long "count"
-       <> short 'c'
-       <> help "show only count")
+      (long "all"
+       <> short 'A'
+       <> help "show all")
     <*> switch
       (long "umail"
        <> short 'U'
        <> help "show umails notifiactions on")
     <*> switch
-      (long "comment"
-       <> short 'C'
-       <> help "show comments on")
-    <*> switch
       (long "discussion"
        <> short 'D'
        <> help "show discussions on")
     <*> switch
-      (long "all"
-       <> short 'a'
-       <> help "show all")
+      (long "comment"
+       <> short 'C'
+       <> help "show comments on")
+
 
 -- | Subparser for hapidry comment
 parseComment :: Parser Commands

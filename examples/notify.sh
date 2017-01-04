@@ -7,6 +7,6 @@ else
 fi
 
 while true; do
-    notify-send "$(hapidry notify)"
+    notify-send "$(hapidry notify -Aq)"
     sleep $TIME
 done
