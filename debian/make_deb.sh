@@ -1,3 +1,4 @@
+#!/bin/bash
 MACHINE=$(uname -m)
 case "$MACHINE" in
   x86_64) ARCHITECTURE=amd64;;
@@ -20,6 +21,10 @@ PATH=$LOCAL/bin:$PATH
 mkdir -p $DEST/bin
 mkdir -p $DEST/share/man/man1
 mkdir -p $DEST/share/doc/hapidry
+mkdir -p $DEST/etc/bash_completion.d
+
+cp debian/hapidry $DEST/
+
 
 stack install --install-ghc --stack-yaml stack.yaml --local-bin-path . hsb2hs
 stack install --install-ghc --stack-yaml stack.yaml --local-bin-path . hapidry
@@ -36,9 +41,15 @@ perl -pe "s/VERSION/$DEBVER/" debian/control.in | \
   perl -pe "s/ARCHITECTURE/$ARCHITECTURE/" | \
   perl -pe "s/INSTALLED_SIZE/$INSTALLED_SIZE/" \
   > $DIST/DEBIAN/control
+cp debian/postinst $DIST/DEBIAN/
+cp debian/postrm $DIST/DEBIAN/
+cp debian/templates $DIST/DEBIAN/
+cp debian/config $DIST/DEBIAN/
 echo $DIST
 
 cat $DIST/DEBIAN/control
+
+tree $DIST
 
 fakeroot dpkg-deb --build $DIST
 rm -rf $DIST

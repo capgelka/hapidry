@@ -8,8 +8,6 @@ module Utils
   , sendUmail
   , getNotifications
   , createComment 
-  , postsFromJson --delete later
-  , umailsFromJson
   , readPost
   , readUmail
   , readSid
@@ -49,7 +47,6 @@ import Control.Lens ((&), (^.))
 
 import System.Exit
 
-import Debug.Trace
 
 readSid :: Text -> IO Text
 readSid username = do 
