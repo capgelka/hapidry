@@ -272,13 +272,13 @@ getNotifications opt client = do
             let uc = nt & umailCount
             let cc = nt & commentsCount
             let dc =  nt & discussCount
-            if uc > 0 && (opt & umail) 
+            if uc > 0 && ((opt & umail) || (opt & full))
                       then T.putStrLn $ T.concat ["you have ", T.pack $ show uc, " unread umails"]
                       else T.putStr ""
-            if cc > 0 && (opt & comment) 
+            if cc > 0 && ((opt & comment) || (opt & full))
                       then T.putStrLn $ T.concat ["you have ", T.pack $ show cc, " unread comments"]
                       else T.putStr ""
-            if dc > 0 && (opt & discussion) 
+            if dc > 0 && ((opt & discussion) || (opt & full))
                       then T.putStrLn $ T.concat ["you have ", T.pack $ show dc, " unread discussions"]
                       else T.putStr ""
 
