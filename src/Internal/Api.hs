@@ -25,7 +25,7 @@ import qualified Data.Text as T (unpack, map, concatMap, pack, snoc, filter, all
 import qualified Data.Text.IO as T
 import Data.Text (Text)
 import Data.Aeson.Lens (key, _String)
-import Control.Lens ((&), (^.), (^?))
+import Control.Lens ((&), (^.), (^?), (^..))
 import qualified Data.Map as Map
 import qualified Network.Wreq.Types as NWTP (FormValue, renderFormValue)
 import Network.Wreq

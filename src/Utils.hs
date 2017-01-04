@@ -194,7 +194,7 @@ readPost b@(Blog blognames order) client | length blognames /= 1     = readPost'
     readPost' (Blog blognames order) = do
       let proc = if order then id else reverse
       result <- postsFromJson <$> postsGet client [] (map T.pack blognames)
-      posts <- case result of
+      posts  <- case result of
         (Right x) -> return x
         (Left x)  -> printError x >> return []
       let sorted = proc $ sortBy (comparing (& IJ.timestamp)) 
@@ -219,7 +219,10 @@ readPost b@(Blog blognames order) client | length blognames /= 1     = readPost'
 
     readComments :: String -> IO ()
     readComments post = do 
-      comments <- commentsFromJson <$> commentsGet client [] (T.pack post)
+      result   <- commentsFromJson <$> commentsGet client [] (T.pack post)
+      comments <- case result of
+        (Right x) -> return x
+        (Left x)  -> printError x >> return []
       let proc = if order then reverse else id
       let sorted = proc $ sortBy (comparing (& IJ.ctimestamp)) 
                                   comments
@@ -303,11 +306,11 @@ umailsFromJson (Right json) = case decode json of
                                Nothing -> []
 umailsFromJson (Left x)     =  []
 
-commentsFromJson :: Either BL.ByteString BL.ByteString -> [IJ.PostComment]
-commentsFromJson (Right json) = case decode json of
+commentsFromJson :: Either BL.ByteString BL.ByteString -> Either BL.ByteString [IJ.PostComment]
+commentsFromJson (Right json) = Right $ case decode json of
                                (Just c) -> IJ.comments c
                                Nothing -> []
-commentsFromJson (Left x)     =  []
+commentsFromJson (Left x)     =  Left x
 
 getFieldFromJson :: Text -> BL.ByteString -> BL.ByteString
 getFieldFromJson field = LE.encodeUtf8 . TL.fromStrict . (\el -> el ^. key field . _String)
