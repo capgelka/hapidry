@@ -1,0 +1,9 @@
+Package: hapidry
+Version: VERSION
+Section: net
+Priority: optional
+Architecture: ARCHITECTURE
+Installed-Size: INSTALLED_SIZE
+Depends: libc6 (>= 2.13), libgmp10
+Maintainer: capgelka <ldyach@yandex.ru>
+Description: (haskell api diary) is a command line client for diary.ru api with interface in unix spirit. It supports most common actions avaible via API, and designed to make easy working with diary using powerfull unix utils.
