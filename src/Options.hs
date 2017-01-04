@@ -171,7 +171,7 @@ parseNotify = Notify
     <*> switch
       (long "comment"
        <> short 'C'
-       <> help "show comments on")
+       <> help "show comments (in your diary) on")
 
 
 -- | Subparser for hapidry comment

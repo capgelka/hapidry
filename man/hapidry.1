@@ -15,18 +15,144 @@ diary using powerfull unix utils.
 .SH OPTIONS
 .
 .TP
-.BI -c,\ --config\ config_path 
+.BI -c,\ --config \ config_path 
 use non defautl hapidry config.
 .TP
 .BI -u,\ --user \ diaryusername
 overrides diary user login.
 .TP
-.BI -p,\ --password\ password
+.BI -p,\ --password \ password
 overrides password for selected user.
+.BI -h,\ --help
+show genaral hapidry help.
+.BI -h,\ --version
+show hapidry version and git revision commit.
+
+
 
 
 .
-.SH Options for [\fread\fR] 
+.SH Options for \fInotify\f 
+get notification data
+.
+.TP
+.BI -h,\ --help
+show help for hapidry notify.
+
+.TP
+.BI -q,\ --quiet
+show notifications only if there are more then 0 events.
+
+.TP
+.BI -A,\ --all
+show notifications for all event types.
+
+.TP
+.BI -U,\ --umail
+show notifications for umails.
+
+.TP
+.BI -D,\ --discussion
+show notifications for discussions.
+
+.TP
+.BI -C,\ --comment
+show notifications for comments in your diary.
+
+
+.
+.SH Options for \fIpost\f
+create new post, It will open yout $EDITOR to write it if no other option is used.
+.
+.TP
+.BI -h,\ --help
+show help for hapidry post.
+
+.TP
+.BI -m,\ --message \ message
+specify text to post
+
+.TP
+.BI -t,\ --title \ title
+specify title to your post
+
+.TP
+.BI -f,\ --file \ file
+specify path to file with prepared post
+
+.TP
+.BI -p,\ --pipe
+get text for message from stdin
+
+.TP
+.BI -w,\ --whitelist
+if set your post will be availavle only for your whitelist
+
+.TP
+.BI -d,\ --draft
+save post as draft if set
+
+.TP
+.BI -t,\ --tags \ tags
+add tags to the post. You cane sepaeate tags with ; 
+
+.TP
+.BI --music \ music
+add info about music you have been listening while you were writing your post.
+
+.TP
+.BI --mood \ mood
+add info about your current mood
+
+
+.
+.SH Options for \fIcomment\f
+create new comment, It will open yout $EDITOR to write it if no other option is used.
+.
+.TP
+.BI -h,\ --help
+show help for hapidry comment.
+
+.TP
+.BI -m,\ --message \ message
+specify comment text
+
+.TP
+.BI -f,\ --file \ file
+specify path to file with prepared text
+
+.TP
+.BI -p,\ --pipe
+get text for message from stdin
+
+
+.
+.SH Options for \fIsend\f
+write new umail, It will open yout $EDITOR to write it if no other option is used.
+.
+.TP
+.BI -h,\ --help
+show help for hapidry send.
+
+.TP
+.BI -m,\ --message \ message
+specify umail text
+
+.TP
+.BI -t,\ --title \ title
+specify title to your umail
+
+.TP
+.BI -f,\ --file \ file
+specify path to file with prepared text
+
+.TP
+.BI -p,\ --pipe
+get text for message from stdin
+
+.
+.SH Options for \fIread\f
+read blogs or comments to post, You can use as many blogs-argumants as you want or a post id if you want to read comments. You can use pipe to w3m to render html.
 .
 .TP
 .BI -r,\ --reverse 
@@ -35,6 +161,27 @@ use reverse order for posts sorted by date.
 .TP
 .BI -h,\ --help
 show help for hapidry read.
+
+
+.
+.SH Options for \fIumail\f
+read your umails. You can use pipe to w3m to render html.
+
+.TP
+.BI -h,\ --help
+show help for hapidry umail.
+
+.TP
+.BI -f,\ --folder \ folder
+choose folder number 0 for incoming 1 for outcoming and 2 for deleted.
+
+.
+.TP
+.BI -r,\ --reverse 
+use reverse order for umails sorted by date.
+
+
+
 
 .SH AUTHOR
 .
@@ -45,7 +192,18 @@ Written by capgelka <ldyach@yandex.ru>.
 .br
 This is Free Software; this software is licensed under the GPL version 2, as published by the Free Software Foundation.
 There is NO warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
+
+.SH BUGS
+
+.br
+.
+.SH Reporing Bugs
+You can report bugs to the githgub issue tracker (https://github.com/capgelka/hapidry/issues/new). Fill free to open an issue if something is unclear for you.
+
+
+
 .
 .SH SEE ALSO
 .
-.BR curl (1).
+.BR curl (1), w3m (1).
