@@ -8,7 +8,7 @@ module Options
   , customExecParser
   , Folder(..)
   , parserPrefs
-    ) where
+  ) where
 
 import Options.Applicative
 import Options.Applicative.Builder (eitherReader, infoOption)
@@ -39,15 +39,18 @@ data Args = Args { auth :: Auth,
                    versionFlag :: Bool,
                    commands :: Commands} deriving (Show)
 
+
 folderReader :: ReadM Folder
 folderReader = eitherReader $ \arg -> case arg of
     "output"  -> Right Output
     "input"   -> Right Input
     "deleted" -> Right Deleted
-    _         -> Left "wrong dolder name"
+    _         -> Left "wrong folder name"
 
 data Commands 
-    = Notify
+    = None
+    |
+      Notify
       {
         quiet :: Bool,
         full  :: Bool,
@@ -103,7 +106,7 @@ parseArgs = Args <$> parseAuth
                  <*>  switch (long "version"
                    <> short 'v'
                    <> help "show version")
-                 <*> parseCommands
+                 <*> (parseCommands <|> pure None)
 
 
 parseConfig :: Parser ConfigPath

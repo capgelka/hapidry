@@ -128,7 +128,7 @@ timeLocale = TimeLocale { wDays = [
 
 convertTime :: String -> IO Text
 convertTime timestr =  do
-  let utcTime = posixSecondsToUTCTime $ (fromIntegral (read timestr :: Int) :: POSIXTime)
+  let utcTime = posixSecondsToUTCTime (fromIntegral (read timestr :: Int) :: POSIXTime)
   tz <- getCurrentTimeZone
   return $ pack $ formatTime (timeLocale {knownTimeZones = [tz]})
                              "%c" 

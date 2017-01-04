@@ -11,6 +11,14 @@ hapidry \- command line client for diary.ru
 (haskell api diary) is a command line client for diary.ru api with interface in unix spirit. It supports most common actions avaible via API, and designed to make easy working with
 diary using powerfull unix utils.
 
+to start use it create .hapidry file in your home dir, and add lines
+.RS
+.nf
+diaryusername="username"
+password="password"
+.RE
+.fi
+
 
 .SH OPTIONS
 .
@@ -23,9 +31,11 @@ overrides diary user login.
 .TP
 .BI -p,\ --password \ password
 overrides password for selected user.
+.TP
 .BI -h,\ --help
 show genaral hapidry help.
-.BI -h,\ --version
+.TP
+.BI -v,\ --version
 show hapidry version and git revision commit.
 
 
@@ -173,7 +183,7 @@ show help for hapidry umail.
 
 .TP
 .BI -f,\ --folder \ folder
-choose folder number 0 for incoming 1 for outcoming and 2 for deleted.
+choose folder output, input (default) or deleted.
 
 .
 .TP

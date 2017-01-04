@@ -23,7 +23,7 @@ import Data.Version (showVersion)
 import Development.GitRev (gitHash)
 import qualified Paths_hapidry as P (version)
 
-
+import System.Process (callProcess)
 
 type Delimeter = T.Text
 
@@ -38,8 +38,6 @@ getCreds command = do
   username <- case command & auth & Options.username of
           Nothing  -> readOption cfg "username"
           (Just x) -> return $ T.pack x
-  -- let path = T.unpack $ T.concat ["/tmp/hapidry_", username]
-  -- exist <- doesFileExist path
   currentSid <- readSid username
   let creds = ClientCredentials {
                 password = password,
@@ -70,3 +68,4 @@ main = do
         parseOpt' n@Notify {} client = getNotifications n client >> return (Right [""])
         parseOpt' p@Blog {} client = readPost p client >> return (Right [""])
         parseOpt' p@Umail {} client = readUmail p client >> return (Right [""])
+        parseOpt' p@None client = callProcess "hapidry" ["--help"] >> return (Right [])

@@ -28,7 +28,6 @@ import qualified Data.ByteString.Char8 as B
 import qualified Data.ByteString.Lazy.Char8 as BL --(ByteString)
 import qualified Data.Configurator as C
 import qualified Data.Configurator.Types as CT
-import Control.Lens ((&))
 #ifdef linux_HOST_OS
 import Text.Editor (runUserEditor)
 #endif
@@ -294,7 +293,7 @@ printError json = case decode json of
       T.putStr "Ошибка: "
       T.putStrLn (r & J.errorText)
       exitWith $ ExitFailure (r & J.returnCode)
-   Nothing  -> T.putStrLn "Unknown Error!" >> (exitWith $ ExitFailure (-1))
+   Nothing  -> T.putStrLn "Unknown Error!" >> exitWith (ExitFailure (-1))
 
 postsFromJson :: Either BL.ByteString [BL.ByteString] -> Either BL.ByteString [IJ.Post]
 postsFromJson (Right x) = Right $ concatMap (\j -> case decode j of
@@ -319,4 +318,4 @@ getFieldFromJson :: Text -> BL.ByteString -> BL.ByteString
 getFieldFromJson field = LE.encodeUtf8 . TL.fromStrict . (\el -> el ^. key field . _String)
 
 getResponseField :: Text -> Either BL.ByteString [BL.ByteString] -> Either BL.ByteString [BL.ByteString]
-getResponseField field = \x -> x >>= (\y -> Right $ map (getFieldFromJson field) y)
+getResponseField field x = x >>= Right . map (getFieldFromJson field)
