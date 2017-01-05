@@ -40,6 +40,7 @@ perl -pe "s/VERSION/$DEBVER/" debian/control.in | \
   > $DIST/DEBIAN/control
 cp debian/postinst $DIST/DEBIAN/
 cp debian/postrm $DIST/DEBIAN/
+cp debian/changelog $DEST/DEBIAN
 
 
 fakeroot dpkg-deb --build $DIST
