@@ -48,7 +48,7 @@ instance NWTP.FormValue DiaryText where
 data  ClientCredentials =  ClientCredentials {
       password :: B.ByteString,
       appkey   :: Text,
-      sid      :: Either Integer Text,
+      sid      :: Either BL.ByteString Text,
       username :: Text,  
       secret   :: B.ByteString
       } deriving Show
@@ -71,7 +71,7 @@ keyHash pass key = decodeLatin1 $ B16.encode $ MD5.hash $ B.append key pass
 don't want dinamically linked icu, encoding lib doesn't compile 
 http://stackoverflow.com/questions/35905276/cant-compile-haskell-encoding-lib-couldnt-find-haxml-modules
 -}
--- | encodes Text as cp1251 encoded Bytestring. 
+-- | encodes Text as cp1251 encoded ByteString. 
 -- it also encodes non cyrrilic unicode symbols as &#xxxx; 
 -- but is takes more time evem if only one suck sybbol exists in input
 toCP1251 :: Text -> B.ByteString
@@ -107,7 +107,7 @@ toForm = map (\(x, y) -> encodeUtf8 x := DiaryText y)
 
 apiPost :: ClientCredentials -> [(Text, Text)] -> IO (Either BL.ByteString BL.ByteString)
 apiPost e params = case e & sid of
-    (Left x)  -> return $ Left "{\"error\": \"Unknown auth error\", \"result\": \"-1\"}"
+    (Left x)  -> return $ Left x
     (Right x) ->  apiPost' $ updateSid x params where
 
         updateSid :: Text -> [(Text, Text)] -> [(Text, Text)]
@@ -122,6 +122,7 @@ apiPost e params = case e & sid of
                (Just x)  -> return $ Left $ r ^. responseBody
                Nothing   -> return $ Left "{\"error\": \"Unknown error\", \"result\": \"-1\"}"
 
+
 authRequest :: ClientCredentials -> IO ClientCredentials
 authRequest env = do
   r <- post "http://www.diary.ru/api" $ toForm [("appkey", appkey env),
@@ -133,15 +134,11 @@ authRequest env = do
   when (isRight $ newEnv & sid) 
        (writeSid newEnv)      
   return newEnv where 
-    authParse :: Response BL.ByteString -> Either Integer Text
+    authParse :: Response BL.ByteString -> Either BL.ByteString Text
     authParse response = case response  ^? responseBody . key "result" of
             (Just "0") -> Right (response ^. responseBody . key "sid" . _String)
-            (Just  _)  -> Left $ (\x -> case x of
-                                      (Right a) -> fst a
-                                      (Left _) -> 0)
-                               $ decimal
-                               $ response ^. responseBody . key "result" . _String
-            Nothing    -> Left (-1)
+            (Just  _)  -> Left $ (read (show $ response ^. responseBody) :: BL.ByteString)
+            Nothing    -> Left "{\"error\": \"Unknown auth error\", \"result\": \"-1\"}"
 
 convertTags :: [Text] -> [(Text, Text)]
 convertTags = map (\t -> ("tags_data[]", t))
