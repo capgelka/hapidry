@@ -15,18 +15,15 @@ import Data.Either (isRight)
 import Data.Aeson
 import Json
 
-import Debug.Trace
 
 import qualified Data.ByteString.Lazy.Char8 as BL -- (ByteString, pack, unpack)
 
-extractError :: Either BL.ByteString BL.ByteString -> Text
+extractError :: Either BL.ByteString a -> Text
 extractError (Left json) = case decode json of
-   (Just r) -> trace (show $ errorText r) errorText r
+   (Just r) -> r & errorText
    Nothing  -> error "Unhandled Exception! Impossible Case"
 extractError _ = error "Unhandled Exception! Impossible Case"
 
--- main :: IO ()
--- main = hspec spec
 instance Eq FormParam where
   (==) (x := y) (a := b)  =  x == a && (renderFormValue y == renderFormValue b)
 
@@ -57,18 +54,6 @@ spec = do
     it "creates md5 hash from password and secret key" $ do
       keyHash "123" "abf" `shouldBe` ("78d4ff855595972b916eac0d520496d1" :: Text)
 
-    -- it "converts url encoded string" $ do
-    --     (ununicode $ 
-    --        BL.pack $ 
-    --        concat $ 
-    --        replicate 5000000 ("error:\\u041d\\u0435\\u0432\\u0435\\u0440\\u043d\\u044b\\u0439\\u100cc" :: String))
-    --      >>= (\x -> (BL.last x) `shouldBe`
-    --                   ('e'))
-    -- it "converts url encoded string" $ do
-    --     (ununicode m)
-    --      `shouldBe`
-    --      ("error:\208\157\208\181\208\178\208\181\209\128\208\189\209\139\208\185")
-
   describe "toCP1251" $ do
     it "converts letters to cp1251 encoding" $ do
       toCP1251 "Русский текст, и ascii"
@@ -89,20 +74,18 @@ spec = do
         ] :: [FormParam])
 
   describe "authRequest" $ do
-    it "returns 67 error in sid field for user with bad credentials" $ do
-      authRequest badClient  >>= (\x -> ( x & sid) `shouldBe` Left 67)
+    it "returns wrong credentials error in sid field for user with bad credentials" $ do
+      authRequest badClient  >>= (\x -> extractError ( x & sid) `shouldBe` "Неверный логин или пароль")
     it "returns Right constructor for sid in sid field for user with correct credentials" $ do
       authRequest goodClient >>= (\x -> ( x & sid) `shouldSatisfy` isRight)
 
   describe "apiPost" $ do 
-    it "returns unknown auth error error for request with wrong sid and login/password" $ do
-      (apiPost badClient [] >>= \x -> return $ extractError x) `shouldReturn` "Unknown auth error"
-    it "returns 15 error for request with empty method" $ do
-      (apiPost goodClient [] >>= \x -> return $ extractError x) `shouldReturn` ""
+    it "returns wrong credential error error for request with wrong sid and login/password" $ do
+      (apiPost badClient [] >>= \x -> return $ extractError x) `shouldReturn` "Неверный логин или пароль"
+    it "returns unspecified method error for request with empty method" $ do
+      (apiPost goodClient [] >>= \x -> return $ extractError x) `shouldReturn` "Метод не определен"
     it "returns response inside Right constructor for request with wrong sid but correct creds" $ do
       apiPost goodClient [("method","user.get")] >>= (`shouldSatisfy` isRight)
     it "returns response inside Right constructor for request with correct sid and incorrect creds" $ do
       client <- (\x -> badClient {sid = x & sid}) <$> authRequest goodClient
       apiPost client [("method","user.get")] >>= (`shouldSatisfy` isRight)
-
--- other tests needs functions to read data from the api for checks. So it'll be implemented later
