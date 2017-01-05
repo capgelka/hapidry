@@ -2,3 +2,11 @@
 
 mkdir -p /etc/bash_completion.d
 mv /usr/hapidry /etc/bash_completion.d/
+hapidry-generate
+
+if [ -f "~/.zshrc" ]
+then
+    echo 'autoload bashcompinit' >> "~/.zshrc"
+    echo 'bashcompinit' >> "~/.zshrc"
+    echo 'source //etc/bash_completion.d/hapidry' >> "~/.zshrc"
+fi

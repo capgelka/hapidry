@@ -9,8 +9,9 @@ esac
 LOCAL=$HOME/.local
 VERSION=$(grep -e '^version' hapidry.cabal | awk '{print $2}' | xargs)
 DEBVER=$VERSION
-BASE=hapidry-$DEBVER-$ARCHITECTURE
+BASE="hapidry-${DEBVER}-${ARCHITECTURE}"
 DIST=`pwd`/$BASE
+
 DEST=$DIST/usr
 ME=$(whoami)
 COPYRIGHT=$DEST/share/doc/hapidry/copyright
@@ -40,7 +41,7 @@ perl -pe "s/VERSION/$DEBVER/" debian/control.in | \
   > $DIST/DEBIAN/control
 cp debian/postinst $DIST/DEBIAN/
 cp debian/postrm $DIST/DEBIAN/
-cp debian/changelog $DEST/DEBIAN
+cp debian/changelog $DIST/DEBIAN/
 
 
 fakeroot dpkg-deb --build $DIST
