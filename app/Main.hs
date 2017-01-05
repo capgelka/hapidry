@@ -24,11 +24,15 @@ import Development.GitRev (gitHash)
 import qualified Paths_hapidry as P (version)
 
 import System.Process (callProcess)
-import System.Directory (doesFileExist)
 import System.Exit
 import Control.Exception
 
 type Delimeter = T.Text
+
+errorMessage :: T.Text -> T.Text
+errorMessage m = T.concat ["Конфигурационный файл не существует! Создайте ",
+                           m,
+                           " вручную или используйте hapidry-generate"]
 
 printResult :: Either BL.ByteString [BL.ByteString] -> Delimeter -> IO ()
 printResult (Left x)  _ = printError x
@@ -36,9 +40,9 @@ printResult (Right xs) d = mapM_ (\x -> BL.putStr x >> T.putStr d) xs >> putStrL
 
 getCreds :: Args -> IO ClientCredentials
 getCreds command = do
-  cfg <- handle (\(e :: IOException) -> T.putStrLn "Конфигурационный файл не существует! Создайте $HOME/.hapidry вручную или используйте hapidry-generate" >> exitWith (ExitFailure 2)) $ do
-    cfgt <- C.load [C.Required (command & config)]
-    return cfgt
+  cfg <- handle (\(e :: IOException) 
+                 -> T.putStrLn (errorMessage $ T.pack (command & config)) >> exitWith (ExitFailure 2))
+                (C.load [C.Required (command & config)])
   password <- readOptionB cfg "password"
   username <- case command & auth & Options.username of
           Nothing  -> readOption cfg "username"
@@ -67,7 +71,7 @@ main = do
                                                BL.concat ["(", $(gitHash), ")"]]
                  | otherwise       = getCreds x >>= parseOpt' (x & commands) where
 
-        parseOpt' p@Post {} client = (createPost p client) >>= \x -> return $ getResponseField "postid" x
+        parseOpt' p@Post {} client = createPost p client >>= \x -> return $ getResponseField "postid" x
         parseOpt' s@Send {} client = sendUmail s client >>= \x -> return $ getResponseField "message" x
         parseOpt' c@Comment {} client = createComment c client >>= \x -> return $ getResponseField "message" x
         parseOpt' n@Notify {} client = getNotifications n client >> return (Right [""])
