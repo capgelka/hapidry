@@ -21,7 +21,8 @@ mkdir -p $DEST/bin
 mkdir -p $DEST/share/man/man1
 mkdir -p $DEST/share/doc/hapidry
 
-cp debian/hapidry $DEST/
+mkdir -p $DIST/etc/bash_completion.d/
+cp debian/hapidry $DIST/etc/bash_completion.d/
 
 
 stack install --install-ghc --stack-yaml stack.yaml --local-bin-path . hapidry
@@ -42,7 +43,6 @@ perl -pe "s/VERSION/$DEBVER/" debian/control.in | \
 cp debian/postinst $DIST/DEBIAN/
 cp debian/postrm $DIST/DEBIAN/
 cp debian/changelog $DIST/DEBIAN/
-
 
 fakeroot dpkg-deb --build $DIST
 rm -rf $DIST

@@ -1,12 +1,18 @@
 #!/bin/bash
 
 mkdir -p /etc/bash_completion.d
-mv /usr/hapidry /etc/bash_completion.d/
 hapidry-generate
 
-if [ -f "~/.zshrc" ]
+ZSH=/etc/zsh/zshrc
+
+if [ -f $ZSH ]
 then
-    echo 'autoload bashcompinit' >> "~/.zshrc"
-    echo 'bashcompinit' >> "~/.zshrc"
-    echo 'source //etc/bash_completion.d/hapidry' >> "~/.zshrc"
+    last=$(tail -n 1 $ZSH)
+    if [[ $last == "source /etc/bash_completion.d/hapidry" ]]; then
+        :
+    else
+        echo 'autoload bashcompinit' >> $ZSH
+        echo 'bashcompinit' >> $ZSH
+        echo 'source /etc/bash_completion.d/hapidry' >> $ZSH
+    fi
 fi

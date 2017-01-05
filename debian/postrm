@@ -1,4 +1,15 @@
-#!/bin/sh
+#!/bin/bash
 
 rm -f $HOME/.hapidry
 rm -f /etc/bash_completion.d/hapidry
+
+ZSH=/etc/zsh/zshrc
+
+if [ -f $ZSH ]
+then
+    last=$(tail -n 1 $ZSH)
+    if [[ $last == "source /etc/bash_completion.d/hapidry" ]]; then
+        head -n -3 $ZSH > tmpf
+        mv tmpf $ZSH
+    fi
+fi
