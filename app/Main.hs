@@ -24,6 +24,8 @@ import Development.GitRev (gitHash)
 import qualified Paths_hapidry as P (version)
 
 import System.Process (callProcess)
+import System.Directory
+import System.Exit
 
 type Delimeter = T.Text
 
@@ -33,6 +35,10 @@ printResult (Right xs) d = mapM_ (\x -> BL.putStr x >> T.putStr d) xs >> putStrL
 
 getCreds :: Args -> IO ClientCredentials
 getCreds command = do
+  exists  <- doesFileExist (command & config)
+  case exists of 
+    True -> return ()
+    _    -> T.putStrLn "Конфигурационный файл не существует! Создайте $HOME/.hapidry вручную или используйте hapidry-generate" >> exitWith (ExitFailure 2)
   cfg <- C.load [C.Required (command & config)]
   password <- readOptionB cfg "password"
   username <- case command & auth & Options.username of
