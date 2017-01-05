@@ -109,7 +109,7 @@ spec = do
 
     it "decodes Post" $ do 
         eitherDecode post `shouldBe` (Right $ IJ.Post "12" 
-                                                      "Thu Jan  1 00:01:40 UTC 1970"
+                                                      (return "Thu Jan  1 00:01:40 UTC 1970")
                                                       100
                                                       "12" 
                                                       "test" 
@@ -122,7 +122,7 @@ spec = do
         eitherDecode JsonSpec.posts `shouldBe` (Right $ IJ.PostList $
                                                   [IJ.Post 
                                                     "13" 
-                                                    "Thu Jan  1 00:01:40 UTC 1970"
+                                                     (return "Thu Jan  1 00:01:40 UTC 1970")
                                                      100
                                                      "212" 
                                                      "test" 
@@ -132,7 +132,7 @@ spec = do
                                                      "BBB",
                                                     IJ.Post 
                                                      "12" 
-                                                     "Thu Jan  1 00:01:40 UTC 1970"
+                                                     (return "Thu Jan  1 00:01:40 UTC 1970")
                                                      100
                                                      "120" 
                                                      "test" 

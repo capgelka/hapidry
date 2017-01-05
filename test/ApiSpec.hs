@@ -12,9 +12,18 @@ import Network.Wreq
 import Network.Wreq.Types (FormValue, renderFormValue)
 import Control.Lens ((&), (^.), (^?))
 import Data.Either (isRight)
+import Data.Aeson
+import Json
 
+import Debug.Trace
 
 import qualified Data.ByteString.Lazy.Char8 as BL -- (ByteString, pack, unpack)
+
+extractError :: Either BL.ByteString BL.ByteString -> Text
+extractError (Left json) = case decode json of
+   (Just r) -> trace (show $ errorText r) errorText r
+   Nothing  -> error "Unhandled Exception! Impossible Case"
+extractError _ = error "Unhandled Exception! Impossible Case"
 
 -- main :: IO ()
 -- main = hspec spec
@@ -86,10 +95,10 @@ spec = do
       authRequest goodClient >>= (\x -> ( x & sid) `shouldSatisfy` isRight)
 
   describe "apiPost" $ do 
-    it "returns 67 error for request with wrong sid and login/password" $ do
-      apiPost badClient [] `shouldReturn` Left 67
+    it "returns unknown auth error error for request with wrong sid and login/password" $ do
+      (apiPost badClient [] >>= \x -> return $ extractError x) `shouldReturn` "Unknown auth error"
     it "returns 15 error for request with empty method" $ do
-      apiPost goodClient [] `shouldReturn` Left 15
+      (apiPost goodClient [] >>= \x -> return $ extractError x) `shouldReturn` ""
     it "returns response inside Right constructor for request with wrong sid but correct creds" $ do
       apiPost goodClient [("method","user.get")] >>= (`shouldSatisfy` isRight)
     it "returns response inside Right constructor for request with correct sid and incorrect creds" $ do

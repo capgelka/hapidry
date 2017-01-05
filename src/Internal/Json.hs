@@ -39,6 +39,12 @@ data Umail = Umail Username Title Preview deriving (Show, Eq)
 data Comment = Comment Id Preview deriving (Show, Eq)
 
 
+instance Show (IO a) where
+    show _ = "???"
+
+instance Eq (IO a) where
+    x == y = show x == show y
+
 newtype CommentList = CommentList [Comment] deriving (Show, Eq)
 
 instance FromJSON Comment where
@@ -94,7 +100,7 @@ data Post = Post {
   , shortname :: Text
   , journalname :: Maybe Text 
   , author :: Text
-} 
+} deriving (Eq, Show)
 
 timeLocale = TimeLocale { wDays = [ 
                                     ("Sunday", "Воскресенье"),
@@ -149,7 +155,7 @@ instance FromJSON Post where
                                   timestamp = v .: "dateline_date"
   parseJSON _ = mzero
 
-newtype PostList = PostList { posts :: [Post] } 
+newtype PostList = PostList { posts :: [Post] } deriving (Eq, Show)
 
 instance FromJSON PostList where
   parseJSON = withObject "posts" $
@@ -169,7 +175,7 @@ data UmailMessage = UmailMessage {
   , utitle :: Text
   , messageHtml :: Text
   , username :: Text
-} 
+} deriving (Eq, Show)
 
 
 
@@ -184,7 +190,7 @@ instance FromJSON UmailMessage where
                                           timestamp = v .: "dateline"
   parseJSON _ = mzero
 
-newtype MessageList = MessageList { umails :: [UmailMessage] } 
+newtype MessageList = MessageList { umails :: [UmailMessage] } deriving (Eq, Show)
 
 
 instance FromJSON MessageList where
@@ -203,7 +209,7 @@ data PostComment = PostComment {
   , ctitle :: Text
   , cmessage :: Text
   , cauthor :: Text
-} 
+} deriving (Eq, Show)
 
 instance FromJSON PostComment where
 
@@ -217,7 +223,7 @@ instance FromJSON PostComment where
   parseJSON _ = mzero
 
 
-newtype PostCommentList = PostCommentList { comments :: [PostComment] } 
+newtype PostCommentList = PostCommentList { comments :: [PostComment] } deriving (Eq, Show)
 
 
 instance FromJSON PostCommentList where

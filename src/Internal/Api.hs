@@ -107,7 +107,7 @@ toForm = map (\(x, y) -> encodeUtf8 x := DiaryText y)
 
 apiPost :: ClientCredentials -> [(Text, Text)] -> IO (Either BL.ByteString BL.ByteString)
 apiPost e params = case e & sid of
-    (Left x)  -> return $ Left "{\"error\": \"Unknown auth error\"}"
+    (Left x)  -> return $ Left "{\"error\": \"Unknown auth error\", \"result\": \"-1\"}"
     (Right x) ->  apiPost' $ updateSid x params where
 
         updateSid :: Text -> [(Text, Text)] -> [(Text, Text)]
@@ -120,7 +120,7 @@ apiPost e params = case e & sid of
                (Just "0")  -> return $ Right $ r ^. responseBody
                (Just "12") -> authRequest e >>= (`apiPost` params)
                (Just x)  -> return $ Left $ r ^. responseBody
-               Nothing   -> return $ Left "{\"error\": \"Unknown error\"}"
+               Nothing   -> return $ Left "{\"error\": \"Unknown error\", \"result\": \"-1\"}"
 
 authRequest :: ClientCredentials -> IO ClientCredentials
 authRequest env = do
