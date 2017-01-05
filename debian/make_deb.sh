@@ -42,7 +42,5 @@ cp debian/postinst $DIST/DEBIAN/
 cp debian/postrm $DIST/DEBIAN/
 
 
-tree $DIST
-
 fakeroot dpkg-deb --build $DIST
 rm -rf $DIST

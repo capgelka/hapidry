@@ -1,4 +1,4 @@
-{-# LANGUAGE  OverloadedStrings, TemplateHaskell, DuplicateRecordFields #-}
+{-# LANGUAGE  OverloadedStrings, TemplateHaskell, DuplicateRecordFields, ScopedTypeVariables #-}
 {-# OPTIONS_GHC -fno-warn-unused-binds #-}
 
 import qualified Data.Configurator as C
@@ -24,8 +24,9 @@ import Development.GitRev (gitHash)
 import qualified Paths_hapidry as P (version)
 
 import System.Process (callProcess)
-import System.Directory
+import System.Directory (doesFileExist)
 import System.Exit
+import Control.Exception
 
 type Delimeter = T.Text
 
@@ -35,11 +36,9 @@ printResult (Right xs) d = mapM_ (\x -> BL.putStr x >> T.putStr d) xs >> putStrL
 
 getCreds :: Args -> IO ClientCredentials
 getCreds command = do
-  exists  <- doesFileExist (command & config)
-  case exists of 
-    True -> return ()
-    _    -> T.putStrLn "Конфигурационный файл не существует! Создайте $HOME/.hapidry вручную или используйте hapidry-generate" >> exitWith (ExitFailure 2)
-  cfg <- C.load [C.Required (command & config)]
+  cfg <- handle (\(e :: IOException) -> T.putStrLn "Конфигурационный файл не существует! Создайте $HOME/.hapidry вручную или используйте hapidry-generate" >> exitWith (ExitFailure 2)) $ do
+    cfgt <- C.load [C.Required (command & config)]
+    return cfgt
   password <- readOptionB cfg "password"
   username <- case command & auth & Options.username of
           Nothing  -> readOption cfg "username"
