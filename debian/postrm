@@ -1,0 +1,4 @@
+#!/bin/sh
+
+rm -f $HOME/.hapidry
+rm -f /etc/bash_completion.d/hapidry

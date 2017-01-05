@@ -1,0 +1,4 @@
+#!/bin/bash
+
+mkdir -p /etc/bash_completion.d
+mv /usr/hapidry /etc/bash_completion.d/
