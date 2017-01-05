@@ -3,14 +3,12 @@ sudo: false
 
 cache:
     directories:
-        - $HOME/.ghc
-        - $HOME/.cabal
         - $HOME/.stack
 
 matrix:
   fast_finish: true
   include:
-    - env: GHCVER=8.0.1 STACK_YAML=stack-8.0.yaml
+    - env: GHCVER=8.0.1 STACK_YAML=stack.yaml
       compiler: ": #stack 8.0.1"
       addons: {apt: {packages: [ghc-8.0.1], sources: [hvr-ghc]}}
 
