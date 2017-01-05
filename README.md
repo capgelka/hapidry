@@ -1,5 +1,9 @@
 # hapidry
 
+
+[![Build Status](https://travis-ci.org/capgelka/hapidry.svg?branch=master)](https://travis-ci.org/capgelka/hapidry)
+[![Release](https://img.shields.io/github/release/capgelka/hapidry.svg)](https://github.com/capgelka/hapidry/releases)
+
 hapidry (haskell api diary) is a command line client for diary.ru api with interface in unix spirit. Feel free to open issues if something is done some other ugly way.
 
 Currently it supports 7 actions (with 6 subcommands).

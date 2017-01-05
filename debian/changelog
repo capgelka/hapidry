@@ -1,3 +1,11 @@
+0.2.10
+New features
+* add travis CI
+
+Bug fixed
+* exception handling for auth errors
+* fix tests
+
 0.2.9
 New features
 * debian packaging

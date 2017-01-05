@@ -17,7 +17,7 @@ matrix:
 
 before_install:
  - unset CC
- - export PATH=$HOME/.local/bin:/opt/ghc/$GHCVER/bin:$PATH;;
+ - export PATH=$HOME/.local/bin:/opt/ghc/$GHCVER/bin:$PATH
  - ./.travis-setup.sh
 
 install:
@@ -26,4 +26,4 @@ install:
 
 
 script:
- - set -e; stack --no-terminal test --haddock --no-haddock-deps --ghc-options="-Werror";;
+ - set -e; stack --no-terminal test --haddock --no-haddock-deps --ghc-options="-Werror"

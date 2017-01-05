@@ -50,13 +50,6 @@ userGet env params = apiPost env (("method", "user.get"):params)
 umailGet :: ClientCredentials -> [(Text, Text)] -> IO (Either BL.ByteString BL.ByteString)
 umailGet env params = apiPost env (("method", "umail.get"):params)
 
--- umailsGet :: ClientCredentials 
---              -> [(Text, Text)] 
---              -> [Name]
---              -> IO (Either BL.ByteString BL.ByteString)
--- umailsGet env p [] = sequence <$> (: []) <$> umailGet env []
--- umailsGet env p names = sequence <$> mapM (\u -> umailGet env (("username", u):p) <$> umailGet env []
-
 commentsGet :: ClientCredentials -> [(Text, Text)] -> Id -> IO (Either BL.ByteString BL.ByteString)
 commentsGet env params pid | T.head pid == 'p' = commentsGet' env params (T.tail pid)
                            | otherwise = commentsGet' env params pid where
