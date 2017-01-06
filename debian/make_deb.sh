@@ -6,15 +6,11 @@ case "$MACHINE" in
   i386)   ARCHITECTURE=i386;;
 esac
 
-LOCAL=$HOME/.local
 VERSION=$(grep -e '^version' hapidry.cabal | awk '{print $2}' | xargs)
-DEBVER=$VERSION
-BASE="hapidry-${DEBVER}-${ARCHITECTURE}"
+BASE="hapidry-${VERSION}-${ARCHITECTURE}"
 DIST=`pwd`/$BASE
 
 DEST=$DIST/usr
-ME=$(whoami)
-COPYRIGHT=$DEST/share/doc/hapidry/copyright
 
 
 mkdir -p $DEST/bin
@@ -35,7 +31,7 @@ gzip -9 $DEST/share/man/man1/hapidry.1
 
 INSTALLED_SIZE=$(du -B 1024 -s $DEST | awk '{print $1}')
 mkdir -p $DIST/DEBIAN
-perl -pe "s/VERSION/$DEBVER/" debian/control.in | \
+perl -pe "s/VERSION/$VERSION/" debian/control.in | \
   perl -pe "s/ARCHITECTURE/$ARCHITECTURE/" | \
   perl -pe "s/INSTALLED_SIZE/$INSTALLED_SIZE/" \
   > $DIST/DEBIAN/control
