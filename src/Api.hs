@@ -14,23 +14,26 @@ module Api
   , commentCreate
   , commentsGet
   , postsGet
+  , printError
   ) where
 
 
-import qualified Data.ByteString.Lazy.Char8 as BL (ByteString)
+import qualified Data.ByteString.Lazy.Char8 as BL (ByteString, putStr, putStrLn)
 import Data.Text (Text)
 import qualified Data.Text.Lazy as L (Text)
 import qualified Data.Text as T (head, tail)
+import qualified Data.Text.IO as T
 import Internal.Api (ClientCredentials(..), apiPost, authRequest)
 --import Data.Aeson.Lens (key, _String)
 import Data.Aeson
 import Data.Text.Lazy.Encoding (encodeUtf8, decodeUtf8)
 import Control.Lens ((&), (^.), (^?))
-import Json
+import qualified Json as J
 import Control.Applicative
 import Control.Monad
 import Data.Maybe (catMaybes)
 
+import System.Exit
 
 type Name = Text
 type Id = Text
@@ -88,9 +91,24 @@ notificationGet env params = apiPost env (("method", "notification.get"):params)
 commentCreate :: ClientCredentials -> [(Text, Text)] -> IO (Either BL.ByteString BL.ByteString)
 commentCreate env params = apiPost env (("method", "comment.create"):("subscribe", "1"):params)
 
+maybeIdByName :: ClientCredentials -> Name -> IO (Maybe Id)
+maybeIdByName env name = do
+  response <- apiPost env [("method", "journal.get"), ("shortname", name)]
+  return $ case response of
+    (Right resp) -> J.userid <$> decode resp
+    (Left _)     -> Nothing
+
 idByName :: ClientCredentials -> Name -> IO (Maybe Id)
 idByName env name = do
   response <- apiPost env [("method", "journal.get"), ("shortname", name)]
-  return $ case response of
-    (Right resp) -> userid <$> decode resp
-    (Left _)     -> Nothing
+  case response of
+    (Right resp) -> return $ J.userid <$> decode resp
+    (Left resp)  -> printError resp >> return Nothing
+
+printError :: BL.ByteString -> IO ()
+printError json = case decode json of
+   (Just r) -> do
+      T.putStr "Ошибка: "
+      T.putStrLn (r & J.errorText)
+      exitWith $ ExitFailure (r & J.returnCode)
+   Nothing  -> T.putStrLn "Unknown Error!" >> BL.putStr json >> exitWith (ExitFailure (-1))

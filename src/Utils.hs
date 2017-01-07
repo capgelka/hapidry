@@ -284,13 +284,13 @@ notificationsFromJson (Right json) = decode json
 notificationsFromJson (Left _)     = Nothing
 
 
-printError :: BL.ByteString -> IO ()
-printError json = case decode json of
-   (Just r) -> do
-      T.putStr "Ошибка: "
-      T.putStrLn (r & J.errorText)
-      exitWith $ ExitFailure (r & J.returnCode)
-   Nothing  -> T.putStrLn "Unknown Error!" >> BL.putStr json >> exitWith (ExitFailure (-1))
+-- printError :: BL.ByteString -> IO ()
+-- printError json = case decode json of
+--    (Just r) -> do
+--       T.putStr "Ошибка: "
+--       T.putStrLn (r & J.errorText)
+--       exitWith $ ExitFailure (r & J.returnCode)
+--    Nothing  -> T.putStrLn "Unknown Error!" >> BL.putStr json >> exitWith (ExitFailure (-1))
 
 postsFromJson :: Either BL.ByteString [BL.ByteString] -> Either BL.ByteString [IJ.Post]
 postsFromJson (Right x) = Right $ concatMap (\j -> case decode j of
