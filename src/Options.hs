@@ -47,6 +47,13 @@ folderReader = eitherReader $ \arg -> case arg of
     "deleted" -> Right Deleted
     _         -> Left "wrong folder name"
 
+defaultConfigPath :: ConfigPath
+#ifdef linux_HOST_OS
+defaultConfigPath = "$(HOME)/.hapidry"
+#else
+defaultConfigPath = "$(HOMEPATH)/.hapidry"
+#endif
+
 data Commands 
     = None
     |
@@ -113,7 +120,7 @@ parseConfig :: Parser ConfigPath
 parseConfig = strOption $
                 short 'c'
                 <> long "config"
-                <> value "$(HOME)/.hapidry"
+                <> value defaultConfigPath
                 <> metavar "CONFIG"
                 <> help "path to config file"
 
