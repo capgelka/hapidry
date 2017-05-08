@@ -71,13 +71,14 @@ spec = do
       ([
         ("param" :: B.ByteString) := (DiaryText "value"),
         ("param2" :: B.ByteString) := (DiaryText "кириллица")
-        ] :: [FormParam])
+       ] :: [FormParam])
 
   describe "authRequest" $ do
     it "returns wrong credentials error in sid field for user with bad credentials" $ do
       authRequest badClient  >>= (\x -> extractError ( x & sid) `shouldBe` "Неверный логин или пароль")
     it "returns Right constructor for sid in sid field for user with correct credentials" $ do
       authRequest goodClient >>= (\x -> ( x & sid) `shouldSatisfy` isRight)
+                                                                                                                                                                                                                        
 
   describe "apiPost" $ do 
     it "returns wrong credential error error for request with wrong sid and login/password" $ do
@@ -89,3 +90,4 @@ spec = do
     it "returns response inside Right constructor for request with correct sid and incorrect creds" $ do
       client <- (\x -> badClient {sid = x & sid}) <$> authRequest goodClient
       apiPost client [("method","user.get")] >>= (`shouldSatisfy` isRight)
+

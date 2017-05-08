@@ -17,6 +17,7 @@ fin
 
 fin ()
 {
+    echo -e "\n"
     exit
 }
 

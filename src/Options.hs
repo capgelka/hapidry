@@ -1,4 +1,4 @@
-{-# LANGUAGE  OverloadedStrings, ExistentialQuantification, DuplicateRecordFields #-}
+{-# LANGUAGE  OverloadedStrings, ExistentialQuantification, CPP, DuplicateRecordFields #-}
 
 module Options
   ( mainParser
@@ -231,7 +231,7 @@ parseUmail = Umail
     <$> optional (option folderReader $
         short 'f'
         <> long "folder"
-        <> help "umail folder"
+        <> help "umail folder {output, input, deleted}"
         <> metavar "UMAIL_FOLDER")
     <*> switch
         (long "reversed"

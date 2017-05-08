@@ -17,7 +17,7 @@ mkdir -p $DEST/bin
 mkdir -p $DEST/share/man/man1
 mkdir -p $DEST/share/doc/hapidry
 
-cp debian/hapidry $DEST
+# cp debian/hapidry $DEST
 
 
 stack install --install-ghc --stack-yaml stack.yaml --local-bin-path . hapidry
@@ -27,7 +27,7 @@ find $DIST -type d | xargs chmod 755
 cp hapidry $DEST/bin/hapidry
 cp debian/first_time.sh $DEST/bin/hapidry-generate
 cp man/hapidry.1 $DEST/share/man/man1/hapidry.1
-gzip -9 $DEST/share/man/man1/hapidry.1
+gzip -9 -f $DEST/share/man/man1/hapidry.1
 
 INSTALLED_SIZE=$(du -B 1024 -s $DEST | awk '{print $1}')
 mkdir -p $DIST/DEBIAN
@@ -42,3 +42,4 @@ cp debian/changelog $DIST/DEBIAN/
 
 fakeroot dpkg-deb --build $DIST
 rm -rf $DIST
+

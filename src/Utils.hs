@@ -45,8 +45,6 @@ import System.Environment(lookupEnv)
 import Data.Aeson.Lens (key, _String)
 import Control.Lens ((&), (^.))
 
-import System.Exit
-
 
 readSid :: Text -> IO Text
 readSid username = do 
