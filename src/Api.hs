@@ -24,7 +24,6 @@ import qualified Data.Text.Lazy as L (Text)
 import qualified Data.Text as T (head, tail)
 import qualified Data.Text.IO as T
 import Internal.Api (ClientCredentials(..), apiPost, authRequest)
---import Data.Aeson.Lens (key, _String)
 import Data.Aeson
 import Data.Text.Lazy.Encoding (encodeUtf8, decodeUtf8)
 import Control.Lens ((&), (^.), (^?))
