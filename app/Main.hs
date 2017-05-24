@@ -10,14 +10,15 @@ import Options
 import Utils
 
 
-import Prelude hiding (putStr)
-import Data.ByteString.Char8 (putStr, pack)
+-- import Prelude hiding (putStr)
+-- import Data.ByteString.Char8 (putStr, pack)
 
 
 import qualified Data.Text    as T
 import qualified Data.Text.IO as T
+import Data.Text.Encoding (encodeUtf8)
 import qualified Data.ByteString.Lazy.Char8 as BL (ByteString, pack, unpack, putStr, putStrLn, concat)
-
+import qualified Data.ByteString.Char8 as B
 
 import Data.Version (showVersion)
 import Development.GitRev (gitHash)
@@ -26,7 +27,7 @@ import qualified Paths_hapidry as P (version)
 import System.Process (callProcess)
 import System.Exit
 import Control.Exception
-import qualified System.Console.Haskeline as HL (runInputT, defaultSettings, getPassword)
+import System.IO (stdin, stdout, hGetEcho, hFlush, hSetEcho)
 
 
 type Delimeter = T.Text
@@ -36,10 +37,28 @@ errorMessage m = T.concat ["Конфигурационный файл не су�
                            m,
                            " вручную или используйте hapidry-generate"]
 
---askPassword :: T.Text -> BL.ByteString -> Either BL.ByteString Text
--- askPassword username = HL.runInputT HL.defaultSettings $ do
---   p <- getPassword (Just '') 
---                    ("Enter password for " ++ (T.unpack username) ++ ":")
+askPassword :: T.Text -> BL.ByteString -> IO (Either BL.ByteString B.ByteString)
+askPassword username err = askPassword' username >>= return . (encodeUtf8 <$>) where
+
+    getPassword :: T.Text -> IO T.Text
+    getPassword username = do
+      putStr $ ("Enter password for " ++ T.unpack username ++ ": ")
+      hFlush stdout
+      pass <- withEcho False T.getLine
+      putChar '\n'
+      return pass
+
+    withEcho :: Bool -> IO a -> IO a
+    withEcho echo action = do
+      old <- hGetEcho stdin
+      bracket_ (hSetEcho stdin echo) (hSetEcho stdin old) action
+
+    askPassword' :: T.Text -> IO (Either BL.ByteString T.Text)
+    askPassword' u =  do
+      pass <- getPassword u
+      return (if T.length pass == 0
+              then (Left err)
+              else Right $ pass)
 
 printResult :: Either BL.ByteString [BL.ByteString] -> Delimeter -> IO ()
 printResult (Left x)  _ = printError x
@@ -67,7 +86,10 @@ getCreds command = do
     _    -> return creds
   case actualSid & sid of
     (Right x)  -> return creds
-    (Left err) -> creds {sid = askPassword username err}
+    (Left err) -> askPassword username err >>= \s -> case s of 
+        (Right pass) -> authRequest $ creds {password = pass}
+        (Left msg)   -> return creds {sid = Left msg}
+
 
 main :: IO ()
 main = do

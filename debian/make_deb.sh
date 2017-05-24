@@ -17,8 +17,6 @@ mkdir -p $DEST/bin
 mkdir -p $DEST/share/man/man1
 mkdir -p $DEST/share/doc/hapidry
 
-# cp debian/hapidry $DEST
-
 
 stack install --install-ghc --stack-yaml stack.yaml --local-bin-path . hapidry
 
@@ -42,4 +40,3 @@ cp debian/changelog $DIST/DEBIAN/
 
 fakeroot dpkg-deb --build $DIST
 rm -rf $DIST
-
