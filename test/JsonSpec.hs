@@ -142,46 +142,6 @@ spec = do
                                                      "AAA"])
 
 
-
-    -- it "decodes real postList" $ do
-    --     eitherDecode long `shouldBe` (Right $ IJ.PostList $
-    --                                               [IJ.Post "13" 
-    --                                                  "100"
-    --                                                  "12" 
-    --                                                  "test" 
-    --                                                  "TEST" 
-    --                                                  "user"
-    --                                                  (Just "user_journal"),
-    --                                                IJ.Post "12" 
-    --                                                  "100"
-    --                                                  "12" 
-    --                                                  "test" 
-    --                                                  "TEST" 
-    --                                                  "user"
-    --                                                  (Just "user_journal")])
-
-    -- it "decodes Umail message" $ do 
-    --     eitherDecode uMessage `shouldBe` (Right $ IJ.UmailMessage "12" 
-    --                                                            "100"
-    --                                                            "test" 
-    --                                                            "TEST" 
-    --                                                            "someone")
-    -- it "decodes Umail messages" $ do 
-    --     eitherDecode messageList `shouldBe` (Right $ IJ.MessageList $
-    --                                               [IJ.UmailMessage "13" 
-    --                                                                "100"
-    --                                                                "test" 
-    --                                                                "TEST" 
-    --                                                                "someone",
-    --                                                IJ.UmailMessage "12" 
-    --                                                                "100"
-    --                                                                "test" 
-    --                                                                "TEST" 
-    --                                                                "someone"])
-    -- it "decodes Post2" $ do 
-    --     eitherDecode "{\"message_html\": \"TEST\"}" `shouldBe` Right (Post "12" "100" "12" "test" "TEST")
-
-   
   describe "Journal" $ do
     it "decodes correctly" $ do
         eitherDecode exampleJournal `shouldBe` Right Journal {userid = "1", shortname = "root"}

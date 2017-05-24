@@ -38,11 +38,11 @@ errorMessage m = T.concat ["Конфигурационный файл не су�
                            " вручную или используйте hapidry-generate"]
 
 askPassword :: T.Text -> BL.ByteString -> IO (Either BL.ByteString B.ByteString)
-askPassword username err = askPassword' username >>= return . (encodeUtf8 <$>) where
+askPassword username err = (encodeUtf8 <$>) <$> askPassword' username where
 
     getPassword :: T.Text -> IO T.Text
     getPassword username = do
-      putStr $ ("Enter password for " ++ T.unpack username ++ ": ")
+      putStr ("Enter password for " ++ T.unpack username ++ ": ")
       hFlush stdout
       pass <- withEcho False T.getLine
       putChar '\n'
@@ -57,8 +57,8 @@ askPassword username err = askPassword' username >>= return . (encodeUtf8 <$>) w
     askPassword' u =  do
       pass <- getPassword u
       return (if T.length pass == 0
-              then (Left err)
-              else Right $ pass)
+              then Left err
+              else Right pass)
 
 printResult :: Either BL.ByteString [BL.ByteString] -> Delimeter -> IO ()
 printResult (Left x)  _ = printError x
