@@ -176,7 +176,7 @@ createComment (Comment pid text  _ _) client = sequence <$> (: [])
                                                                            ("postid", Just pid)])
                                                               
 readPost :: Commands -> ClientCredentials -> IO ()
-readPost b@(Blog blognames order) client | length blognames /= 1     = readPost' b
+readPost b@(Blog blognames order offset) client | length blognames /= 1     = readPost' b
                                          | isPostId $ head blognames = readComments $ head blognames 
                                          | otherwise                 = readPost' b where
 
@@ -185,9 +185,13 @@ readPost b@(Blog blognames order) client | length blognames /= 1     = readPost'
     isPostId xs       = all isDigit xs
 
     readPost' :: Commands -> IO ()
-    readPost' (Blog blognames order) = do
+    readPost' (Blog blognames order offset) = do
+      options <- return $ case offset of
+          Nothing  -> []
+          Just x   -> [("from", T.pack x)]
+      
       let proc = if order then id else reverse
-      result <- postsFromJson <$> postsGet client [] (map T.pack blognames)
+      result <- postsFromJson <$> postsGet client options (map T.pack blognames)
       posts  <- case result of
         (Right x) -> return x
         (Left x)  -> printError x >> return []
@@ -213,7 +217,10 @@ readPost b@(Blog blognames order) client | length blognames /= 1     = readPost'
 
     readComments :: String -> IO ()
     readComments post = do 
-      result   <- commentsFromJson <$> commentsGet client [] (T.pack post)
+      options <- return $ case offset of
+          Nothing  -> []
+          Just x   -> [("from", T.pack x)]
+      result   <- commentsFromJson <$> commentsGet client options (T.pack post)
       comments <- case result of
         (Right x) -> return x
         (Left x)  -> printError x >> return []
@@ -232,12 +239,15 @@ readPost b@(Blog blognames order) client | length blognames /= 1     = readPost'
           T.putStrLn $ c & IJ.cmessage
 
 readUmail :: Commands -> ClientCredentials -> IO ()
-readUmail (Umail folder order) client = do
+readUmail (Umail folder order offset) client = do
   let proc = if order then id else reverse
   let folderType = T.pack $ show $ case folder of
                                     (Just x)  -> 1 + fromEnum x
-                                    Nothing   -> 1 + fromEnum Input   
-  umails <- umailsFromJson <$> umailGet client [("folder", folderType)]
+                                    Nothing   -> 1 + fromEnum Input
+  options <- return $ case offset of
+          Nothing  -> []
+          Just x   -> [("from", T.pack x)]   
+  umails <- umailsFromJson <$> umailGet client ([("folder", folderType)] ++ options)
   let sorted = proc $ sortBy (comparing (& IJ.utimestamp)) 
                               umails
   mapM_ printUmail sorted where
@@ -281,14 +291,6 @@ notificationsFromJson :: Either BL.ByteString BL.ByteString -> Maybe Notificatio
 notificationsFromJson (Right json) = decode json
 notificationsFromJson (Left _)     = Nothing
 
-
--- printError :: BL.ByteString -> IO ()
--- printError json = case decode json of
---    (Just r) -> do
---       T.putStr "Ошибка: "
---       T.putStrLn (r & J.errorText)
---       exitWith $ ExitFailure (r & J.returnCode)
---    Nothing  -> T.putStrLn "Unknown Error!" >> BL.putStr json >> exitWith (ExitFailure (-1))
 
 postsFromJson :: Either BL.ByteString [BL.ByteString] -> Either BL.ByteString [IJ.Post]
 postsFromJson (Right x) = Right $ concatMap (\j -> case decode j of

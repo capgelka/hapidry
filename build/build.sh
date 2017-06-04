@@ -22,6 +22,7 @@ LIBC_DEPENDENCY="libc6 >= 2.13"
 GMP_DEPENDENCY=libgmp10
 URL="https://github.com/capgelka/hapidry"
 PACKAGE=$(grep -e '^name' hapidry.cabal | awk '{print $2}' | xargs)
+LICENSE=$(grep -e '^license' hapidry.cabal | awk '{print $2}' | xargs)
 SECTION=net
 PRIORITY=optional
 MAINTAINER="capgelka <ldyach@yandex.ru>"
@@ -69,6 +70,7 @@ for pack_type in deb rpm pacman
             --deb-changelog /app/build/changelog \
             --chdir /app \
             --force \
+            --license "${LICENSE}" \
             usr
     done
 

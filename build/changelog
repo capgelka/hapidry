@@ -1,3 +1,11 @@
+0.3
+New features
+* offset option
+* packages for pacman and rpm
+
+Bug fixed:
+* improve error handling
+
 0.2.10
 New features
 * add travis CI

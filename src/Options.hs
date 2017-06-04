@@ -96,12 +96,14 @@ data Commands
     | Blog 
       {
         blognames :: [Target],  -- ^ list of blognames to read
-        reversed :: Bool -- ^ reverse order of post by date if set
+        reversed :: Bool, -- ^ reverse order of post by date if set
+        offset :: Maybe String -- ^ offset for posts sample
       }
     | Umail
       {
         folder :: Maybe Folder, -- ^ folder to read
-        reversed :: Bool -- ^ reverse order of post by date if set
+        reversed :: Bool, -- ^ reverse order of umails by date if set
+        offset :: Maybe String -- ^ offset for umails sample
       } deriving (Show)
 
 mainParser :: ParserInfo Args
@@ -157,6 +159,10 @@ parseRead = Blog
       (long "reversed"
        <> short 'r'
        <> help "reverse sorting order")
+    <*> optional (strOption $
+        short 'o'
+        <> long "offet"
+        <> help "ofsett for posts")
 
 
 -- | Subparser for hapidry notify
@@ -237,6 +243,10 @@ parseUmail = Umail
         (long "reversed"
          <> short 'r'
          <> help "reverse sorting order")
+    <*> optional (strOption $
+        short 'o'
+        <> long "offet"
+        <> help "ofsett for posts")
 
 
 parsePost :: Parser Commands
