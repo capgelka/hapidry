@@ -1,0 +1,9 @@
+Template: hapidry/diary_username
+Type: string
+Description: your diary username
+ 
+
+Template: hapidry/diary_password
+Type: password
+Description: your password for diary.ru account
+
