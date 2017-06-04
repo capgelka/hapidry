@@ -18,8 +18,6 @@ mkdir -p $DEST/bin
 mkdir -p $DEST/share/man/man1
 mkdir -p $DEST/share/doc/hapidry
 
-LIBC_DEPENDENCY="libc6 >= 2.13"
-GMP_DEPENDENCY=libgmp10
 URL="https://github.com/capgelka/hapidry"
 PACKAGE=$(grep -e '^name' hapidry.cabal | awk '{print $2}' | xargs)
 LICENSE=$(grep -e '^license' hapidry.cabal | awk '{print $2}' | xargs)
@@ -60,8 +58,6 @@ for pack_type in deb rpm pacman
             --maintainer   "${MAINTAINER}" \
             --description  "${DESCRIPTION}" \
             --deb-priority "${PRIORITY}" \
-            --depends "${LIBC_DEPENDENCY}" \
-            --depends "${GMP_DEPENDENCY}" \
             --category "${SECTION}" \
             --url "${URL}" \
             --after-install /app/build/postinst \
