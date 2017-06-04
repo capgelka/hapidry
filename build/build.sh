@@ -24,9 +24,6 @@ URL="https://github.com/capgelka/hapidry"
 PACKAGE=$(grep -e '^name' hapidry.cabal | awk '{print $2}' | xargs)
 SECTION=net
 PRIORITY=optional
-# Architecture: ARCHITECTURE
-# Installed-Size: INSTALLED_SIZE
-# Depends: libc6 (>= 2.13), libgmp10
 MAINTAINER="capgelka <ldyach@yandex.ru>"
 DESCRIPTION="(haskell api diary) is a command line client for diary.ru api with interface in unix spirit. It supports most common actions available via API, and designed to make easy working with diary using powerfull unix utils."
 
@@ -39,27 +36,25 @@ cp build/first_time.sh $DEST/bin/hapidry-generate
 cp man/hapidry.1 $DEST/share/man/man1/hapidry.1
 gzip -9 -f $DEST/share/man/man1/hapidry.1
 
-# INSTALLED_SIZE=$(du -B 1024 -s $DEST | awk '{print $1}')
-# mkdir -p $DIST/build
-# perl -pe "s/VERSION/$VERSION/" build/control.in | \
-#   perl -pe "s/ARCHITECTURE/$ARCHITECTURE/" | \
-#   perl -pe "s/INSTALLED_SIZE/$INSTALLED_SIZE/" \
-#   > $DIST/build/control
-# cp build/postinst $DIST/build/
-# cp build/postrm $DIST/build/
-# cp build/changelog $DIST/build/
+mkdir -p $DIST/build
 
-# container=$(docker create tenzer/fpm:latest)
-# docker cp $DEST "${container}:${DEST}"
-# ls -l $DEST
-# docker start $container- i ls -l $DEST
+cp build/postinst $DIST/build
+cp build/postrm $DIST/build
+cp build/changelog $DIST/build
+
+if [ -n $(docker images | grep hapidry/fpm-builder)]; then
+    pushd docker
+    docker build -t hapidry/fpm-builder .
+    popd
+fi
+
 for pack_type in deb rpm pacman
     do
-        docker run --rm -v "${DIST}:/app" tenzer/fpm:latest \
+        docker run --rm -v "${DIST}:/app" hapidry/fpm-builder \
             --input-type dir \
             --name     hapidry \
             --version "${VERSION}" \
-            --package /app \
+            --package "/app/" \
             --architecture "${ARCHITECTURE}" \
             --maintainer   "${MAINTAINER}" \
             --description  "${DESCRIPTION}" \
@@ -68,18 +63,14 @@ for pack_type in deb rpm pacman
             --depends "${GMP_DEPENDENCY}" \
             --category "${SECTION}" \
             --url "${URL}" \
-            --after-install build/postinst \
-            --after-remove build/postrm \
+            --after-install /app/build/postinst \
+            --after-remove /app/build/postrm \
             --output-type $pack_type \
-            --deb-changelog build/changelog \
-            # --verbose \
-            # --debug \
+            --deb-changelog /app/build/changelog \
             --chdir /app \
-            # --workdir app  \
-            /app
-            # "${DIST}"
+            --force \
+            usr
     done
-# docker rm $container
 
-# fakeroot dpkg-deb --build $DIST
-# rm -rf $dist
+rm -rf "${DIST}/usr"
+rm -rf "${DIST}/build"

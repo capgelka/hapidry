@@ -2,7 +2,7 @@ name:                hapidry
 version:             0.2.10
 synopsis:            Initial project template from stack
 description:         Please see README.md
-homepage:            http://github.com/capgelka/hapidry#readme
+homepage:            https://github.com/capgelka/hapidry#readme
 license:             GPL-2
 license-file:        LICENSE
 author:              capgelka
@@ -26,7 +26,7 @@ library
                      , bytestring
                      , text
                      , aeson
-                     , optparse-applicative>=0.13.0.0
+                     , optparse-applicative
                      , configurator
                      , attoparsec
                      , unordered-containers
