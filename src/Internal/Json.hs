@@ -125,7 +125,7 @@ timeLocale = TimeLocale { wDays = [
                                     ("November", "Ноября"),
                                     ("December", "Декабря")], 
                         amPm = ("AM", "PM"), 
-                        dateTimeFmt = "%a%e %b %H:%M:%S %Z %Y", 
+                        dateTimeFmt = "%a%e  %b %H:%M:%S %Z %Y", 
                         dateFmt = "%m/%d/%y", 
                         timeFmt = "%H:%M:%S", 
                         time12Fmt = "%I:%M:%S %p", 

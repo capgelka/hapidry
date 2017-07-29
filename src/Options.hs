@@ -161,8 +161,8 @@ parseRead = Blog
        <> help "reverse sorting order")
     <*> optional (strOption $
         short 'o'
-        <> long "offet"
-        <> help "ofsett for posts")
+        <> long "offset"
+        <> help "offset for posts")
 
 
 -- | Subparser for hapidry notify
@@ -245,8 +245,8 @@ parseUmail = Umail
          <> help "reverse sorting order")
     <*> optional (strOption $
         short 'o'
-        <> long "offet"
-        <> help "ofsett for posts")
+        <> long "offset"
+        <> help "offset for posts")
 
 
 parsePost :: Parser Commands
