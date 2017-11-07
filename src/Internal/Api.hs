@@ -50,7 +50,8 @@ data  ClientCredentials =  ClientCredentials {
       appkey   :: Text,
       sid      :: Either BL.ByteString Text,
       username :: Text,  
-      secret   :: B.ByteString
+      secret   :: B.ByteString,
+      endpoint :: String
       } deriving Show
 
 
@@ -115,7 +116,7 @@ apiPost e params = case e & sid of
 
         apiPost' :: [(Text, Text)] -> IO (Either BL.ByteString BL.ByteString)
         apiPost' params = do
-            r <- post "http://www.diary.ru/api" $ toForm params
+            r <- post (e & endpoint) $ toForm params
             case r ^? responseBody . key "result" . _String of
                (Just "0")  -> return $ Right $ r ^. responseBody
                (Just "12") -> authRequest e >>= (`apiPost` params)
@@ -125,11 +126,11 @@ apiPost e params = case e & sid of
 
 authRequest :: ClientCredentials -> IO ClientCredentials
 authRequest env = do
-  r <- post "http://www.diary.ru/api" $ toForm [("appkey", appkey env),
-                                                ("password", keyHash (password env)
-                                                                     (secret env)),
-                                                ("username", username env),
-                                                ("method",  "user.auth")]
+  r <- post (env & endpoint) $ toForm [("appkey", appkey env),
+                                              ("password", keyHash (password env)
+                                                                   (secret env)),
+                                              ("username", username env),
+                                              ("method",  "user.auth")]
   let newEnv = env {sid = authParse r}
   when (isRight $ newEnv & sid) 
        (writeSid newEnv)      

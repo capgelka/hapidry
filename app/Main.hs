@@ -2,6 +2,7 @@
 {-# OPTIONS_GHC -fno-warn-unused-binds #-}
 
 import qualified Data.Configurator as C
+import qualified Data.Configurator.Types as C (Config)
 import Control.Lens ((&))
 import Api
 import Internal.Api (authRequest)
@@ -64,6 +65,13 @@ printResult :: Either BL.ByteString [BL.ByteString] -> Delimeter -> IO ()
 printResult (Left x)  _ = printError x
 printResult (Right xs) d = mapM_ (\x -> BL.putStr x >> T.putStr d) xs >> putStrLn ""
 
+getApiEndpointRootUrl :: C.Config -> IO String
+getApiEndpointRootUrl conf = T.unpack <$> choice <$> (readOption conf "secure") where
+  choice "True" = "https://secure.diary.ru/api"
+  choice "true" = "https://secure.diary.ru/api"
+  choice _      = "http://www.diary.ru/api"
+
+
 getCreds :: Args -> IO ClientCredentials
 getCreds command = do
   cfg <- handle (\(e :: IOException) 
@@ -74,12 +82,14 @@ getCreds command = do
           Nothing  -> readOption cfg "username"
           (Just x) -> return $ T.pack x
   currentSid <- readSid username
+  apiRoot <- getApiEndpointRootUrl cfg
   let creds = ClientCredentials {
                 password = password,
                 appkey  = "5ab793910e36584cd81622e5eb77d3d1",
                 sid     = Right currentSid,
                 username    = username,  
-                secret  = "8543db8deccb4b0fcb753291c53f8f4f"
+                secret  = "8543db8deccb4b0fcb753291c53f8f4f",
+                endpoint = apiRoot
                 } & updateCreds $ command & auth
   actualSid <- case currentSid of
     ("") -> authRequest creds

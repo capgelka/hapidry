@@ -9,8 +9,8 @@ matrix:
   fast_finish: true
   include:
     - env: GHCVER=8.0.1 STACK_YAML=stack.yaml
-      compiler: ": #stack 8.0.1"
-      addons: {apt: {packages: [ghc-8.0.1], sources: [hvr-ghc]}}
+      compiler: ": #stack 8.2.1"
+      addons: {apt: {packages: [ghc-8.2.1], sources: [hvr-ghc]}}
 
 
 before_install:
