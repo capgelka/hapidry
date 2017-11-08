@@ -11,7 +11,7 @@ module Options
   ) where
 
 import Options.Applicative
-import Options.Applicative.Builder (eitherReader, infoOption)
+import Options.Applicative.Builder (eitherReader)
 import Data.List.Split (splitOn)
 import Data.Char (isSpace)
 
@@ -19,16 +19,15 @@ import Data.Char (isSpace)
 import Data.Monoid 
 
 
-type Action = String
 type Target = String
 type Id = String
 type Path   = String
 data Auth   = Auth {username :: Maybe String, password :: Maybe String} deriving (Show)
 type ConfigPath = String
-type Version =  Bool
 data Folder = Input | Output | Deleted deriving (Enum, Show)
 
 
+parserPrefs :: ParserPrefs
 parserPrefs = prefs $ disambiguate
                     <> showHelpOnError
                     <> showHelpOnEmpty
@@ -149,8 +148,10 @@ parseCommands = subparser $
     command "read" (parseRead `withInfo` "read blogposts") <>
     command "umail" (parseUmail `withInfo` "read umail")
 
+
 withInfo :: Parser a -> String -> ParserInfo a
 withInfo opts desc = info (helper <*> opts) $ progDesc desc
+
 
 parseRead :: Parser Commands
 parseRead = Blog
@@ -290,8 +291,9 @@ parsePost = Post
     <*> optional (strOption $
         long "mood"
         <> help "post mood")
-      
 
+
+multiString :: Mod OptionFields [String] -> Parser [String]
 multiString desc = concat <$> many single where 
   single = option ((map trim . splitOn ",") <$> str) desc
   trim :: String -> String

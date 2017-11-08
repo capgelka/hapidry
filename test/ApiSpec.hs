@@ -33,7 +33,8 @@ badClient = ClientCredentials {
                 appkey  = "5ab793910e36584cd81622e5eb77d3d1",
                 sid     = Right "",
                 username    = "username",  
-                secret  = "8543db8deccb4b0fcb753291c53f8f4f"
+                secret  = "8543db8deccb4b0fcb753291c53f8f4f",
+                endpoint = "https://secure.diary.ru/api"
               } 
 
 goodClient = ClientCredentials {
@@ -41,7 +42,8 @@ goodClient = ClientCredentials {
                 appkey  = "5ab793910e36584cd81622e5eb77d3d1",
                 sid     = Right "",
                 username    = "чутест",  
-                secret  = "8543db8deccb4b0fcb753291c53f8f4f"
+                secret  = "8543db8deccb4b0fcb753291c53f8f4f",
+                endpoint = "https://secure.diary.ru/api"
               }
 
 m :: BL.ByteString
