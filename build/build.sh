@@ -26,7 +26,7 @@ PRIORITY=optional
 MAINTAINER="capgelka <ldyach@yandex.ru>"
 DESCRIPTION="(haskell api diary) is a command line client for diary.ru api with interface in unix spirit. It supports most common actions available via API, and designed to make easy working with diary using powerfull unix utils."
 
-stack install --install-ghc --stack-yaml stack.yaml --local-bin-path . hapidry
+stack install --install-ghc --stack-yaml stack.yaml --local-bin-path . hapidry --allow-different-user
 
 
 find $DIST -type d | xargs chmod 755
