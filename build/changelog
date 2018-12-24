@@ -1,3 +1,11 @@
+0.3.2
+New features:
+* Use https
+
+Bugs fixed:
+* fix reading blogs which have only digits in names
+* fix headings for reading blogs
+
 0.3
 New features
 * offset option
