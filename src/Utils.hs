@@ -1,4 +1,4 @@
-{-# LANGUAGE  OverloadedStrings, CPP, DuplicateRecordFields #-}
+{-# LANGUAGE  OverloadedStrings, CPP, DuplicateRecordFields,  DoAndIfThenElse #-}
 
 module Utils 
   ( readOption
@@ -176,9 +176,10 @@ createComment (Comment pid text  _ _) client = sequence <$> (: [])
                                                                            ("postid", Just pid)])
                                                               
 readPost :: Commands -> ClientCredentials -> IO ()
-readPost b@(Blog blognames order offset) client | length blognames /= 1     = readPost' b
-                                         | isPostId $ head blognames = readComments $ head blognames 
-                                         | otherwise                 = readPost' b where
+readPost b@(Blog blognames order offset)
+         client | length blognames /= 1     = readPost' b
+                | isPostId $ head blognames = readComments $ head blognames 
+                | otherwise                 = readPost' b where
 
     isPostId :: String -> Bool
     isPostId ('p':xs) = all isDigit xs
@@ -214,29 +215,35 @@ readPost b@(Blog blognames order offset) client | length blognames /= 1     = re
           T.putStrLn $ p & IJ.message
           T.putStrLn $ T.concat ["comments: ", p & IJ.commentCount, "<br><br><br>\n\n\n"]
 
-
     readComments :: String -> IO ()
-    readComments post = do 
-      options <- return $ case offset of
-          Nothing  -> []
-          Just x   -> [("from", T.pack x)]
-      result   <- commentsFromJson <$> commentsGet client options (T.pack post)
-      comments <- case result of
-        (Right x) -> return x
-        (Left x)  -> printError x >> return []
-      let proc = if order then reverse else id
-      let sorted = proc $ sortBy (comparing (& IJ.ctimestamp)) 
-                                  comments
-      mapM_ printComment sorted where
-        printComment :: IJ.PostComment -> IO ()
-        printComment c = do
-          date <- c & IJ.cdate
-          T.putStrLn $ T.concat ["<b>", c & IJ.cauthor, "</b> ",
-                                 date, " [", c & IJ.commentid, "]", "<br>"]
-          T.putStrLn $ c & IJ.ctitle
-          T.putStrLn "<br>"
-          T.putStrLn "<br><br>\n\n"
-          T.putStrLn $ c & IJ.cmessage
+    readComments post = postExists client (T.pack post) >>= \x -> case x of 
+        True  -> readComments' post
+        False -> readPost' b
+
+    readComments' :: String -> IO ()
+    readComments' post =  do
+        options <- return $ case offset of
+            Nothing  -> []
+            Just x   -> [("from", T.pack x)]
+        result   <- commentsFromJson <$> commentsGet client options (T.pack post)
+        comments <- case result of
+          (Right x) -> return x
+          (Left x)  -> printError x >> return []
+        let proc = if order then reverse else id
+        let sorted = proc $ sortBy (comparing (& IJ.ctimestamp)) 
+                                    comments
+        mapM_ printComment sorted where
+          printComment :: IJ.PostComment -> IO ()
+          printComment c = do
+            date <- c & IJ.cdate
+            T.putStrLn $ T.concat ["<b>", c & IJ.cauthor, "</b> ",
+                                   date, " [", c & IJ.commentid, "]", "<br>"]
+            T.putStrLn $ c & IJ.ctitle
+            T.putStrLn "<br>"
+            T.putStrLn "<br><br>\n\n"
+            T.putStrLn $ c & IJ.cmessage
+
+
 
 readUmail :: Commands -> ClientCredentials -> IO ()
 readUmail (Umail folder order offset) client = do

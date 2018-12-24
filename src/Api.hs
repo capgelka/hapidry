@@ -15,6 +15,7 @@ module Api
   , commentsGet
   , postsGet
   , printError
+  , postExists
   ) where
 
 
@@ -23,7 +24,7 @@ import Data.Text (Text)
 import qualified Data.Text.Lazy as L (Text)
 import qualified Data.Text as T (head, tail)
 import qualified Data.Text.IO as T
-import Internal.Api (ClientCredentials(..), apiPost, authRequest)
+import Internal.Api (ClientCredentials(..), apiPost, authRequest, apiCheckCode)
 import Data.Aeson
 import Data.Text.Lazy.Encoding (encodeUtf8, decodeUtf8)
 import Control.Lens ((&), (^.), (^?))
@@ -111,3 +112,8 @@ printError json = case decode json of
       T.putStrLn (r & J.errorText)
       exitWith $ ExitFailure (r & J.returnCode)
    Nothing  -> T.putStrLn "Unknown Error!" >> BL.putStr json >> exitWith (ExitFailure (-1))
+
+postExists :: ClientCredentials -> Id -> IO Bool
+postExists env pid = do
+  code <- apiCheckCode env (("method", "comment.get"):("postid", pid):[])
+  return $ code /= 162

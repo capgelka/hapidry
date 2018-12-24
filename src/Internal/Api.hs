@@ -7,6 +7,7 @@ module Internal.Api
       , toCP1251
       , toForm
       , apiPost
+      , apiCheckCode
       , DiaryText(..)
     ) where
 
@@ -123,6 +124,21 @@ apiPost e params = case e & sid of
                (Just x)  -> return $ Left $ r ^. responseBody
                Nothing   -> return $ Left "{\"error\": \"Unknown error\", \"result\": \"-1\"}"
 
+apiCheckCode :: ClientCredentials -> [(Text, Text)] -> IO Integer
+apiCheckCode e params = case e & sid of
+    (Left x)  -> return (read (BL.unpack x) :: Integer)
+    (Right x) ->  apiCheckCode' $ updateSid x params where
+
+        updateSid :: Text -> [(Text, Text)] -> [(Text, Text)]
+        updateSid sid params = ("sid", sid):filter (\(x, _) -> x /= "sid") params
+
+        apiCheckCode' :: [(Text, Text)] -> IO Integer
+        apiCheckCode' params = do
+            r <- post (e & endpoint) $ toForm params
+            case r ^? responseBody . key "result" . _String of
+               (Just "12") -> authRequest e >>= (`apiCheckCode` params)
+               (Just x)  -> return (read (T.unpack x) :: Integer)
+               Nothing   -> return $ -1
 
 authRequest :: ClientCredentials -> IO ClientCredentials
 authRequest env = do
@@ -138,7 +154,7 @@ authRequest env = do
     authParse :: Response BL.ByteString -> Either BL.ByteString Text
     authParse response = case response  ^? responseBody . key "result" of
             (Just "0") -> Right (response ^. responseBody . key "sid" . _String)
-            (Just  _)  -> Left $ (read (show $ response ^. responseBody) :: BL.ByteString)
+            (Just  _)  -> Left (read (show $ response ^. responseBody) :: BL.ByteString)
             Nothing    -> Left "{\"error\": \"Unknown auth error\", \"result\": \"-1\"}"
 
 convertTags :: [Text] -> [(Text, Text)]
