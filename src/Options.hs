@@ -53,6 +53,25 @@ defaultConfigPath = "$(HOME)/.hapidry"
 defaultConfigPath = "$(HOMEPATH)/.hapidry"
 #endif
 
+data DybrAction = DybrPost
+      {
+        text :: Maybe String, -- ^ optional field to store message text 
+        title :: Maybe String, -- ^ optional field to store post title
+        file :: Maybe Path, -- ^ optional field for path to file with message for post
+        pipe :: Bool, -- ^ flag. read message from stdin uf set
+        tags :: [String] -- ^ list of tags for post
+      } 
+    | DybrRepost
+      {
+        sourceId :: String, -- ^ Diary post id to repost
+        wrap :: Maybe String -- ^ Text for wrapping
+      } deriving (Show)
+
+-- data Dybr = DybrData
+--       {
+--         action :: DybrAction -- ^ What to do with dybr.ru api        
+--       } deriving (Show)
+
 data Commands 
     = None
     |
@@ -103,6 +122,10 @@ data Commands
         folder :: Maybe Folder, -- ^ folder to read
         reversed :: Bool, -- ^ reverse order of umails by date if set
         offset :: Maybe String -- ^ offset for umails sample
+      }
+    | Dybr
+      {
+        action :: DybrAction -- ^ What to do with dybr.ru api        
       } deriving (Show)
 
 mainParser :: ParserInfo Args
@@ -142,15 +165,58 @@ parseAuth = Auth <$> optional
 parseCommands :: Parser Commands
 parseCommands = subparser $
     command "notify" (parseNotify `withInfo` "get notification data") <>
-    command "post"  (parsePost  `withInfo` "create new post") <>
-    command "comment" (parseComment  `withInfo` "create new comment") <>
-    command "send"  (parseSend  `withInfo` "send new umail") <>
+    command "post"  (parsePost `withInfo` "create new post") <>
+    command "comment" (parseComment `withInfo` "create new comment") <>
+    command "send"  (parseSend `withInfo` "send new umail") <>
     command "read" (parseRead `withInfo` "read blogposts") <>
-    command "umail" (parseUmail `withInfo` "read umail")
+    command "umail" (parseUmail `withInfo` "read umail") <>
+    command "dybr" ((\x -> Dybr { action = x }) <$> parseDybr `withInfo` "dybr options")
 
 
 withInfo :: Parser a -> String -> ParserInfo a
 withInfo opts desc = info (helper <*> opts) $ progDesc desc
+
+parseDybr :: Parser DybrAction
+parseDybr = subparser $
+    command "post" (parseDybrPost `withInfo` "create new post on Dybr") <>
+    command "repost" (parseDybrRepost `withInfo` "repost from diary")
+
+
+parseDybrPost :: Parser DybrAction
+parseDybrPost = DybrPost
+    <$> optional (strOption $
+        short 'm'
+        <> long "message"
+        <> help "post text"
+        <> metavar "POST_MESSAGE")
+    <*> optional (strOption $
+        short 't'
+        <> long "title"
+        <> help "post title"
+        <> metavar "POST_MESSAGE_TITLE")
+    <*> optional (strOption $
+        short 'f'
+        <> long "file"
+        <> help "get text from file"
+        <> metavar "POST_MESSAGE_FILE")
+    <*> switch
+      (long "pipe"
+       <> short 'p'
+       <> help "get text from stdin")
+    <*> multiString
+        (short 'T'
+        <> long "tags"
+        <> metavar "POST_MESSAGE_TAGS"
+        <> help "add tags to message")
+
+
+parseDybrRepost :: Parser DybrAction
+parseDybrRepost = DybrRepost
+    <$> argument str (metavar "DIARY_POST_ID")
+    <*> optional (strOption $
+      long "--wrap"
+       <> short 'w'
+       <> help "text to wrap post")
 
 
 parseRead :: Parser Commands
