@@ -67,9 +67,9 @@ printResult (Right xs) d = mapM_ (\x -> BL.putStr x >> T.putStr d) xs >> putStrL
 
 getApiEndpointRootUrl :: C.Config -> IO String
 getApiEndpointRootUrl conf = T.unpack <$> choice <$> (readOption conf "insecure") where
-  choice "True" = "http://diary.ru/api"
-  choice "true" = "http://diary.ru/api"
-  choice _      = "https://diary.ru/api"
+  choice "True" = "http://www.diary.ru/api"
+  choice "true" = "http://www.diary.ru/api"
+  choice _      = "https://www.diary.ru/api"
 
 
 getCreds :: Args -> IO ClientCredentials
