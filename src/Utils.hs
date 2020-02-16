@@ -1,4 +1,4 @@
-{-# LANGUAGE  OverloadedStrings, CPP, DuplicateRecordFields,  DoAndIfThenElse #-}
+{-# LANGUAGE OverloadedStrings, CPP, DuplicateRecordFields, ForeignFunctionInterface #-}
 
 module Utils 
   ( readOption
@@ -40,14 +40,28 @@ import Data.List (sortBy)
 import Data.Ord (comparing)
 import Data.Char (isDigit)
 import System.Directory
-import System.Environment(lookupEnv)
+import System.Environment (lookupEnv)
 
 import Data.Aeson.Lens (key, _String)
 import Control.Lens ((&), (^.))
 
+import Foreign.C.String (CString, newCString)
+import Foreign.Marshal.Alloc (free)
+
+foreign import ccall "print_html_ffi" printHtmlForeign :: CString -> IO ()
+
+
+printHtml :: Text -> IO ()
+printHtml html = do
+  chtml <- newCString $ T.unpack $ html 
+  printHtmlForeign chtml
+  free chtml
+  return ()
+
 
 readSid :: Text -> IO Text
-readSid username = do 
+readSid username = do
+  printHtml "<b>OLOLO!</b>"
   path <- T.unpack <$> (getTempPrefix >>= \tmp -> return $ T.concat [tmp, "/hapidry_", username])
   exist <- doesFileExist path
   if exist then T.readFile path else return "" where

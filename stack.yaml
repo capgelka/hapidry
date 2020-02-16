@@ -10,11 +10,20 @@ packages:
 # Packages to be pulled from upstream that are not in the resolver (e.g., acme-missiles-0.3)
 extra-deps: []
 
+
 # Override default flag values for local packages and extra-deps
 flags: {}
 
 # Extra package databases containing global packages
 extra-package-dbs: []
+
+extra-lib-dirs:
+- ./bin
+extra-include-dirs:
+- ./bin
+
+# extra-libraries: 
+# - html_md_tools
 
 # Control whether we use the GHC we find on the path
 # system-ghc: true
