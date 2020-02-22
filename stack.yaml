@@ -17,11 +17,6 @@ flags: {}
 # Extra package databases containing global packages
 extra-package-dbs: []
 
-extra-lib-dirs:
-- ./bin
-extra-include-dirs:
-- ./bin
-
 # extra-libraries: 
 # - html_md_tools
 

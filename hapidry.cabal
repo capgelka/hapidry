@@ -9,14 +9,16 @@ author:              capgelka
 maintainer:          ldyach@yandex.ru
 copyright:           GPL
 category:            network
-build-type:          Simple
+build-type:          Custom
 cabal-version:       >=1.10
+
+custom-setup
+  setup-depends: base >= 4.7 && < 5, Cabal >= 1.18, directory >= 1.2.1
 
 library
   hs-source-dirs:      src
   exposed-modules:     Api, Options, Utils, Json, Internal.Api, Internal.Json
-  ghc-options:         -O3 
--- -l /home/lott/Data/hapidry/bin/libhtml_md_tools.so -dynamic
+  ghc-options:         -O3
   build-depends:       base
                      , lens
                      , lens-aeson
@@ -34,8 +36,7 @@ library
                      , split
                      , time
                      , directory
- -- include-dirs:         /home/lott/Data/hapidry/bin/
-  extra-libraries:  html_md_tools
+  extra-libraries: html_md_tools ssl crypto
   if !os(windows)
     build-depends:     editor-open
 
@@ -55,7 +56,12 @@ executable hapidry
                      , text
                      , gitrev
                      , process
---  include-dirs:         /home/lott/Data/hapidry/bin/
+ -- include-dirs:         /home/lott/Data/hapidry/bin/
+ -- c-sources: foreign/html_md_tools2.c foreign/libhtml_md_tools.a 
+  --cc-options: -O2 -std=c99
+  --include-dirs: foreign
+  -- include-dirs: bin
+  --extra-lib-dirs: foreign
   default-language:    Haskell2010
 
 test-suite hapidry-test
