@@ -6,6 +6,11 @@
 
 hapidry (haskell api diary) is a command line client for diary.ru api with interface in unix spirit. Feel free to open issues if something is done some other ugly way.
 
+In the new version it uses 2 Rust libraries. https://gitlab.com/Kanedias/html2md and `mdcat` libraries to pretty print content on terminal. So no need to use it like `hapidry read postdid | w3m -T text/html | less`. Just `hapidry read postdid`.
+They both wrapped with https://github.com/capgelka/html_md_tools to use from haskell ffi. Because there are no need to change this lib this repo contains only the compiled static library, so one doesn't need a rust toolchain to build hapidry.
+
+
+
 Currently it supports 7 actions (with 6 subcommands).
 
 * Create new post in your blog
@@ -33,19 +38,17 @@ Currently it supports 7 actions (with 6 subcommands).
 * Read blogs
     * `hapidry read` (read your own blog)
     * `hapidry read someone1 someone2` (read someone1 and someone2 blogs)
-    * `hapidry read -r` (read posts in reversed order)
-    * `hapidry read | w3m -T text/html | less` (use less to read posts rendered via w3m)
+    * `hapidry read -r` (read posts in reversed order) w3m)
 
 * Read umail
     * `hapidry umail` (read income umails)
     * `hapidry umail deleted` (read umails from deleted folder)
     * `hapidry umail -r` (umail in reversed order)
-    * `hapidry umail | w3m -T text/html | less` (use less to read umail rendered via w3m)
 
 * Read comments
     * `hapidry read postid` (can be number or number with "p" prefix)
     * `hapidry read postid -r` (read posts in reversed order)
-    * `hapidry read postdid | w3m -T text/html | less` (use less to read posts rendered via w3m)
+
 
 * There are also some additional features
     * `hapidry post -m message --tags "tagone, tag2,othertag"` (creates new post with 3 tags)
