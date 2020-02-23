@@ -23,7 +23,7 @@ fin ()
 
 
 
-echo "This is first your first hapidry run. This script can generate hapidry config for you"
+echo "This script can generate hapidry config for you"
 
 while true; do
     read -p "Do you to generate config? [Y/n] $(echo -e '\n')" yn

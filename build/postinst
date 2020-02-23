@@ -2,7 +2,7 @@
 
 mkdir -p /etc/bash_completion.d
 hapidry --bash-completion-script $(which hapidry) > /etc/bash_completion.d/hapidry
-hapidry-generate
+echo "You can run hapidry-generate to generate config file if you don't want to do it manually"
 
 ZSH=/etc/zsh/zshrc
 
