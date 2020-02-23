@@ -216,18 +216,24 @@ readPost b@(Blog blognames order offset)
         printBlog :: IJ.Post -> IO ()
         printBlog p = do
           date <- p & IJ.date
-          T.putStrLn $ case p & IJ.journalname of
-              Just x -> T.concat ["<h3>", x, " (", p & IJ.author, ")</h3><br>"]
-              Nothing -> ""
-          T.putStrLn $ T.concat [date,
-                                ": ",
-                                 p & IJ.title, 
-                                 " [",
-                                 p & IJ.postid,
-                                 "]"]
-          T.putStrLn "<br><br>\n\n"
-          T.putStrLn $ p & IJ.message
-          T.putStrLn $ T.concat ["comments: ", p & IJ.commentCount, "<br><br><br>\n\n\n"]
+          printHtml $ T.concat
+            [
+              (case p & IJ.journalname of
+                Just x -> T.concat ["<b>", x, " (", p & IJ.author, ")</b>"]
+                Nothing -> ""),
+              "<h1>",
+              (T.concat [date,
+                                    ": ",
+                                     p & IJ.title, 
+                                     " [",
+                                     p & IJ.postid,
+                                     "]"]
+              ),                      
+               "</h1>\n\n",
+              p & IJ.message,
+              T.concat ["<p>comments: ", p & IJ.commentCount, "<p> </p><br></br><br>\n\n\n"]
+            ]
+          
 
     readComments :: String -> IO ()
     readComments post = postExists client (T.pack post) >>= \x -> case x of 
@@ -250,12 +256,20 @@ readPost b@(Blog blognames order offset)
           printComment :: IJ.PostComment -> IO ()
           printComment c = do
             date <- c & IJ.cdate
-            T.putStrLn $ T.concat ["<b>", c & IJ.cauthor, "</b> ",
-                                   date, " [", c & IJ.commentid, "]", "<br>"]
-            T.putStrLn $ c & IJ.ctitle
-            T.putStrLn "<br>"
-            T.putStrLn "<br><br>\n\n"
-            T.putStrLn $ c & IJ.cmessage
+            printHtml $ T.concat
+              [
+                 "<h1>"
+                 , c & IJ.cauthor
+                 , " "
+                 , date
+                 , " ["
+                 , c & IJ.commentid
+                 , "] </h1>" 
+                 ,  c & IJ.ctitle
+                 , "<br>"
+                 , "<br><br>\n\n"
+                 ,  c & IJ.cmessage
+              ]
 
 
 
@@ -275,16 +289,20 @@ readUmail (Umail folder order offset) client = do
     printUmail :: IJ.UmailMessage -> IO ()
     printUmail u = do
       date <- u & IJ.dateline
-      T.putStr $ T.concat ["<h3>(", u & IJ.username, ") "]
-      T.putStrLn $ T.concat [date,
-                            ": ",
-                             u & IJ.utitle, 
-                             " [",
-                             u & IJ.umailid,
-                             "]</h3>"]
-      T.putStrLn "<br><br>\n\n"
-      T.putStrLn $ IJ.messageHtml u
-      T.putStrLn "<br>"
+      printHtml $ T.concat 
+        [
+            T.concat ["<h3>(", u & IJ.username, ") "]
+            , T.concat [date,
+                                  ": ",
+                                   u & IJ.utitle, 
+                                   " [",
+                                   u & IJ.umailid,
+                                   "]</h3>"]
+            , "<br><br>\n\n"
+            , IJ.messageHtml u
+            , "<br>"
+        ]
+   
 
 getNotifications :: Commands -> ClientCredentials -> IO ()
 getNotifications opt client = do 
