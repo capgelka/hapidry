@@ -61,7 +61,6 @@ printHtml html = do
 
 readSid :: Text -> IO Text
 readSid username = do
-  printHtml "<b>OLOLO!</b>"
   path <- T.unpack <$> (getTempPrefix >>= \tmp -> return $ T.concat [tmp, "/hapidry_", username])
   exist <- doesFileExist path
   if exist then T.readFile path else return "" where

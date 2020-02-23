@@ -9,10 +9,8 @@ import           System.Directory
 
 main = defaultMainWithHooks simpleUserHooks
   {
-  --  preConf = makeExtLib
-  confHook = \a f -> confHook simpleUserHooks a f >>= updateExtraLibDirs
-  , postCopy = copyExtLib
-  -- , postClean = cleanExtLib
+      confHook = \a f -> confHook simpleUserHooks a f >>= updateExtraLibDirs
+      , postCopy = copyExtLib
   }
 
 
